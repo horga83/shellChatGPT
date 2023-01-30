@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- ChatGPT Shell Wrapper
-# v0.1.15  2023  by mountaineerbr  GPL+3
+# v0.1.16  2023  by mountaineerbr  GPL+3
 
 #Set OpenAI key (may be set from enviroment)
 #OPENAI_KEY=
@@ -128,6 +128,8 @@ MODELS
 OPTIONS
 	-NUM 		Set maximum tokens. Defaults=$OPTMM.
 	-a [NAME] 	Set a model name, check with -l.
+	-e [INSTRUCT] [INPUT]
+			Set Edit mode, defaults to text-davinci-edit-001.
 	-h 		Print this help page.
 	-i [PROMPT] 	Creates an image given a prompt.
 	-i [PNG_PATH] 	Creates a variation of a given image.
