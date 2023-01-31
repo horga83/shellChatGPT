@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- ChatGPT Shell Wrapper
-# v0.1.16  2023  by mountaineerbr  GPL+3
+# v0.1.17  2023  by mountaineerbr  GPL+3
 
 #Set OpenAI key (may be set from enviroment)
 #OPENAI_KEY=
@@ -61,11 +61,9 @@ COMPLETIONS
 
 
 EDITS
-	Given a prompt/input and an instruction, the model will
-	return an edited version of the prompt.
-
-	Given a prompt and/or an input image, the model will
-	generate a new image.
+	Given instruction and prompt/input, the model will
+	return an edited version of the prompt. This endpoint
+	is set with models with \`edit' in their name.
 
 
 IMAGES
@@ -80,7 +78,7 @@ IMAGES
 	Creates a variation of a given image. The image to use as
 	the basis for the variation(s). Must be a valid PNG file,
 	less than 4MB and square. If Imagemagick is available,
-	input image will be convereted to square before upload.
+	input image will be converted to square before upload.
 
 
 ENVIRONMENT
@@ -90,7 +88,9 @@ ENVIRONMENT
 REQUIREMENTS
 	A free OpenAI GPTChat key.
 
-	Ksh or bash. cURL. JQ and Imagemagick are optionally required.
+	Ksh or bash. cURL.
+
+	JQ and Imagemagick are optionally required.
 
 
 LIMITS
@@ -127,7 +127,6 @@ MODELS
 
 OPTIONS
 	-NUM 		Set maximum tokens. Defaults=$OPTMM.
-	-a [NAME] 	Set a model name, check with -l.
 	-e [INSTRUCT] [INPUT]
 			Set Edit mode, defaults to text-davinci-edit-001.
 	-h 		Print this help page.
@@ -136,6 +135,7 @@ OPTIONS
 	-j 		Print raw JSON data.
 	-k [KEY] 	Set API key (free).
 	-l 		List models.
+	-m [MOD_NAME] 	Set a model name, check with -l.
 	-m [NUM] 	Set model by NUM:
 			  #completions
 			  0. 	text-davinci-003

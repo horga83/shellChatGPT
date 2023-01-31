@@ -51,7 +51,7 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 ## Usage
 
 - Set your OpenAI API key with option `-k [KEY]` or environment variable `$OPENAI_KEY`
-- Just write yoru prompt after the script name `chatgpt.sh`
+- Just write your prompt after the script name `chatgpt.sh`
 - Set temperature value with `-t [VAL]` (0.0 to 2.0), defaults=0.
 - To set your model, run `chatgpt.sh -l` and then set option `-m [MODEL_NAME]`
 - Some models require a \`prompt' while others \`instructions' and \`input'
