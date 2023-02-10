@@ -8,10 +8,9 @@ Shell wrapper for OpenAI API for ChatGPT and DALL-E.
 - Follow up conversations
 - Generate images from text input
 - Generate variations of images
-- Set the model to interact with
-- Converts base64 JSON data to PNG image at `$HOME/Downloads`
-- Convert and upload images for variations
-- Set temperature, number of results and any available model
+- Choose amongst available models
+- Lots of command line options
+- Converts base64 JSON data to PNG image
 
 
 ```
@@ -44,6 +43,7 @@ Usage_: 8 + 52 = 60 tokens
 - cURL
 - JQ (optional)
 - Imagemagick (optional)
+- Base64 (optional)
 
 ### Installation
 
