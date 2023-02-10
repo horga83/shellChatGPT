@@ -2,6 +2,7 @@
 
 Shell wrapper for OpenAI API for ChatGPT and DALL-E.
 
+
 ## Features
 
 - GPT chat from the command line
@@ -49,6 +50,7 @@ Usage_: 8 + 52 = 60 tokens
 
 Just download the stand-alone `chatgpt.sh` and make it executable or clone this repo.
 
+
 ## Usage
 
 - Set your OpenAI API key with option `-k [KEY]` or environment variable `$OPENAI_KEY`
@@ -58,4 +60,10 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 - Some models require a \`prompt' while others \`instructions' and \`input'
 - To generate images, set option -i and write your prompt
 - Make a variation of an image, set -i and an image path for upload
+
+
+## Environment
+
+- Set `$OPENAI_KEY` with your OpenAI API key.
+- Set `$CHATGPTRC` with path to chatgpt.sh configuration file.
 
