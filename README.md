@@ -5,6 +5,7 @@ Shell wrapper for OpenAI API for ChatGPT and DALL-E.
 ## Features
 
 - GPT chat from the command line
+- Follow up conversations
 - Generate images from text input
 - Generate variations of images
 - Set the model to interact with
@@ -18,8 +19,8 @@ Shell wrapper for OpenAI API for ChatGPT and DALL-E.
 Prompt: 6 words; Max tokens: 1024
 ######################################## 100.0%
 Object: text_completion
-Model: text-davinci-003
-Usage: 8+52=60 tokens
+Model_: text-davinci-003
+Usage_: 8 + 52 = 60 tokens
 
 
 1. Ubuntu

@@ -1,27 +1,43 @@
 #!/usr/bin/env ksh
-# chatgpt.sh -- ChatGPT Shell Wrapper
-# v0.1.17  2023  by mountaineerbr  GPL+3
+# chatgpt.sh -- Ksh/Bash ChatGPT Shell Wrapper
+# v0.2.11  2023  by mountaineerbr  GPL+3
 
-#Set OpenAI key (may be set from enviroment)
+# OpenAI API key
 #OPENAI_KEY=
 
-#DEFAULTS
-#Model
+# DEFAULTS
+# Model
 OPTM=0
-#Temperature
-OPTT=0
-#Maximum tokens
-OPTMM=1024
-#Number of responses
-OPTN=1
-#Endpoint
+# Endpoint
 EPN=0
-#JSON backup from API
-TMPFILE="${HOME}/Downloads/chatgpt.json"
-#Image size
+# Temperature
+OPTT=0
+# Top P
+OPTP=1
+# Maximum tokens
+OPTMM=1024
+# Presence penalty
+#OPTA=
+# Frequency penalty
+#OPTAA=
+# Number of responses
+OPTN=1
+# Image size
 OPTS=512x512
-#Image format
+# Image format
 OPTI_FMT=b64_json  #url
+
+# Cache files
+CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatgptsh"
+FILE="${CACHEDIR}/chatgpt.json"
+FILECHAT="${FILE%.*}.tsv"
+FILECONF="${FILE%.*}.conf"
+FILETXT="${FILE%.*}.txt"
+FILEIN="${FILE%.*}_in.png"
+FILEOUT="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}/chatgpt_out.png"
+
+# Set user defaults
+[[ -e ${CHATGPTRC:-$FILECONF} ]] && { 	. "${CHATGPTRC:-$FILECONF}" || exit ;}
 
 HELP="NAME
 	${0##*/} -- ChatGPT Shell Wrapper
@@ -31,7 +47,7 @@ SYNOPSIS
 	${0##*/} [-m [MODEL_NAME|NUMBER]] [opt] [PROMPT]
 	${0##*/} [-m [MODEL_NAME|NUMBER]] [opt] [INSTRUCTIONS] [INPUT]
 	${0##*/} -e [opt] [INSTRUCTIONS] [INPUT]
-	${0##*/} -i [opt] [256|512|1024] [PROMPT]
+	${0##*/} -i [opt] [256|512|1024|S|M|L] [PROMPT]
 	${0##*/} -i [opt] [INPUT_PNG_PATH]
 	${0##*/} -l [MODEL_NAME]
 
@@ -39,7 +55,7 @@ SYNOPSIS
 	see ENVIRONMENT section.
 
 	Local copy of the last	API response is stored at:
-	\"$TMPFILE\".
+	${FILE/$HOME/\~}
 
 
 COMPLETIONS
@@ -47,17 +63,44 @@ COMPLETIONS
 	completions, and can also return the probabilities of
 	alternative tokens at each position.
 
-	Make a good prompt. May use bullets for multiple questions
-	in a single prompt. Write \`act as [technician]', add
-	examples of expected results.
+	Make a good prompt. May use bullets for multiple questions in
+	a single prompt. Write \`act as [technician]', add examples of
+	expected results.
 
+	To keep a history of the latest context in the chat, set option
+	-c. This keeps a record of the latest prompts and replies and
+	sends some history context with new questions. This option
+	respects max tokens setting. The chat format is \`Q: [prompt]'
+	and \`A: [reply]', but a single letter such as \`I:' or simply
+	\`:' may be set to mark the initial instruction prompt.
+
+
+	Temperature 	number 	Optional 	Defaults to $OPTT
 	Lowering temperature means it will take fewer risks, and
 	completions will be more accurate and deterministic.
 	Increasing temperature will result in more diverse completions.
 	
-	Ex: low-temp:  We’re not asking the model to try to be
-	creative with its responses – especially for yes or no
-	questions.
+	Ex: low-temp:  We’re not asking the model to try to be creative
+	with its responses – especially for yes or no questions.
+
+
+	Top_p 	number 	Optional 	Defaults to $OPTP
+	An alternative to sampling with temperature, called nucleus
+	sampling, where the model considers the results of the tokens
+	with top_p probability mass. So 0.1 means only the tokens
+	comprising the top 10% probability mass are considered.
+
+	They generally recommend altering this or temperature but both.
+
+	
+	Presence_penalty 	number 	Optional 	Defaults to 0
+	Frequency_penalty 	number 	Optional 	Defaults to 0
+	Number between -2.0 and 2.0. Positive values penalize new tokens
+	based on whether they appear in the text so far.
+
+	Presense penalty increases the model's likelihood to talk about
+	new topics, while frequency penalty decreases the model's like-
+	lihood to repeat the same line verbatim.
 
 
 EDITS
@@ -68,7 +111,7 @@ EDITS
 
 IMAGES
 	The first positional parameter sets the output image size
-	256x256, 512x512 or 1024x1024. Defaults=$OPTS.
+	256x256/small, 512x512/medium or 1024x1024/large. Defaults=$OPTS.
 
 	CREATE IMAGE
 	Creates an image given a prompt. A text description of the
@@ -82,13 +125,20 @@ IMAGES
 
 
 ENVIRONMENT
+	CHATGPTRC 	Path to user ${0##*/} configuration.
+			Defaults=${CHATGPTRC:-${FILECONF/$HOME/\~}}
+
+	EDITOR
+	VISUAL 		Text editor for external prompt editing.
+			Defaults=vim
+	
 	OPENAI_KEY 	Set your personal (free) OpenAI API key.
 
 
 REQUIREMENTS
 	A free OpenAI GPTChat key.
 
-	Ksh or bash. cURL.
+	Ksh or Bash. cURL.
 
 	JQ and Imagemagick are optionally required.
 
@@ -126,7 +176,11 @@ MODELS
 
 
 OPTIONS
-	-NUM 		Set maximum tokens. Defaults=$OPTMM.
+	-NUM 		Set maximum tokens. Max=4096, defaults=$OPTMM.
+	-a [VAL]	Set presence penalty  (completions; -2.0 - 2.0).
+	-A [VAL]	Set frequency penalty (completions; -2.0 - 2.0).
+	-c 		Set chat mode and history file (completions).
+	-C 		Set session break in history file.
 	-e [INSTRUCT] [INPUT]
 			Set Edit mode, defaults to text-davinci-edit-001.
 	-h 		Print this help page.
@@ -137,24 +191,20 @@ OPTIONS
 	-l 		List models.
 	-m [MOD_NAME] 	Set a model name, check with -l.
 	-m [NUM] 	Set model by NUM:
-			  #completions
-			  0. 	text-davinci-003
-			  1. 	text-curie-001
-			  2. 	text-babbage-001
-			  3. 	text-ada-001
-			  #codex
-			  4. 	code-davinci-002
-			  5. 	code-cushman-001
-			  #moderation
-			  6. 	text-moderation-latest
-			  7. 	text-moderation-stable
-			  #edits
-			  8. 	text-davinci-edit-001
-			  9. 	code-davinci-edit-001
+		  # Completions           # Moderation
+		  0. text-davinci-003     6. text-moderation-latest
+		  1. text-curie-001       7. text-moderation-stable
+		  2. text-babbage-001
+		  3. text-ada-001
+		  # Codex                 # Edits
+		  4. code-davinci-002     8. text-davinci-edit-001
+		  5. code-cushman-001     9. code-davinci-edit-001
 	-n [NUM] 	Set number of results. Defaults=$OPTN.
+	-p [VAL] 	Set top_p value (0.0 - 1.0). Defaults=$OPTP.
 	-t [VAL] 	Set temperature value (0.0 - 2.0). Defaults=$OPTT.
+	-vv 		Print request body, may set twice to exit.
+	-xx 		Edit prompt in text editor or edit prompt buffer.
 	-z 		Print last call JSON file backup."
-
 #API docs: <https://beta.openai.com/docs/guides>
 
 MODELS=(
@@ -185,24 +235,35 @@ ENDPOINTS=(
 	
 
 
-function promptf
+function prompt_mainf
 {
 	curl -\# -L https://api.openai.com/v1/${ENDPOINTS[$EPN]} \
 		-H "Content-Type: application/json" \
 		-H "Authorization: Bearer $OPENAI_KEY" \
 		-d "$BLOCK" \
-		-o "$TMPFILE"
+		-o "$FILE"
+}
+
+function promptf
+{
+	if ((OPTV>1))
+	then 	echo "$BLOCK" ;exit
+	elif ((OPTV))
+	then	jq -r '.instruction//empty, .input//empty, .prompt//empty' <<<"$BLOCK" || echo "$BLOCK"
+	fi
+	prompt_mainf "$@"
 }
 
 function prompt_printf
 {
 	if ((OPTJ)) #print raw json
-	then 	cat -- "$TMPFILE"
+	then 	cat -- "$FILE"
 	else 	jq -r '"Object: \(.object)",
-			"Model: \(.model//empty)",
-			"Usage: \(.usage.prompt_tokens)+\(.usage.completion_tokens)=\(.usage.total_tokens//empty) tokens",
-			.choices[].text' "$TMPFILE" \
-		|| cat -- "$TMPFILE"
+			"Model_: \(.model//empty)",
+			"Usage_: \(.usage.prompt_tokens) + \(.usage.completion_tokens) = \(.usage.total_tokens//empty) tokens"' \
+			"$FILE" >&2 \
+		&& jq -r '.choices[].text' "$FILE" \
+		|| cat -- "$FILE"
 	fi
 }
 
@@ -214,22 +275,25 @@ function prompt_imgvarf
 		-F response_format="$OPTI_FMT" \
 		-F n="$OPTN" \
 		-F size="$OPTS" \
-		-o "$TMPFILE"
+		-o "$FILE"
 }
 
 function prompt_imgprintf
 {
+	typeset n fout
 	if ((OPTJ)) #print raw json
-	then 	cat -- "$TMPFILE"
+	then 	cat -- "$FILE"
 	elif [[ $OPTI_FMT = b64_json ]]
-	then 	n=0
-		while jq -e ".data[${n}]" "$TMPFILE" >/dev/null 2>&1
-		do 	jq -r ".data[${n}].b64_json" "$TMPFILE" | base64 -d > "${TMPFILE%.json}${n}.png"
-			echo "File: ${TMPFILE%.json}${n}.png" >&2
+	then 	[[ -d "${FILEOUT%/*}" ]] || FILEOUT="${FILEIN}"
+		n=0
+		while jq -e ".data[${n}]" "$FILE" >/dev/null 2>&1
+		do 	fout="${FILEOUT%.*}${n}.png"
+			jq -r ".data[${n}].b64_json" "$FILE" | base64 -d > "$fout"
+			echo "File: ${fout/$HOME/\~}" >&2
 			((n++)) ;((n<50)) || break
 		done
-		((n)) || { 	cat -- "$TMPFILE" ;false ;}
-	else 	jq -r '.data[].url' "$TMPFILE" || cat -- "$TMPFILE"
+		((n)) || { 	cat -- "$FILE" ;false ;}
+	else 	jq -r '.data[].url' "$FILE" || cat -- "$FILE"
 	fi
 }
 
@@ -237,59 +301,85 @@ function list_modelsf
 {
 	curl https://api.openai.com/v1/models${1:+/}${1} \
 		-H "Authorization: Bearer $OPENAI_KEY" \
-		-o "$TMPFILE"
+		-o "$FILE"
 	if [[ $1 ]]
-	then  	jq . "$TMPFILE" || cat -- "$TMPFILE"
-	else 	jq -r '.data[].id' "$TMPFILE" | sort
+	then  	jq . "$FILE" || cat -- "$FILE"
+	else 	jq -r '.data[].id' "$FILE" | sort
 	fi
 }
 
 function lastjsonf
 {
-	if [[ -e $TMPFILE ]]
-	then 	jq . "$TMPFILE" || cat -- "$TMPFILE"
+	if [[ -s $FILE ]]
+	then 	jq . "$FILE" || cat -- "$FILE"
 	fi
 }
 
 
 #parse opts
-while getopts ehiIjlm:a:n:kt:z0123456789 c
-do 	case $c in
+while getopts a:A:cCehiIjlm:n:kp:t:vxz0123456789 c
+do 	[[ $OPTARG = .[0-9]* ]] && OPTARG=0$OPTARG
+	case $c in
 		[0-9]) 	OPTMAX=$OPTMAX$c;;
+		a) 	OPTA="$OPTARG";;
+		A) 	OPTAA="$OPTARG";;
+		c) 	OPTC=1;;
+		C) 	((OPTCC++)) || tee -a -- "${FILECHAT}" >&2 <<<'SESSION BREAK';;
 		e) 	OPTE=1;;
 		h) 	echo "$HELP" ;exit ;;
 		i|I) 	OPTI=1;;
 		j) 	OPTJ=1;;
 		l) 	OPTL=1 ;;
-		m|a) 	OPTMSET=1
-			if [[ $OPTARG = *[a-zA-Z] ]]
+		m) 	OPTMSET=1
+			if [[ $OPTARG = *[a-zA-Z]* ]]
 			then 	MOD=$OPTARG  #set model name
 			else 	OPTM=$OPTARG #set one pre defined model number
 			fi;;
 		n) 	OPTN=$OPTARG ;;
 		k) 	OPENAI_KEY=$OPTARG;;
-		t) 	OPTT=$OPTARG ;[[ $OPTT = .* ]] && OPTT=0$OPTT;;
+		p) 	if ((OPTARG>1))
+			then 	echo "err: illegal top_p -- $OPTARG" >&2
+			else 	OPTP=$OPTARG
+			fi;;
+		t) 	if ((OPTARG>2))
+			then 	echo "err: illegal temperature -- $OPTARG" >&2
+			else 	OPTT=$OPTARG
+			fi;;
+		v) 	((++OPTV));;
+		x) 	((++OPTX));;
 		z) 	OPTZ=1;;
 	esac
 done ; unset c
 shift $((OPTIND -1))
 
-trk=sK-gDD7IQwrq1bxiyVVDL9XT3BlbKFJrVIFauUfJFU32bqzrWAB
-OPENAI_KEY="${OPENAI_KEY:-${BEARER:-${OPENAI_API_KEY:-${GPTCHATKEY:-${trk//K/k}}}}}"
-: ${OPENAI_KEY:?API key required}
+mkdir -p "$CACHEDIR" || exit
+OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
 command -v jq >/dev/null 2>&1 || function jq { 	false ;}
 command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
+[[ ${OPTT#0} ]] && [[ ${OPTP#1} ]] && echo "warning: temperature and top_p both set" >&2
+(($#)) || [[ -t 0 ]] || set -- "$(</dev/stdin)"
+if ((OPTX))  #external editor
+then 	((OPTX<2)) && echo "$@" > "$FILETXT"
+	${VISUAL:-${EDITOR:-vim}} "$FILETXT" </dev/tty >/dev/tty
+ 	set -- "$(<"$FILETXT")"
+fi
 OPTMAX=${OPTMAX:-$OPTMM}
-((OPTI+OPTII+OPTL+OPTZ)) || echo "Prompt: $(wc -w <<<"$*") words; Max tokens: $OPTMAX" >&2
-set -- "${@//[\"]/\\\"}"            #quote double quote marks
+((OPTI+OPTII+OPTL+OPTZ)) || {
+	TKN_PREV=$(($(wc -c <<<"$*")/4))
+	echo "Prompt tokens: ~$TKN_PREV; Max tokens: $OPTMAX" >&2
+}
+set -- "${@//[\"]/\\\"}"          #quote double quote marks
 set -- "${@//[$'\n\r\v\f']/\\n}"  #quote new line/formfeed characters
-set -- "${@//[$'\t']/    }"         #tabs
+set -- "${@//[$'\t']/\\t}"        #tabs
+
+[[ $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA,"
+[[ $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA,"
 
 if ((OPTI))
 then 	case "${1}" in 	#set image size
-		1024*) 	OPTS=1024x1024 ;shift;;
-		512*) 	OPTS=512x512 ;shift;;
-		256*) 	OPTS=256x256 ;shift;;
+		1024*|[Ll]arge|[Ll]) 	OPTS=1024x1024 ;shift;;
+		512*|[Mm]edium|[Mm]) 	OPTS=512x512 ;shift;;
+		256*|[Ss]mall|[Ss]) 	OPTS=256x256 ;shift;;
 	esac ;MOD=image
 	#set upload image instead
 	[[ -e "$1" ]] && OPTII=1 MOD=image-var
@@ -315,58 +405,104 @@ case "$MOD" in
 	*) 		EPN=0;;
 esac
 
-if ((OPTL))
-then 	list_modelsf "$1"
-elif ((OPTZ))
+if ((OPTZ))
 then 	lastjsonf
+elif ((OPTL))
+then 	list_modelsf "$@"
 elif ((OPTII))
 then 	[[ -e ${1:?input PNG path required} ]] || exit
 	if command -v magick >/dev/null 2>&1  #convert img to 'square png'
 	then 	if [[ $1 != *.[Pp][Nn][Gg] ]] ||
 			((! $(magick identify -format '%[fx:(h == w)]' "$1") ))
-		then 	magick convert "${1}" -gravity Center -extent 1:1 "${TMPFILE%.*}_in.png" &&
-			set  -- "${TMPFILE%.*}_in.png"
+		then 	magick convert "${1}" -gravity Center -extent 1:1 "${FILEIN}" &&
+			set  -- "${FILEIN}" "${@:2}"
 		fi
+		#https://legacy.imagemagick.org/Usage/resize/
 	fi
 	prompt_imgvarf "$1"
 	prompt_imgprintf
-elif ((OPTI))
+elif ((OPTI))      #image
 then 	BLOCK="{
-		\"prompt\": \"${*:?ERR}\",
+		\"prompt\": \"${*:?IMG PROMPT ERR}\",
 		\"size\": \"$OPTS\",
 		\"n\": $OPTN,
 		\"response_format\": \"$OPTI_FMT\"
 	}"
 	promptf
 	prompt_imgprintf
-elif ((OPTEMBED))
+elif ((OPTEMBED))  #embed
 then 	BLOCK="{
 		\"model\": \"$MOD\",
-		\"input\": \"${*:?ERR}\",
+		\"input\": \"${*:?INPUT ERR}\",
 		\"temperature\": $OPTT,
+		\"top_p\": $OPTP,
 		\"max_tokens\": $OPTMAX,
 		\"n\": $OPTN
 	}"
 	promptf
 	prompt_printf
-elif ((OPTE))
+elif ((OPTE))      #edit
 then 	BLOCK="{
 		\"model\": \"$MOD\",
 		\"instruction\": \"$1\",
-		\"input\": \"${2:?ERR}\",
+		\"input\": \"${2:?EDIT MODE ERR}\",
 		\"temperature\": $OPTT,
+		\"top_p\": $OPTP,
 		\"n\": $OPTN
 	}"
 	promptf
 	prompt_printf
-else 	BLOCK="{
+else               #completion
+	if [[ $OPTC ]]  #chat
+	then 	if [[ ${*# } = [A-Z]:* ]] || [[ ${*# } = :* ]]
+		then 	ORIG_INPUT="${*#[ :]}"
+			ORIG_TYPE="${*%%:*}"
+			set -- "${*#[ :]}" ;set -- "${*#[ :]}"
+		else 	ORIG_INPUT="${*:?PROMPT ERR}"
+			set -- "Q: $*"
+		fi
+		if [[ -s "${FILECHAT}" ]]
+		then 	((max_prev=TKN_PREV))
+			while IFS=$'\t' read -r time token type string
+			do 	[[ $time$token = *[Bb][Rr][Ee][Aa][Kk]* ]] && break
+				[[ $time ]] && ((token>0)) || continue
+				if ((max_prev+token<OPTMAX))
+				then 	((max_prev+=token)); ((max_hist+=token+1))
+					string="${string#\"}" string="${string%\"}"
+					string="${string/\\n\\n[A-Z]\:/ }"
+					while [[ $string != "$buf" ]]
+					do 	buf="$string"
+						for glob in '\\n' '[A-Z]:' '[ "]'
+						do 	string="${string#$glob}"
+						done
+					done ;unset buf glob
+					set -- "$type: ${string# }\n\n$*"
+				fi
+			done < <(tac -- "${FILECHAT}")
+			unset max_prev time token type string
+		fi
+	fi
+	#https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
+
+	BLOCK="{
 		\"model\": \"$MOD\",
-		\"prompt\": \"${*:?ERR}\",
+		\"prompt\": \"${*:?PROMPT ERR}\",
 		\"temperature\": $OPTT,
+		\"top_p\": $OPTP, $OPTA_OPT $OPTAA_OPT
 		\"max_tokens\": $OPTMAX,
 		\"n\": $OPTN
 	}"
 	promptf
 	prompt_printf
+
+	if [[ $OPTC ]] && {
+	 	tkn=($(jq -r '.usage.prompt_tokens//empty, .usage.completion_tokens//empty, (.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"))
+		ans=$(jq '.choices[].text' "$FILE") ans="${ans/\\n\\n[A-Z]\:/ }"
+		((${#tkn[@]}==3)) && ((${#ans}))
+		}
+	then 	{ 	printf '%s\t%d\t%s\t%s\n' "${tkn[2]}" "$((tkn[0]-max_hist))" "${ORIG_TYPE-Q}" "\"${ORIG_INPUT:-$*}\""
+			printf '%s\t%d\t%s\t%s\n' "${tkn[2]}" "${tkn[1]}" "A" "${ans# }"
+		} >> "${FILECHAT}"
+	fi; unset tkn ans
 fi
 
