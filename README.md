@@ -1,5 +1,4 @@
 # shellChatGPT
-
 Shell wrapper for OpenAI API for ChatGPT and DALL-E.
 
 

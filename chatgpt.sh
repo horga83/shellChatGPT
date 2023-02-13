@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh/Bash ChatGPT Shell Wrapper
-# v0.2.11  2023  by mountaineerbr  GPL+3
+# v0.2.12  2023  by mountaineerbr  GPL+3
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -57,6 +57,18 @@ SYNOPSIS
 	Local copy of the last	API response is stored at:
 	${FILE/$HOME/\~}
 
+	All positional arguments are read as a single PROMPT. If the
+	chosen model require a INTRUCTION and INPUT prompts, first
+	positional argument is taken as INSTRUCTIONS and the following
+	ones as INPUT or PROMPT.
+
+	Option -e sets the \`edits' endpoint. That endpoint requires
+	both INSTRUCTIONS and INPUT prompts.
+
+	Option -i generates images according to PROMPT. If first
+	positional argument is a picture file, then generate variation
+	of it.
+
 
 COMPLETIONS
 	Given a prompt, the model will return one or more predicted
@@ -70,9 +82,12 @@ COMPLETIONS
 	To keep a history of the latest context in the chat, set option
 	-c. This keeps a record of the latest prompts and replies and
 	sends some history context with new questions. This option
-	respects max tokens setting. The chat format is \`Q: [prompt]'
-	and \`A: [reply]', but a single letter such as \`I:' or simply
-	\`:' may be set to mark the initial instruction prompt.
+	respects max tokens setting. Set -C to break from previous
+	session.
+
+	The chat format is \`Q: [prompt]' and \`A: [reply]', but a single
+	letter such as \`I:' or simply \`:' may be set to mark the initial
+	instruction prompt.
 
 
 	Temperature 	number 	Optional 	Defaults to $OPTT
@@ -179,8 +194,8 @@ OPTIONS
 	-NUM 		Set maximum tokens. Max=4096, defaults=$OPTMM.
 	-a [VAL]	Set presence penalty  (completions; -2.0 - 2.0).
 	-A [VAL]	Set frequency penalty (completions; -2.0 - 2.0).
-	-c 		Set chat mode and history file (completions).
-	-C 		Set session break in history file.
+	-c 		Set chat mode, read history file (completions).
+	-C 		Set new session in history file.
 	-e [INSTRUCT] [INPUT]
 			Set Edit mode, defaults to text-davinci-edit-001.
 	-h 		Print this help page.
@@ -258,8 +273,7 @@ function prompt_printf
 {
 	if ((OPTJ)) #print raw json
 	then 	cat -- "$FILE"
-	else 	jq -r '"Object: \(.object)",
-			"Model_: \(.model//empty)",
+	else 	jq -r '"Model_: \(.model//"?")\tObject: \(.object//"?")",
 			"Usage_: \(.usage.prompt_tokens) + \(.usage.completion_tokens) = \(.usage.total_tokens//empty) tokens"' \
 			"$FILE" >&2 \
 		&& jq -r '.choices[].text' "$FILE" \
@@ -280,17 +294,21 @@ function prompt_imgvarf
 
 function prompt_imgprintf
 {
-	typeset n fout
+	typeset n m fname fout
 	if ((OPTJ)) #print raw json
 	then 	cat -- "$FILE"
 	elif [[ $OPTI_FMT = b64_json ]]
 	then 	[[ -d "${FILEOUT%/*}" ]] || FILEOUT="${FILEIN}"
-		n=0
+		n=0 m=0
+		for fname in "${FILEOUT%.png}"*
+		do 	fname="${fname%.png}" fname="${fname##*[!0-9]}"
+			((m>fname)) || ((m=fname+1)) 
+		done
 		while jq -e ".data[${n}]" "$FILE" >/dev/null 2>&1
-		do 	fout="${FILEOUT%.*}${n}.png"
+		do 	fout="${FILEOUT%.*}${m}.png"
 			jq -r ".data[${n}].b64_json" "$FILE" | base64 -d > "$fout"
 			echo "File: ${fout/$HOME/\~}" >&2
-			((n++)) ;((n<50)) || break
+			((++n, ++m)) ;((n<50)) || break
 		done
 		((n)) || { 	cat -- "$FILE" ;false ;}
 	else 	jq -r '.data[].url' "$FILE" || cat -- "$FILE"
@@ -442,10 +460,11 @@ then 	BLOCK="{
 	promptf
 	prompt_printf
 elif ((OPTE))      #edit
-then 	BLOCK="{
+then 	: "${2:?EDIT MODE ERR}"
+	BLOCK="{
 		\"model\": \"$MOD\",
 		\"instruction\": \"$1\",
-		\"input\": \"${2:?EDIT MODE ERR}\",
+		\"input\": \"${@:2}\",
 		\"temperature\": $OPTT,
 		\"top_p\": $OPTP,
 		\"n\": $OPTN
