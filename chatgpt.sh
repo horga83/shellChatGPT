@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh/Bash ChatGPT Shell Wrapper
-# v0.2.12  2023  by mountaineerbr  GPL+3
+# v0.2.13  2023  by mountaineerbr  GPL+3
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -63,11 +63,18 @@ SYNOPSIS
 	ones as INPUT or PROMPT.
 
 	Option -e sets the \`edits' endpoint. That endpoint requires
-	both INSTRUCTIONS and INPUT prompts.
+	both INSTRUCTIONS and INPUT prompts. This option requires
+	setting an \`edits model'.
 
 	Option -i generates images according to PROMPT. If first
 	positional argument is a picture file, then generate variation
 	of it.
+
+	Stdin is supported when there is no positional arguments left
+	after option parsing. Stdin input sets a single PROMPT.
+
+	For complete model and settings information, refer to OPENAI
+	API docs at <https://beta.openai.com/docs/guides>.
 
 
 COMPLETIONS
@@ -92,8 +99,8 @@ COMPLETIONS
 
 	Temperature 	number 	Optional 	Defaults to $OPTT
 	Lowering temperature means it will take fewer risks, and
-	completions will be more accurate and deterministic.
-	Increasing temperature will result in more diverse completions.
+	completions will be more accurate and deterministic. Increasing
+	temperature will result in more diverse completions.
 	
 	Ex: low-temp:  We’re not asking the model to try to be creative
 	with its responses – especially for yes or no questions.
@@ -119,9 +126,9 @@ COMPLETIONS
 
 
 EDITS
-	Given instruction and prompt/input, the model will
-	return an edited version of the prompt. This endpoint
-	is set with models with \`edit' in their name.
+	Given instruction and prompt/input, the model will return an
+	edited version of the prompt. This endpoint is set with models
+	with \`edit' in their name.
 
 
 IMAGES
@@ -151,11 +158,8 @@ ENVIRONMENT
 
 
 REQUIREMENTS
-	A free OpenAI GPTChat key.
-
-	Ksh or Bash. cURL.
-
-	JQ and Imagemagick are optionally required.
+	A free OpenAI GPTChat key. Ksh or Bash. cURL. JQ and Imagemagick
+	are optionally required.
 
 
 LIMITS
@@ -171,23 +175,9 @@ LIMITS
 	TPM 	(tokens per minute)
 
 
-MODELS
-	DAVINCI
-	Good at: Complex intent, cause and effect, summarization
-	for audience.
-	
-	CURIE
-	Good at: Language translation, complex classification,
-	text sentiment, summarization.
-	
-	BABBAGE
-	Good at: Moderate classification, semantic search classification.
-	Idea iteration, Sentence completion, Plot generation.
-	
-	ADA
-	Good at: Parsing text, simple classification,
-	address correction, keywords.
-	Random data, Character descriptions.
+BUGS
+	White spaces or newlines at the end of PROMPT may return an
+	empty response. Add/remove ending space or resetting temperature.
 
 
 OPTIONS
@@ -220,7 +210,6 @@ OPTIONS
 	-vv 		Print request body, may set twice to exit.
 	-xx 		Edit prompt in text editor or edit prompt buffer.
 	-z 		Print last call JSON file backup."
-#API docs: <https://beta.openai.com/docs/guides>
 
 MODELS=(
 	#COMPLETIONS
@@ -273,7 +262,7 @@ function prompt_printf
 {
 	if ((OPTJ)) #print raw json
 	then 	cat -- "$FILE"
-	else 	jq -r '"Model_: \(.model//"?")\tObject: \(.object//"?")",
+	else 	jq -r '"Model_: \(.model//"?") (\(.object//"?"))",
 			"Usage_: \(.usage.prompt_tokens) + \(.usage.completion_tokens) = \(.usage.total_tokens//empty) tokens"' \
 			"$FILE" >&2 \
 		&& jq -r '.choices[].text' "$FILE" \
