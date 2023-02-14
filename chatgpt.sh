@@ -177,7 +177,8 @@ LIMITS
 
 BUGS
 	White spaces or newlines at the end of PROMPT may return an
-	empty response. Add/remove ending space or resetting temperature.
+	empty response. Try removing/adding ending spaces or resetting
+	temperature.
 
 
 OPTIONS
