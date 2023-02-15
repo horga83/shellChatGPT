@@ -158,8 +158,8 @@ ENVIRONMENT
 
 
 REQUIREMENTS
-	A free OpenAI GPTChat key. Ksh or Bash. cURL. JQ and Imagemagick
-	are optionally required.
+	A free OpenAI GPTChat key. Ksh or Bash. cURL. JQ and
+	ImageMagick are optionally required.
 
 
 LIMITS
@@ -208,8 +208,9 @@ OPTIONS
 	-n [NUM] 	Set number of results. Defaults=$OPTN.
 	-p [VAL] 	Set top_p value (0.0 - 1.0). Defaults=$OPTP.
 	-t [VAL] 	Set temperature value (0.0 - 2.0). Defaults=$OPTT.
-	-vv 		Print request body, may set twice to exit.
-	-xx 		Edit prompt in text editor or edit prompt buffer.
+	-vv 		Print request body, set twice to dump and exit.
+	-xx 		Edit current prompt in text editor, set twice
+			to edit previous prompt buffer.
 	-z 		Print last call JSON file backup."
 
 MODELS=(
