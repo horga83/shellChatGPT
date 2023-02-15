@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh/Bash ChatGPT Shell Wrapper
-# v0.2.14  2023  by mountaineerbr  GPL+3
+# v0.2.15  2023  by mountaineerbr  GPL+3
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -324,6 +324,34 @@ function lastjsonf
 	fi
 }
 
+function edf
+{
+	typeset REPLY
+	
+	((OPTX<2)) && (($#)) && unquotef "$@" >"$FILETXT"
+	
+	${VISUAL:-${EDITOR:-vim}} "$FILETXT" </dev/tty >/dev/tty
+	
+	echo "Confirm new prompt? [Y]es, [n]o or [a]bort" >&2
+	read -n1 ;[[ $REPLY = [AaEeQq] ]] && exit ;[[ $REPLY = [!Nn] ]]
+}
+
+function quotef
+{
+ 	set -- "${@//[\"]/\\\"}"          #double quote marks
+	set -- "${@//[$'\t']/\\t}"        #tabs
+	set -- "${@//[$'\n\r\v\f']/\\n}"  #new line/form feed
+	echo "$@"
+}
+
+function unquotef
+{
+ 	set -- "${@//\\\"/\"}"
+	set -- "${@//\\t/$'\t'}"
+	set -- "${@//\\n/$'\n'}"
+	echo "$@"
+}
+
 
 #parse opts
 while getopts a:A:cCehiIjlm:n:kp:t:vxz0123456789 c
@@ -361,43 +389,15 @@ do 	[[ $OPTARG = .[0-9]* ]] && OPTARG=0$OPTARG
 done ; unset c
 shift $((OPTIND -1))
 
-mkdir -p "$CACHEDIR" || exit
-OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
-command -v jq >/dev/null 2>&1 || function jq { 	false ;}
-command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
-[[ ${OPTT#0} ]] && [[ ${OPTP#1} ]] && echo "warning: temperature and top_p both set" >&2
-(($#)) || [[ -t 0 ]] || set -- "$(</dev/stdin)"
-if ((OPTX))  #external editor
-then 	((OPTX<2)) && echo "$@" > "$FILETXT"
-	${VISUAL:-${EDITOR:-vim}} "$FILETXT" </dev/tty >/dev/tty
- 	set -- "$(<"$FILETXT")"
-fi
 OPTMAX=${OPTMAX:-$OPTMM}
-((OPTI+OPTII+OPTL+OPTZ)) || {
-	TKN_PREV=$(($(wc -c <<<"$*")/4))
-	echo "Prompt tokens: ~$TKN_PREV; Max tokens: $OPTMAX" >&2
-}
-set -- "${@//[\"]/\\\"}"          #quote double quote marks
-set -- "${@//[$'\n\r\v\f']/\\n}"  #quote new line/formfeed characters
-set -- "${@//[$'\t']/\\t}"        #tabs
-
+OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
+((OPTC)) && ((OPTE+OPTI)) && OPTC=  ;((OPTL+OPTZ)) && OPTX= 
+[[ ${OPTT#0} ]] && [[ ${OPTP#1} ]] && echo "warning: temperature and top_p both set" >&2
 [[ $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA,"
 [[ $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA,"
-
-if ((OPTI))
-then 	case "${1}" in 	#set image size
-		1024*|[Ll]arge|[Ll]) 	OPTS=1024x1024 ;shift;;
-		512*|[Mm]edium|[Mm]) 	OPTS=512x512 ;shift;;
-		256*|[Ss]mall|[Ss]) 	OPTS=256x256 ;shift;;
-	esac ;MOD=image
-	#set upload image instead
-	[[ -e "$1" ]] && OPTII=1 MOD=image-var
-fi
-#set model
 ((OPTE)) && ((!OPTMSET)) && OPTM=8
 MOD="${MOD:-${MODELS[$OPTM]}}"
-#set model endpoint
-case "$MOD" in
+case "$MOD" in  #set model endpoint
 	image-var) 	EPN=4;;
 	image) 		EPN=3;;
 	code-*) 	case "$MOD" in
@@ -413,6 +413,30 @@ case "$MOD" in
 			esac;;
 	*) 		EPN=0;;
 esac
+if ((OPTI))
+then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
+	case "$1" in 	#set image size
+		1024*|[Ll]arge|[Ll]) 	OPTS=1024x1024 ;shift;;
+		512*|[Mm]edium|[Mm]) 	OPTS=512x512 ;shift;;
+		256*|[Ss]mall|[Ss]) 	OPTS=256x256 ;shift;;
+	esac ;MOD=image
+	#set upload image instead
+	[[ -e "$1" ]] && OPTII=1 MOD=image-var
+fi
+
+(($#)) || [[ -t 0 ]] || set -- "$(</dev/stdin)"
+((OPTX)) && ((!OPTC)) && edf "$@" && set -- "$(<"$FILETXT")"  #editor
+((OPTI+OPTII+OPTL+OPTZ)) || {
+	TKN_PREV=$(($(wc -c <<<"$*")/4))
+	echo "Prompt tokens: ~$TKN_PREV; Max tokens: $OPTMAX" >&2
+}
+for arg  #quote input
+do 	((init++)) || set --
+	set -- "$@" "$(quotef "$arg")"
+done ;unset arg init
+
+mkdir -p "$CACHEDIR" || exit
+command -v jq >/dev/null 2>&1 || function jq { 	false ;}
 
 if ((OPTZ))
 then 	lastjsonf
@@ -465,10 +489,10 @@ then 	: "${2:?EDIT MODE ERR}"
 else               #completion
 	if [[ $OPTC ]]  #chat
 	then 	if [[ ${*# } = [A-Z]:* ]] || [[ ${*# } = :* ]]
-		then 	ORIG_INPUT="${*#[ :]}"
-			ORIG_TYPE="${*%%:*}"
-			set -- "${*#[ :]}" ;set -- "${*#[ :]}"
-		else 	ORIG_INPUT="${*:?PROMPT ERR}"
+		then 	ORIG_INPUT="$*" ORIG_INPUT="${ORIG_INPUT#[ :]}"
+			ORIG_TYPE="$*" ORIG_TYPE="${ORIG_TYPE%%:*}"
+			set -- "${ORIG_INPUT#[ :]}"
+		else 	ORIG_INPUT="$*"
 			set -- "Q: $*"
 		fi
 		if [[ -s "${FILECHAT}" ]]
@@ -491,6 +515,8 @@ else               #completion
 			done < <(tac -- "${FILECHAT}")
 			unset max_prev time token type string
 		fi
+		((OPTX)) && OPTX=1 edf "$@" && set -- "$(quotef "$(<"$FILETXT")")"
+		[[ $* = Q:\  ]] && set --  #err on empty input
 	fi
 	#https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
 
@@ -506,7 +532,10 @@ else               #completion
 	prompt_printf
 
 	if [[ $OPTC ]] && {
-	 	tkn=($(jq -r '.usage.prompt_tokens//empty, .usage.completion_tokens//empty, (.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"))
+	 	tkn=($(jq -r '.usage.prompt_tokens//empty,
+			.usage.completion_tokens//empty,
+			(.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"
+		))
 		ans=$(jq '.choices[0].text' "$FILE") ans="${ans/\\n\\n[A-Z]\:/ }"
 		((${#tkn[@]}==3)) && ((${#ans}))
 		}
