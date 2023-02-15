@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh/Bash ChatGPT Shell Wrapper
-# v0.2.13  2023  by mountaineerbr  GPL+3
+# v0.2.14  2023  by mountaineerbr  GPL+3
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -265,9 +265,9 @@ function prompt_printf
 	if ((OPTJ)) #print raw json
 	then 	cat -- "$FILE"
 	else 	jq -r '"Model_: \(.model//"?") (\(.object//"?"))",
-			"Usage_: \(.usage.prompt_tokens) + \(.usage.completion_tokens) = \(.usage.total_tokens//empty) tokens"' \
-			"$FILE" >&2 \
-		&& jq -r '.choices[].text' "$FILE" \
+			"Usage_: \(.usage.prompt_tokens) + \(.usage.completion_tokens) = \(.usage.total_tokens//empty) tokens"' "$FILE" >&2
+		jq -r '.choices[1] as $sep | .choices[] | (.text, if $sep != null then "---" else empty end)' "$FILE" \
+		|| jq -r '.choices[].text' "$FILE" \
 		|| cat -- "$FILE"
 	fi
 }
@@ -507,7 +507,7 @@ else               #completion
 
 	if [[ $OPTC ]] && {
 	 	tkn=($(jq -r '.usage.prompt_tokens//empty, .usage.completion_tokens//empty, (.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"))
-		ans=$(jq '.choices[].text' "$FILE") ans="${ans/\\n\\n[A-Z]\:/ }"
+		ans=$(jq '.choices[0].text' "$FILE") ans="${ans/\\n\\n[A-Z]\:/ }"
 		((${#tkn[@]}==3)) && ((${#ans}))
 		}
 	then 	{ 	printf '%s\t%d\t%s\t%s\n' "${tkn[2]}" "$((tkn[0]-max_hist))" "${ORIG_TYPE-Q}" "\"${ORIG_INPUT:-$*}\""
