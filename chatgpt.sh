@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh/Bash ChatGPT Shell Wrapper
-# v0.2.17  2023  by mountaineerbr  GPL+3
+# v0.2.18  2023  by mountaineerbr  GPL+3
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -176,9 +176,9 @@ LIMITS
 
 
 BUGS
-	White spaces or newlines at the end of PROMPT may return an
-	empty response. Try removing/adding ending spaces or resetting
-	temperature.
+	A PROMPT may return an empty response. Try trimming ending spaces,
+	appending a full stop/ellipsis, or resetting temperature. Maybe
+	the model just does not have anything else to add/complete.
 
 
 OPTIONS
