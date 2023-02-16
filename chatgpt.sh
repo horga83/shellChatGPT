@@ -1,6 +1,7 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh/Bash ChatGPT Shell Wrapper
-# v0.2.18  2023  by mountaineerbr  GPL+3
+# v0.3  2023  by mountaineerbr  GPL+3
+[[ $BASH_VERSION ]] && shopt -s extglob
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -324,21 +325,23 @@ function lastjsonf
 	fi
 }
 
-function set_orig_typef
+function token_prevf
 {
-	ORIG_INPUT="${*# }"
-	if [[ ${ORIG_INPUT# } = [\ A-Z]:* ]] || [[ ${ORIG_INPUT# } = :* ]]
-	then 	ORIG_TYPE="${ORIG_INPUT%%:*}" ORIG_TYPE="${ORIG_TYPE:- }"
-	fi
-	ORIG_INPUT="${ORIG_INPUT#[ :]}" ORIG_INPUT="${ORIG_INPUT:- }"
+	TKN_PREV=$(($(wc -c <<<"$*")/4))
+	echo "Prompt tokens: ~$TKN_PREV; Max tokens: $OPTMAX" >&2
+}
+
+function check_typef
+{
+	[[ $* = ?(*+(\\n|$'\n'))*([$IFS\"])*([A-Za-z0-9/.+-]):* ]]
 }
 
 function edf
 {
 	typeset pre pos REPLY
 	
-	((OPTX<2)) && (($#)) && unquotef "$@" >"$FILETXT"
-	pre=$(<"$FILETXT")
+	((OPTX<2)) && (($#)) && unescapef "$@" >"$FILETXT"
+	((REC_OUT_SET)) && pre=$(<"$FILETXT")
 	
 	${VISUAL:-${EDITOR:-vim}} "$FILETXT" </dev/tty >/dev/tty
 	
@@ -347,14 +350,14 @@ function edf
 	then 	exit 2
 	elif [[ $REPLY = [Nn] ]]
 	then 	return 1
-	elif pos=$(<"$FILETXT") ;[[ "$pos" != "$pre" ]]
-	then 	set_orig_typef "${pos#*"$pre"}"
+	elif ((REC_OUT_SET)) && pos=$(<"$FILETXT") && [[ "$pos" != "$pre" ]]
+	then 	check_typef "${pos#*"$pre"}" || REC_OUT="${pos#*"$pre"}"
 	fi
-	((OPTC)) && TKN_PREV=$(($(wc -c <<<"$ORIG_INPUT")/4))
+	((OPTC)) && token_prevf "${pos#*"$pre"}"
 	return 0
 }
 
-function quotef
+function escapef
 {
  	set -- "${@//[\"]/\\\"}"          #double quote marks
 	set -- "${@//[$'\t']/\\t}"        #tabs
@@ -362,7 +365,7 @@ function quotef
 	echo "$@"
 }
 
-function unquotef
+function unescapef
 {
  	set -- "${@//\\\"/\"}"
 	set -- "${@//\\t/$'\t'}"
@@ -444,13 +447,10 @@ esac
 
 (($#)) || [[ -t 0 ]] || set -- "$(</dev/stdin)"
 ((OPTX)) && ((!OPTC)) && edf "$@" && set -- "$(<"$FILETXT")"  #editor
-((OPTI+OPTII+OPTL+OPTZ)) || {
-	TKN_PREV=$(($(wc -c <<<"$*")/4))
-	echo "Prompt tokens: ~$TKN_PREV; Max tokens: $OPTMAX" >&2
-}
-for arg  #quote input
+((OPTI+OPTII+OPTL+OPTZ)) || token_prevf "$*"
+for arg  #escape input
 do 	((init++)) || set --
-	set -- "$@" "$(quotef "$arg")"
+	set -- "$@" "$(escapef "$arg")"
 done ;unset arg init
 
 mkdir -p "$CACHEDIR" || exit
@@ -460,7 +460,7 @@ if ((OPTZ))
 then 	lastjsonf
 elif ((OPTL))
 then 	list_modelsf "$@"
-elif ((OPTII))     #image variation
+elif ((OPTII))     #image variations
 then 	[[ -e ${1:?input PNG path required} ]] || exit
 	if command -v magick >/dev/null 2>&1  #convert img to 'square png'
 	then 	if [[ $1 != *.[Pp][Nn][Gg] ]] ||
@@ -472,7 +472,7 @@ then 	[[ -e ${1:?input PNG path required} ]] || exit
 	fi
 	prompt_imgvarf "$1"
 	prompt_imgprintf
-elif ((OPTI))      #image generation
+elif ((OPTI))      #image generations
 then 	BLOCK="{
 		\"prompt\": \"${*:?IMG PROMPT ERR}\",
 		\"size\": \"$OPTS\",
@@ -481,7 +481,7 @@ then 	BLOCK="{
 	}"
 	promptf
 	prompt_imgprintf
-elif ((OPTEMBED))  #embed
+elif ((OPTEMBED))  #embeds
 then 	BLOCK="{
 		\"model\": \"$MOD\",
 		\"input\": \"${*:?INPUT ERR}\",
@@ -492,7 +492,7 @@ then 	BLOCK="{
 	}"
 	promptf
 	prompt_printf
-elif ((OPTE))      #edit
+elif ((OPTE))      #edits
 then 	: "${2:?EDIT MODE ERR}"
 	BLOCK="{
 		\"model\": \"$MOD\",
@@ -504,42 +504,36 @@ then 	: "${2:?EDIT MODE ERR}"
 	}"
 	promptf
 	prompt_printf
-else               #completion
-	if [[ $OPTC ]]  #chat
-	then 	set_orig_typef "$*"
-		set -- "${ORIG_TYPE:-Q}: ${ORIG_INPUT#[ :]}"
+else               #completions
+	if [[ $OPTC ]]  #chat mode
+	then 	check_typef "$*" && set -- "${*##*([$IFS:])}" || set -- "Q: $*"
+		REC_OUT="$*"
 		if [[ -s "${FILECHAT}" ]]
-		then 	((max_prev=TKN_PREV))
-			while IFS=$'\t' read -r time token type string
+		then 	((max_prev=TKN_PREV+1))
+			while IFS=$'\t' read -r time token string
 			do 	[[ $time$token = *[Bb][Rr][Ee][Aa][Kk]* ]] && break
-				[[ ${string// } ]] && ((token>0)) || continue
-				if ((max_prev+token<OPTMAX))
-				then 	((max_prev+=token)); ((max_hist+=token+1))
-					string="${string#\"}" string="${string%\"}"
-					string="${string/\\n\\n[A-Z]\:/ }"
-					while [[ $string != "$buf" ]]
-					do 	buf="$string"
-						for glob in '\\[n]' '[A-Z]:' '[ "]'
-						do 	string="${string#$glob}"
-						done
-					done ;unset buf glob
-					set -- "$type: ${string# }\n\n$*"
+				[[ ${string//[$IFS\"]} ]] && ((token>0)) || continue
+				if ((max_prev+token+1<OPTMAX))
+				then 	((max_prev+=token+1))
+					string="${string#[ \"]}" string="${string%[ \"]}"
+					set -- "${string#[ :]}\n\n$*"
 				fi
 			done < <(tac -- "${FILECHAT}")
-			unset max_prev time token type string
+			((max_prev-=TKN_PREV+1))
+			unset REPLY time token string
 		fi
-		((OPTX)) && OPTX=1 edf "$@" && set -- "$(quotef "$(<"$FILETXT")")"
-		if [[ ${*// } = Q: ]] || [[ ! ${*//[ :]} ]] || [[ ${ORIG_INPUT} = \  ]]
+		((OPTX)) && OPTX=1 REC_OUT_SET=1 edf "$@" && set -- "$(escapef "$(<"$FILETXT")")"
+		if [[ ${*//[$IFS\"]} = *(*([A-Za-z0-9/.+-]):) ]] \
+			|| [[ ${REC_OUT//[$IFS\"]} = *(*([A-Za-z0-9/.+-]):) ]]
 		then 	echo "Enter prompt: " >&2
 			read -r ${BASH_VERSION:+-e}
 			if [[ $REPLY ]]
-			then 	set_orig_typef "$REPLY"
-				set -- "$REPLY"
-			else 	set --  #err on empty input
+			then 	{ 	check_typef "$REPLY" && set -- "$REPLY" ;} || set -- "Q: $REPLY"
+			else 	set --  #err on empty input later
 			fi
+			unset REC_OUT
 		fi
 	fi
-	set -- "${@#[ :]}" ;set -- "${@#[ :]}"
 	#https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
 
 	BLOCK="{
@@ -558,15 +552,16 @@ else               #completion
 			.usage.completion_tokens//empty,
 			(.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"
 		) )
-		ans=$(jq '.choices[0].text' "$FILE") ans="${ans/\\n\\n[A-Z]\:/ }"
-		((${#tkn[@]}==3)) && ((${#ans}))
+		ans=$(jq '.choices[0].text' "$FILE") ans="${ans##*(\\[nt]|\")}" ans="${ans%\"}"
+		((${#tkn[@]}>2)) && ((${#ans}))
 		}
-	then 	{ 	printf '%s\t%d\t%s\t%s\n' "${tkn[2]}" "$((tkn[0]-(max_hist<=tkn[0]?max_hist:tkn[0]+1) ))" "${ORIG_TYPE-Q}" "\"${ORIG_INPUT:-$(quotef "$*")}\""
-			printf '%s\t%d\t%s\t%s\n' "${tkn[2]}" "${tkn[1]}" "A" "${ans# }"
+	then 	{ 	check_typef "$ans" || ans="A: $ans"
+			printf '%s\t%d\t"%s"\n' "${tkn[2]}" "$((max_prev<=tkn[0]?tkn[0]-max_prev:-1))" "$(escapef "${REC_OUT:-$*}")"
+			printf '%s\t%d\t"%s"\n' "${tkn[2]}" "${tkn[1]}" "$ans"
 		} >> "${FILECHAT}"
 	fi; unset tkn ans
 
-	set -- ;unset ORIG_INPUT ORIG_TYPE
+	set -- ;unset REC_OUT REC_POUT
 	((OPTC)) || break
 fi
 
