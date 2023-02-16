@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh/Bash ChatGPT Shell Wrapper
-# v0.2.15  2023  by mountaineerbr  GPL+3
+# v0.2.16  2023  by mountaineerbr  GPL+3
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -561,7 +561,7 @@ else               #completion
 		ans=$(jq '.choices[0].text' "$FILE") ans="${ans/\\n\\n[A-Z]\:/ }"
 		((${#tkn[@]}==3)) && ((${#ans}))
 		}
-	then 	{ 	printf '%s\t%d\t%s\t%s\n' "${tkn[2]}" "$((tkn[0]-max_hist))" "${ORIG_TYPE-Q}" "\"${ORIG_INPUT:-$(quotef "$*")}\""
+	then 	{ 	printf '%s\t%d\t%s\t%s\n' "${tkn[2]}" "$((tkn[0]-(max_hist<=tkn[0]?max_hist:tkn[0]+1) ))" "${ORIG_TYPE-Q}" "\"${ORIG_INPUT:-$(quotef "$*")}\""
 			printf '%s\t%d\t%s\t%s\n' "${tkn[2]}" "${tkn[1]}" "A" "${ans# }"
 		} >> "${FILECHAT}"
 	fi; unset tkn ans
