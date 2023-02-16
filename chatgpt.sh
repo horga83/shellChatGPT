@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh/Bash ChatGPT Shell Wrapper
-# v0.2.16  2023  by mountaineerbr  GPL+3
+# v0.2.17  2023  by mountaineerbr  GPL+3
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -529,13 +529,13 @@ else               #completion
 			unset max_prev time token type string
 		fi
 		((OPTX)) && OPTX=1 edf "$@" && set -- "$(quotef "$(<"$FILETXT")")"
-		if [[ ${*// } = Q: ]] || [[ ! ${*//[ :]} ]]  #err on empty input
+		if [[ ${*// } = Q: ]] || [[ ! ${*//[ :]} ]] || [[ ${ORIG_INPUT} = \  ]]
 		then 	echo "Enter prompt: " >&2
 			read -r ${BASH_VERSION:+-e}
 			if [[ $REPLY ]]
 			then 	set_orig_typef "$REPLY"
 				set -- "$REPLY"
-			else 	set --
+			else 	set --  #err on empty input
 			fi
 		fi
 	fi
