@@ -324,16 +324,34 @@ function lastjsonf
 	fi
 }
 
+function set_orig_typef
+{
+	ORIG_INPUT="${*# }"
+	if [[ ${ORIG_INPUT# } = [\ A-Z]:* ]] || [[ ${ORIG_INPUT# } = :* ]]
+	then 	ORIG_TYPE="${ORIG_INPUT%%:*}" ORIG_TYPE="${ORIG_TYPE:- }"
+	fi
+	ORIG_INPUT="${ORIG_INPUT#[ :]}" ORIG_INPUT="${ORIG_INPUT:- }"
+}
+
 function edf
 {
-	typeset REPLY
+	typeset pre pos REPLY
 	
 	((OPTX<2)) && (($#)) && unquotef "$@" >"$FILETXT"
+	pre=$(<"$FILETXT")
 	
 	${VISUAL:-${EDITOR:-vim}} "$FILETXT" </dev/tty >/dev/tty
 	
-	echo "Confirm new prompt? [Y]es, [n]o or [a]bort" >&2
-	read -n1 ;[[ $REPLY = [AaEeQq] ]] && exit ;[[ $REPLY = [!Nn] ]]
+	echo "Confirm new prompt? [Y]es, [n]o or [a]bort " >&2
+	if read -n1 ;[[ $REPLY = [AaEeQq] ]]
+	then 	exit 2
+	elif [[ $REPLY = [Nn] ]]
+	then 	return 1
+	elif pos=$(<"$FILETXT") ;[[ "$pos" != "$pre" ]]
+	then 	set_orig_typef "${pos#*"$pre"}"
+	fi
+	((OPTC)) && TKN_PREV=$(($(wc -c <<<"$ORIG_INPUT")/4))
+	return 0
 }
 
 function quotef
@@ -361,7 +379,7 @@ do 	[[ $OPTARG = .[0-9]* ]] && OPTARG=0$OPTARG
 		a) 	OPTA="$OPTARG";;
 		A) 	OPTAA="$OPTARG";;
 		c) 	OPTC=1;;
-		C) 	((OPTCC++)) || tee -a -- "${FILECHAT}" >&2 <<<'SESSION BREAK';;
+		C) 	((OPTCC++)) || tee -a -- "${FILECHAT}" >&2 <<<'SESSION BREAK'; OPTC=1;;
 		e) 	OPTE=1;;
 		h) 	echo "$HELP" ;exit ;;
 		i|I) 	OPTI=1;;
@@ -395,6 +413,16 @@ OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key requ
 [[ ${OPTT#0} ]] && [[ ${OPTP#1} ]] && echo "warning: temperature and top_p both set" >&2
 [[ $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA,"
 [[ $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA,"
+if ((OPTI))
+then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
+	case "$1" in 	#set image size
+		1024*|[Ll]arge|[Ll]) 	OPTS=1024x1024 ;shift;;
+		512*|[Mm]edium|[Mm]) 	OPTS=512x512 ;shift;;
+		256*|[Ss]mall|[Ss]) 	OPTS=256x256 ;shift;;
+	esac ;MOD=image
+	#set upload image instead
+	[[ -e "$1" ]] && OPTII=1 MOD=image-var
+fi
 ((OPTE)) && ((!OPTMSET)) && OPTM=8
 MOD="${MOD:-${MODELS[$OPTM]}}"
 case "$MOD" in  #set model endpoint
@@ -413,16 +441,6 @@ case "$MOD" in  #set model endpoint
 			esac;;
 	*) 		EPN=0;;
 esac
-if ((OPTI))
-then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
-	case "$1" in 	#set image size
-		1024*|[Ll]arge|[Ll]) 	OPTS=1024x1024 ;shift;;
-		512*|[Mm]edium|[Mm]) 	OPTS=512x512 ;shift;;
-		256*|[Ss]mall|[Ss]) 	OPTS=256x256 ;shift;;
-	esac ;MOD=image
-	#set upload image instead
-	[[ -e "$1" ]] && OPTII=1 MOD=image-var
-fi
 
 (($#)) || [[ -t 0 ]] || set -- "$(</dev/stdin)"
 ((OPTX)) && ((!OPTC)) && edf "$@" && set -- "$(<"$FILETXT")"  #editor
@@ -442,7 +460,7 @@ if ((OPTZ))
 then 	lastjsonf
 elif ((OPTL))
 then 	list_modelsf "$@"
-elif ((OPTII))
+elif ((OPTII))     #image variation
 then 	[[ -e ${1:?input PNG path required} ]] || exit
 	if command -v magick >/dev/null 2>&1  #convert img to 'square png'
 	then 	if [[ $1 != *.[Pp][Nn][Gg] ]] ||
@@ -454,7 +472,7 @@ then 	[[ -e ${1:?input PNG path required} ]] || exit
 	fi
 	prompt_imgvarf "$1"
 	prompt_imgprintf
-elif ((OPTI))      #image
+elif ((OPTI))      #image generation
 then 	BLOCK="{
 		\"prompt\": \"${*:?IMG PROMPT ERR}\",
 		\"size\": \"$OPTS\",
@@ -488,25 +506,20 @@ then 	: "${2:?EDIT MODE ERR}"
 	prompt_printf
 else               #completion
 	if [[ $OPTC ]]  #chat
-	then 	if [[ ${*# } = [A-Z]:* ]] || [[ ${*# } = :* ]]
-		then 	ORIG_INPUT="$*" ORIG_INPUT="${ORIG_INPUT#[ :]}"
-			ORIG_TYPE="$*" ORIG_TYPE="${ORIG_TYPE%%:*}"
-			set -- "${ORIG_INPUT#[ :]}"
-		else 	ORIG_INPUT="$*"
-			set -- "Q: $*"
-		fi
+	then 	set_orig_typef "$*"
+		set -- "${ORIG_TYPE:-Q}: ${ORIG_INPUT#[ :]}"
 		if [[ -s "${FILECHAT}" ]]
 		then 	((max_prev=TKN_PREV))
 			while IFS=$'\t' read -r time token type string
 			do 	[[ $time$token = *[Bb][Rr][Ee][Aa][Kk]* ]] && break
-				[[ $time ]] && ((token>0)) || continue
+				[[ ${string// } ]] && ((token>0)) || continue
 				if ((max_prev+token<OPTMAX))
 				then 	((max_prev+=token)); ((max_hist+=token+1))
 					string="${string#\"}" string="${string%\"}"
 					string="${string/\\n\\n[A-Z]\:/ }"
 					while [[ $string != "$buf" ]]
 					do 	buf="$string"
-						for glob in '\\n' '[A-Z]:' '[ "]'
+						for glob in '\\[n]' '[A-Z]:' '[ "]'
 						do 	string="${string#$glob}"
 						done
 					done ;unset buf glob
@@ -516,8 +529,17 @@ else               #completion
 			unset max_prev time token type string
 		fi
 		((OPTX)) && OPTX=1 edf "$@" && set -- "$(quotef "$(<"$FILETXT")")"
-		[[ $* = Q:\  ]] && set --  #err on empty input
+		if [[ ${*// } = Q: ]] || [[ ! ${*//[ :]} ]]  #err on empty input
+		then 	echo "Enter prompt: " >&2
+			read -r ${BASH_VERSION:+-e}
+			if [[ $REPLY ]]
+			then 	set_orig_typef "$REPLY"
+				set -- "$REPLY"
+			else 	set --
+			fi
+		fi
 	fi
+	set -- "${@#[ :]}" ;set -- "${@#[ :]}"
 	#https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
 
 	BLOCK="{
@@ -535,13 +557,16 @@ else               #completion
 	 	tkn=($(jq -r '.usage.prompt_tokens//empty,
 			.usage.completion_tokens//empty,
 			(.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"
-		))
+		) )
 		ans=$(jq '.choices[0].text' "$FILE") ans="${ans/\\n\\n[A-Z]\:/ }"
 		((${#tkn[@]}==3)) && ((${#ans}))
 		}
-	then 	{ 	printf '%s\t%d\t%s\t%s\n' "${tkn[2]}" "$((tkn[0]-max_hist))" "${ORIG_TYPE-Q}" "\"${ORIG_INPUT:-$*}\""
+	then 	{ 	printf '%s\t%d\t%s\t%s\n' "${tkn[2]}" "$((tkn[0]-max_hist))" "${ORIG_TYPE-Q}" "\"${ORIG_INPUT:-$(quotef "$*")}\""
 			printf '%s\t%d\t%s\t%s\n' "${tkn[2]}" "${tkn[1]}" "A" "${ans# }"
 		} >> "${FILECHAT}"
 	fi; unset tkn ans
+
+	set -- ;unset ORIG_INPUT ORIG_TYPE
+	((OPTC)) || break
 fi
 
