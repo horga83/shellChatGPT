@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh/Bash ChatGPT Shell Wrapper
-# v0.3  2023  by mountaineerbr  GPL+3
+# v0.3.2  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
 
 # OpenAI API key
@@ -187,7 +187,7 @@ OPTIONS
 	-a [VAL]	Set presence penalty  (completions; -2.0 - 2.0).
 	-A [VAL]	Set frequency penalty (completions; -2.0 - 2.0).
 	-c 		Set chat mode, read history file (completions).
-	-C 		Set new session in history file.
+	-C 		Set chat mode and start new session in history file.
 	-e [INSTRUCT] [INPUT]
 			Set Edit mode, defaults to text-davinci-edit-001.
 	-h 		Print this help page.
@@ -254,9 +254,9 @@ function prompt_mainf
 function promptf
 {
 	if ((OPTV>1))
-	then 	echo "$BLOCK" ;exit
+	then 	printf '%s\n' "$BLOCK" ;exit
 	elif ((OPTV))
-	then	jq -r '.instruction//empty, .input//empty, .prompt//empty' <<<"$BLOCK" || echo "$BLOCK"
+	then	jq -r '.instruction//empty, .input//empty, .prompt//empty' <<<"$BLOCK" || printf '%s\n' "$BLOCK"
 	fi
 	prompt_mainf "$@"
 }
@@ -299,7 +299,7 @@ function prompt_imgprintf
 		while jq -e ".data[${n}]" "$FILE" >/dev/null 2>&1
 		do 	fout="${FILEOUT%.*}${m}.png"
 			jq -r ".data[${n}].b64_json" "$FILE" | base64 -d > "$fout"
-			echo "File: ${fout/$HOME/\~}" >&2
+			printf '%s\n' "File: ${fout/$HOME/\~}" >&2
 			((++n, ++m)) ;((n<50)) || break
 		done
 		((n)) || { 	cat -- "$FILE" ;false ;}
@@ -328,7 +328,7 @@ function lastjsonf
 function token_prevf
 {
 	TKN_PREV=$(($(wc -c <<<"$*")/4))
-	echo "Prompt tokens: ~$TKN_PREV; Max tokens: $OPTMAX" >&2
+	printf '%s\n' "Prompt tokens: ~$TKN_PREV; Max tokens: $OPTMAX" >&2
 }
 
 function check_typef
@@ -341,17 +341,19 @@ function edf
 	typeset pre pos REPLY
 	
 	((OPTX<2)) && (($#)) && unescapef "$@" >"$FILETXT"
-	((REC_OUT_SET)) && pre=$(<"$FILETXT")
+	((OPTC)) && ((OPTX)) && pre=$(<"$FILETXT")
 	
 	${VISUAL:-${EDITOR:-vim}} "$FILETXT" </dev/tty >/dev/tty
 	
-	echo "Confirm new prompt? [Y]es, [n]o or [a]bort " >&2
-	if read -n1 ;[[ $REPLY = [AaEeQq] ]]
+	printf '%s\n' "Confirm new prompt? [Y]es, [n]o or [a]bort " >&2
+	if read -r -n 1 ;[[ $REPLY = [AaEeQq] ]]
 	then 	exit 2
 	elif [[ $REPLY = [Nn] ]]
 	then 	return 1
-	elif ((REC_OUT_SET)) && pos=$(<"$FILETXT") && [[ "$pos" != "$pre" ]]
-	then 	check_typef "${pos#*"$pre"}" || REC_OUT="${pos#*"$pre"}"
+	elif ((OPTC)) && ((OPTX)) &&
+		pos=$(<"$FILETXT") && [[ "$pos" != "$pre" ]]
+	then 	check_typef "${pos#*"$pre"}" &&
+		REC_OUT="${pos#*"$pre"}" || REC_OUT="Q: ${pos#*"$pre"}"
 	fi
 	((OPTC)) && token_prevf "${pos#*"$pre"}"
 	return 0
@@ -362,7 +364,7 @@ function escapef
  	set -- "${@//[\"]/\\\"}"          #double quote marks
 	set -- "${@//[$'\t']/\\t}"        #tabs
 	set -- "${@//[$'\n\r\v\f']/\\n}"  #new line/form feed
-	echo "$@"
+	printf '%s\n' "$@"
 }
 
 function unescapef
@@ -370,7 +372,7 @@ function unescapef
  	set -- "${@//\\\"/\"}"
 	set -- "${@//\\t/$'\t'}"
 	set -- "${@//\\n/$'\n'}"
-	echo "$@"
+	printf '%s\n' "$@"
 }
 
 
@@ -382,9 +384,9 @@ do 	[[ $OPTARG = .[0-9]* ]] && OPTARG=0$OPTARG
 		a) 	OPTA="$OPTARG";;
 		A) 	OPTAA="$OPTARG";;
 		c) 	OPTC=1;;
-		C) 	((OPTCC++)) || tee -a -- "${FILECHAT}" >&2 <<<'SESSION BREAK'; OPTC=1;;
+		C) 	((OPTC++)) || tee -a -- "${FILECHAT}" >&2 <<<'SESSION BREAK';;
 		e) 	OPTE=1;;
-		h) 	echo "$HELP" ;exit ;;
+		h) 	printf '%s\n' "$HELP" ;exit ;;
 		i|I) 	OPTI=1;;
 		j) 	OPTJ=1;;
 		l) 	OPTL=1 ;;
@@ -396,11 +398,11 @@ do 	[[ $OPTARG = .[0-9]* ]] && OPTARG=0$OPTARG
 		n) 	OPTN=$OPTARG ;;
 		k) 	OPENAI_KEY=$OPTARG;;
 		p) 	if ((OPTARG>1))
-			then 	echo "err: illegal top_p -- $OPTARG" >&2
+			then 	printf '%s\n' "err: illegal top_p -- $OPTARG" >&2
 			else 	OPTP=$OPTARG
 			fi;;
 		t) 	if ((OPTARG>2))
-			then 	echo "err: illegal temperature -- $OPTARG" >&2
+			then 	printf '%s\n' "err: illegal temperature -- $OPTARG" >&2
 			else 	OPTT=$OPTARG
 			fi;;
 		v) 	((++OPTV));;
@@ -413,7 +415,7 @@ shift $((OPTIND -1))
 OPTMAX=${OPTMAX:-$OPTMM}
 OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
 ((OPTC)) && ((OPTE+OPTI)) && OPTC=  ;((OPTL+OPTZ)) && OPTX= 
-[[ ${OPTT#0} ]] && [[ ${OPTP#1} ]] && echo "warning: temperature and top_p both set" >&2
+[[ ${OPTT#0} ]] && [[ ${OPTP#1} ]] && printf '%s\n' "warning: temperature and top_p both set" >&2
 [[ $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA,"
 [[ $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA,"
 if ((OPTI))
@@ -506,7 +508,7 @@ then 	: "${2:?EDIT MODE ERR}"
 	prompt_printf
 else               #completions
 	if [[ $OPTC ]]  #chat mode
-	then 	check_typef "$*" && set -- "${*##*([$IFS:])}" || set -- "Q: $*"
+	then 	check_typef "$*" && set -- "${*##*([$IFS:])}" || set -- "Q: ${*##*([$IFS:])}"
 		REC_OUT="$*"
 		if [[ -s "${FILECHAT}" ]]
 		then 	((max_prev=TKN_PREV+1))
@@ -522,13 +524,13 @@ else               #completions
 			((max_prev-=TKN_PREV+1))
 			unset REPLY time token string
 		fi
-		((OPTX)) && OPTX=1 REC_OUT_SET=1 edf "$@" && set -- "$(escapef "$(<"$FILETXT")")"
+		((OPTX)) && OPTX=1  edf "$@" && set -- "$(escapef "$(<"$FILETXT")")"
 		if [[ ${*//[$IFS\"]} = *(*([A-Za-z0-9/.+-]):) ]] \
 			|| [[ ${REC_OUT//[$IFS\"]} = *(*([A-Za-z0-9/.+-]):) ]]
-		then 	echo "Enter prompt: " >&2
+		then 	printf '%s\n' "Enter prompt: " >&2
 			read -r ${BASH_VERSION:+-e}
 			if [[ $REPLY ]]
-			then 	{ 	check_typef "$REPLY" && set -- "$REPLY" ;} || set -- "Q: $REPLY"
+			then 	{ 	check_typef "$REPLY" && set -- "${REPLY##*([$IFS:])}" ;} || set -- "Q: ${REPLY##*([$IFS:])}"
 			else 	set --  #err on empty input later
 			fi
 			unset REC_OUT
@@ -561,7 +563,7 @@ else               #completions
 		} >> "${FILECHAT}"
 	fi; unset tkn ans
 
-	set -- ;unset REC_OUT REC_POUT
+	set -- ;unset REPLY REC_OUT
 	((OPTC)) || break
 fi
 
