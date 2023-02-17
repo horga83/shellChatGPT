@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh/Bash ChatGPT Shell Wrapper
-# v0.3.2  2023  by mountaineerbr  GPL+3
+# v0.3.3  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
 
 # OpenAI API key
@@ -384,7 +384,7 @@ do 	[[ $OPTARG = .[0-9]* ]] && OPTARG=0$OPTARG
 		a) 	OPTA="$OPTARG";;
 		A) 	OPTAA="$OPTARG";;
 		c) 	OPTC=1;;
-		C) 	((OPTC++)) || tee -a -- "${FILECHAT}" >&2 <<<'SESSION BREAK';;
+		C) 	((OPTCC++)) || tee -a -- "${FILECHAT}" >&2 <<<'SESSION BREAK'; OPTC=1;;
 		e) 	OPTE=1;;
 		h) 	printf '%s\n' "$HELP" ;exit ;;
 		i|I) 	OPTI=1;;
@@ -563,7 +563,7 @@ else               #completions
 		} >> "${FILECHAT}"
 	fi; unset tkn ans
 
-	set -- ;unset REPLY REC_OUT
-	((OPTC)) || break
+	#set -- ;unset REPLY REC_OUT
+	#((OPTC)) || break
 fi
 
