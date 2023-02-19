@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh/Bash ChatGPT Shell Wrapper
-# v0.3.3  2023  by mountaineerbr  GPL+3
+# v0.3.4  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
 
 # OpenAI API key
@@ -530,7 +530,7 @@ else               #completions
 		then 	printf '%s\n' "Enter prompt: " >&2
 			read -r ${BASH_VERSION:+-e}
 			if [[ $REPLY ]]
-			then 	{ 	check_typef "$REPLY" && set -- "${REPLY##*([$IFS:])}" ;} || set -- "Q: ${REPLY##*([$IFS:])}"
+			then 	{ 	check_typef "$REPLY" && set -- "$*${REPLY##*([$IFS:])}" ;} || set -- "$*Q: ${REPLY##*([$IFS:])}"
 			else 	set --  #err on empty input later
 			fi
 			unset REC_OUT
