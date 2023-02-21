@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash ChatGPT Shell Wrapper
-# v0.4.3  2023  by mountaineerbr  GPL+3
+# v0.4.4  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
 [[ $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST
 
@@ -98,7 +98,7 @@ COMPLETIONS
 	questions. This option respects max tokens setting. Set -C to
 	continue from last recorded session.
 
-	The defaults chat format is \`$Q_TYPE & $A_TYPE'. A name such as \`NAME:'
+	The defaults chat format is \`Q & A'. A name such as \`NAME:'
 	may be introduced as interlocutor. Setting \`:' will not add
 	and interlocutor to the following text, this may be useful to
 	set intructions, and completing a previous prompt.
@@ -124,8 +124,8 @@ COMPLETIONS
 	intructions at the first prompt, such as:
 
 	prompt>	\": The following is a conversation with an AI assistant.
-		   The assistant is helpful, creative, clever, and very
-		   friendly.\"
+		  The assistant is helpful, creative, clever, and very
+		  friendly.\"
 
 	reply_> \"Assistant: Hello! How can I help you?\"
 
@@ -166,9 +166,15 @@ COMPLETIONS
 
 
 EDITS
-	Given instruction and prompt/input, the model will return an
-	edited version of the prompt. This endpoint is set with models
-	with \`edit' in their name.
+	This endpoint is set with models with \`edit' in their name
+	or option -e.
+
+	Editing works by specifying existing text as a prompt and an
+	instruction on how to modify it. The edits endpoint can be used
+	to change the tone or structure of text, or make targeted changes
+	like fixing spelling. We’ve also observed edits to work well on
+	empty prompts, thus enabling text generation similar to the
+	completions endpoint. 
 
 
 IMAGES
@@ -605,10 +611,9 @@ then 	BLOCK="{
 	promptf
 	prompt_printf
 elif ((OPTE))      #edits
-then 	: "${2:?EDIT MODE ERR}"
-	BLOCK="{
+then 	BLOCK="{
 		\"model\": \"$MOD\",
-		\"instruction\": \"$1\",
+		\"instruction\": \"${1:?EDIT MODE ERR}\",
 		\"input\": \"${@:2}\",
 		\"temperature\": $OPTT,
 		\"top_p\": $OPTP,
@@ -618,7 +623,7 @@ then 	: "${2:?EDIT MODE ERR}"
 	prompt_printf
 else               #completions
 	((!OPTC)) || ((OPTC>1)) || break_sessionf
-	[[ $CHAT_INSTR ]] && set -- "$CHAT_INSTR\\n\\n$*"  #chatbot instructions
+	((OPTC)) && [[ $CHAT_INSTR ]] && set -- "$CHAT_INSTR\\n\\n$*"  #chatbot instructions
 	while :
 	do 	if [[ $OPTC ]]  #chat mode
 		then 	if (($#))  #input from pos args, first pass
