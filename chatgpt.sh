@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash ChatGPT Shell Wrapper
-# v0.4.1.1  2023  by mountaineerbr  GPL+3
+# v0.4.2  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
 [[ $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST
 
@@ -453,18 +453,20 @@ function edf
 
 function escapef
 {
- 	set -- "${@//[\"]/\\\"}"          #double quote marks
-	set -- "${@//[$'\t']/\\t}"        #tabs
-	set -- "${@//[$'\n\r\v\f']/\\n}"  #new line/form feed
-	printf '%s\n' "$@"
+	typeset var
+ 	var=${*//[\"]/\\\"}            #double quote marks
+	var=${var//[$'\t']/\\t}        #tabs
+	var=${var//[$'\n\r\v\f']/\\n}  #new line/form feed
+	printf '%s\n' "$var"
 }
 
 function unescapef
 {
- 	set -- "${@//\\\"/\"}"
-	set -- "${@//\\t/$'\t'}"
-	set -- "${@//\\n/$'\n'}"
-	printf '%s\n' "$@"
+	typeset var
+ 	var=${*//\\\"/\"}
+	var=${var//\\t/$'\t'}
+	var=${var//\\n/$'\n'}
+	printf '%s\n' "$var"
 }
 
 function break_sessionf
