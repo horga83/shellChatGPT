@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash ChatGPT Shell Wrapper
-# v0.4.1  2023  by mountaineerbr  GPL+3
+# v0.4.1.1  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
 [[ $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST
 
@@ -419,33 +419,32 @@ function check_cmdf
 
 function edf
 {
-	typeset ed_msg pre pos REPLY
+	typeset ed_msg pos REPLY
 	
-	if ((OPTC))
+	if ((OPTC>0))
 	then 	ed_msg=",,,,,,(edit below this line),,,,,,"
-		pre=$(unescapef "$HIST${HIST:+\\n$ed_msg}")
-		printf "%s${pre:+\\n}" "$pre" >"$FILETXT"
+		PRE=$(unescapef "$HIST${HIST:+\\n$ed_msg}")
+		printf "%s${PRE:+\\n}" "$PRE" >"$FILETXT"
 		if (($#))
-		then 	printf "${pre:+\\n}%s\n" "$*"
-		else 	printf "${pre:+\\n}%s: \n" "${USER_TYPE:-Q}"
+		then 	printf "${PRE:+\\n}%s\n" "$*"
+		else 	printf "${PRE:+\\n}%s: \n" "${USER_TYPE:-Q}"
 		fi >>"$FILETXT"
 	fi
 	
 	${VISUAL:-${EDITOR:-vim}} "$FILETXT" </dev/tty >/dev/tty
 
-	if ((OPTC)) && pos=$(<"$FILETXT") && [[ "$pos" != "$pre" ]]
-	then 	if [[ "$pos" != "$pre"* ]]
-		then
-			printf 'Warning: %s \n' 'Bad edit. [R]edit, r[e]do or [c]ontinue?' >&2
+	if ((OPTC)) && pos=$(<"$FILETXT") && [[ "$pos" != "$PRE" ]]
+	then 	while [[ "$pos" != "$PRE"* ]]
+		do 	printf 'Warning: %s \n' 'Bad edit: [E]dit, [r]edo or [c]ontinue?' >&2
 			read -r
 			case "$REPLY" in
-				[CcNnQqAa]) 	:;;
-				[Ee]*) return 200;;
-				[Rr]|*) OPTC= edf "$@" || return ;pos=$(<"$FILETXT");;
+				[CcNnQqAa]) 	break;;  #continue
+				[Rr]*) 	return 200;;  #redo
+				[Ee]|*) OPTC= edf "$@"  #edit
+					pos=$(<"$FILETXT");;
 			esac
-			#case ${REPLY:-$1} in 	[!NnQq]*) return 200;; esac
-		fi
-		set -- "${pos#*"$pre"}"
+		done
+		set -- "${pos#*"$PRE"}"
 		check_cmdf "$*" && return 200
 		set_typef "$*" && REC_OUT="$*" || REC_OUT="${USER_TYPE:-Q}: $*"
 	fi
@@ -620,7 +619,7 @@ else               #completions
 
 			#read hist file
 			if [[ -s "${FILECHAT}" ]]
-			then 	((max_prev=TKN_PREV+1))
+			then 	((max_prev=TKN_PREV+1)) ;unset HIST
 				while IFS=$'\t' read -r time token string
 				do 	[[ $time$token = *[Bb][Rr][Ee][Aa][Kk]* ]] && break
 					[[ ${string//[$IFS\"]} ]] && ((token>0)) || continue
@@ -636,13 +635,13 @@ else               #completions
 
 			#text editor
 			if ((OPTX))
-			then 	edf "$@"
+			then 	edf "$@" || continue  #sig:200
 				while :
 				do 	new_prompt_confirmf
 					case $? in
 						201) 	break 2;;  #abort
 						200) 	continue 2;;  #redo
-						199) 	OPTC= edf "$@" || break 2;;  #edit
+						199) 	OPTC=-1 edf "$@" || break 2;;  #edit
 						0) 	set -- "$(escapef "$(<"$FILETXT")")"
 							break;;  #yes
 						*) 	break;;  #no
@@ -703,7 +702,7 @@ else               #completions
 			} >> "$FILECHAT"
 		fi; unset tkn ans
 
-		set --  ;unset REPLY TKN_PREV REC_OUT HIST
+		set --  ;unset REPLY TKN_PREV REC_OUT HIST PRE
 		((OPTC)) || break
 	done
 fi
