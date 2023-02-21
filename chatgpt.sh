@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash ChatGPT Shell Wrapper
-# v0.4.2  2023  by mountaineerbr  GPL+3
+# v0.4.3  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
 [[ $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST
 
@@ -29,7 +29,7 @@ OPTS=512x512
 # Image format
 OPTI_FMT=b64_json  #url
 
-# Cache files
+# CACHE FILES
 CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatgptsh"
 FILE="${CACHEDIR}/chatgpt.json"
 FILECHAT="${FILE%.*}.tsv"
@@ -38,8 +38,16 @@ FILETXT="${FILE%.*}.txt"
 FILEIN="${FILE%.*}_in.png"
 FILEOUT="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}/chatgpt_out.png"
 
-# Set user defaults
-[[ -e ${CHATGPTRC:-$FILECONF} ]] && { 	. "${CHATGPTRC:-$FILECONF}" || exit ;}
+# CHATBOT INTERLOCUTORS/TYPES
+Q_TYPE=Q
+A_TYPE=A
+# Obs: no spaces allowed
+
+# CHATBOT INSTRUCTIONS
+#CHAT_INSTR=": The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly."
+
+# Load user defaults
+[[ -e ${CHATGPTRC:-$FILECONF} ]] && . "${CHATGPTRC:-$FILECONF}"
 
 HELP="NAME
 	${0##*/} -- ChatGPT Shell Wrapper
@@ -90,7 +98,7 @@ COMPLETIONS
 	questions. This option respects max tokens setting. Set -C to
 	continue from last recorded session.
 
-	The defaults chat format is \`Q & A'. A name such as \`NAME:'
+	The defaults chat format is \`$Q_TYPE & $A_TYPE'. A name such as \`NAME:'
 	may be introduced as interlocutor. Setting \`:' will not add
 	and interlocutor to the following text, this may be useful to
 	set intructions, and completing a previous prompt.
@@ -110,7 +118,7 @@ COMPLETIONS
 	a single prompt. Write \`act as [technician]', add examples of
 	expected results.
 
-	For the chatbot, the only indication given is the initial \`Q:'
+	For the chatbot, the only indication given is the initial \`$Q_TYPE:'
 	interlocutor flag so the initial reply may vary considerably.
 	You may try setting the bot identity and how it behaves as
 	intructions at the first prompt, such as:
@@ -427,7 +435,7 @@ function edf
 		printf "%s${PRE:+\\n}" "$PRE" >"$FILETXT"
 		if (($#))
 		then 	printf "${PRE:+\\n}%s\n" "$*"
-		else 	printf "${PRE:+\\n}%s: \n" "${USER_TYPE:-Q}"
+		else 	printf "${PRE:+\\n}%s: \n" "${USER_TYPE:-$Q_TYPE}"
 		fi >>"$FILETXT"
 	fi
 	
@@ -446,7 +454,7 @@ function edf
 		done
 		set -- "${pos#*"$PRE"}"
 		check_cmdf "$*" && return 200
-		set_typef "$*" && REC_OUT="$*" || REC_OUT="${USER_TYPE:-Q}: $*"
+		set_typef "$*" && REC_OUT="$*" || REC_OUT="${USER_TYPE:-$Q_TYPE}: $*"
 	fi
 	return 0
 }
@@ -610,12 +618,13 @@ then 	: "${2:?EDIT MODE ERR}"
 	prompt_printf
 else               #completions
 	((!OPTC)) || ((OPTC>1)) || break_sessionf
+	[[ $CHAT_INSTR ]] && set -- "$CHAT_INSTR\\n\\n$*"  #chatbot instructions
 	while :
 	do 	if [[ $OPTC ]]  #chat mode
 		then 	if (($#))  #input from pos args, first pass
 			then 	check_cmdf "$*" && continue
 				set_typef "$*" && REC_OUT="$*" \
-					|| REC_OUT="${USER_TYPE:-Q}: $*"
+					|| REC_OUT="${USER_TYPE:-$Q_TYPE}: $*"
 				set -- "$REC_OUT"
 			fi
 
@@ -655,7 +664,7 @@ else               #completions
 			if [[ ${*//[$IFS\"]} = *($TYPE_GLOB:) ]] \
 				|| [[ ${REC_OUT//[$IFS\"]} = *($TYPE_GLOB:) ]]
 			then 	while :
-				do 	printf '\n%s[%s]: ' "Prompt" "${USER_TYPE:-Q}" >&2
+				do 	printf '\n%s[%s]: ' "Prompt" "${USER_TYPE:-$Q_TYPE}" >&2
 					read -r ${BASH_VERSION:+-e}
 					if [[ $REPLY ]]
 					then 	check_cmdf "$REPLY" && continue
@@ -667,7 +676,7 @@ else               #completions
 							*) 	unset REPLY; set -- ;break;;  #no
 						esac
 						set_typef "$REPLY" && REC_OUT="$REPLY" \
-							|| REC_OUT="${USER_TYPE:-Q}: $REPLY"
+							|| REC_OUT="${USER_TYPE:-$Q_TYPE}: $REPLY"
 						set -- "$HIST$REC_OUT"
 					else 	set --
 					fi ;break
@@ -697,7 +706,7 @@ else               #completions
 			ans="${ans##*([$IFS]|\\[nt]|\")}" ans="${ans%\"}"
 			((${#tkn[@]}>2)) && ((${#ans}))
 			}
-		then 	check_typef "$ans" || ans="A: $ans"
+		then 	check_typef "$ans" || ans="$A_TYPE: $ans"
 			REC_OUT="${REC_OUT%%*([$IFS:])}" REC_OUT="${REC_OUT##*([$IFS:])}"
 			{	printf '%s\t%d\t"%s"\n' "${tkn[2]}" "$((max_prev<=tkn[0]?tkn[0]-max_prev:-1))" "$(escapef "${REC_OUT:-$*}")"
 				printf '%s\t%d\t"%s"\n' "${tkn[2]}" "${tkn[1]}" "$ans"
