@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
-# chatgpt.sh -- Ksh93/Bash ChatGPT Shell Wrapper
-# v0.4.4.1  2023  by mountaineerbr  GPL+3
+# chatgpt.sh -- Ksh93/Bash ChatGPT/DALL-E Shell Wrapper
+# v0.4.5  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
 [[ $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST
 
@@ -29,6 +29,14 @@ OPTS=512x512
 # Image format
 OPTI_FMT=b64_json  #url
 
+# CHATBOT INTERLOCUTORS
+Q_TYPE=Q
+A_TYPE=A
+# Obs: no spaces allowed
+
+# CHATBOT INSTRUCTIONS
+#CHATINSTR="The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly."
+
 # CACHE FILES
 CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatgptsh"
 FILE="${CACHEDIR}/chatgpt.json"
@@ -38,19 +46,11 @@ FILETXT="${FILE%.*}.txt"
 FILEIN="${FILE%.*}_in.png"
 FILEOUT="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}/chatgpt_out.png"
 
-# CHATBOT INTERLOCUTORS/TYPES
-Q_TYPE=Q
-A_TYPE=A
-# Obs: no spaces allowed
-
-# CHATBOT INSTRUCTIONS
-#CHAT_INSTR=": The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly."
-
 # Load user defaults
 [[ -e ${CHATGPTRC:-$FILECONF} ]] && . "${CHATGPTRC:-$FILECONF}"
 
 HELP="NAME
-	${0##*/} -- ChatGPT Shell Wrapper
+	${0##*/} -- ChatGPT/DALL-E Shell Wrapper
 
 
 SYNOPSIS
@@ -61,16 +61,13 @@ SYNOPSIS
 	${0##*/} -i [opt] [INPUT_PNG_PATH]
 	${0##*/} -l [MODEL_NAME]
 
-	A personal (free) OpenAI API is required, set it with -k or
-	see ENVIRONMENT section.
-
-	Local copy of the last	API response is stored at:
-	${FILE/$HOME/\~}
-
 	All positional arguments are read as a single PROMPT. If the
-	chosen model require a INTRUCTION and INPUT prompts, first
+	chosen model requires an INTRUCTION and INPUT prompts, first
 	positional argument is taken as INSTRUCTIONS and the following
 	ones as INPUT or PROMPT.
+
+	Set option -c to start the chatbot and keep a record of the
+	conversation in a history file.
 
 	Option -e sets the \`edits' endpoint. That endpoint requires
 	both INSTRUCTIONS and INPUT prompts. This option requires
@@ -82,6 +79,11 @@ SYNOPSIS
 
 	Stdin is supported when there is no positional arguments left
 	after option parsing. Stdin input sets a single PROMPT.
+
+	Cache and configuration is kept at \`${CACHEDIR/$HOME/\~}'.
+
+	A personal (free) OpenAI API is required, set it with -k or
+	see ENVIRONMENT section.
 
 	For complete model and settings information, refer to OPENAI
 	API docs at <https://beta.openai.com/docs/guides>.
@@ -109,7 +111,7 @@ COMPLETIONS
 		-c  |  !new 	  Starts new session.
 		-x  |  !editor 	  Set/unset text editor.
 		-v  |  !verbose	  Set/unset verbose.
-		-V  |  !block	  Print prompt.
+		-V  |  !block	  Print prompt block.
 		!q  |  !quit	  Exit.
 
 
@@ -145,24 +147,7 @@ COMPLETIONS
 	Ex: low-temp:  We’re not asking the model to try to be creative
 	with its responses – especially for yes or no questions.
 
-
-	Top_p 	number 	Optional 	Defaults to $OPTP
-	
-	An alternative to sampling with temperature, called nucleus
-	sampling, where the model considers the results of the tokens
-	with top_p probability mass. So 0.1 means only the tokens
-	comprising the top 10% probability mass are considered.
-	They generally recommend altering this or temperature but both.
-
-	
-	Presence_penalty 	number 	Optional 	Defaults to 0
-	Frequency_penalty 	number 	Optional 	Defaults to 0
-
-	Number between -2.0 and 2.0. Positive values penalize new tokens
-	based on whether they appear in the text so far.
-	Presense penalty increases the model's likelihood to talk about
-	new topics, while frequency penalty decreases the model's like-
-	lihood to repeat the same line verbatim.
+	For more on settings, see <https://beta.openai.com/docs/guides>.
 
 
 EDITS
@@ -190,9 +175,34 @@ IMAGES
 	input image will be converted to square before upload.
 
 
+SKILLS
+	Q&A, Grammar correction, Summarize for a 2nd grader, Natural
+	language to OpenAI API, Text to command, English to other
+	languages, Natural language to Stripe API, SQL translate, Parse
+	unstructured data, Classification, Python to natural language,
+	Movie to Emoji, Calculate Time Complexity, Translate programming
+	languages, Advanced tweet classifier, Explain code, Keywords,
+	Factual answering, Ad from product description, Product name
+	generator, TL;DR summarization, Python bug fixer, Spreadsheet
+	creator, JavaScript helper chatbot, ML/AI language model tutor,
+	Science fiction book list maker, Tweet classifier, Airport code
+	extractor, SQL request, Extract contact information, JavaScript
+	to Python, Friend chat, Mood to color, Write a Python docstring,
+	Analogy maker, JavaScript one line function, Micro horror story
+	creator, Third-person converter, Notes to summary, VR fitness
+	idea generator, Essay outline, Recipe creator (eat at your own
+	risk), Chat, Marv the sarcastic chat bot, Turn by turn directions,
+	Restaurant review creator, Create study notes, and Interview
+	questions.
+
+	See examples at <https://platform.openai.com/examples>.
+
+
 ENVIRONMENT
 	CHATGPTRC 	Path to user ${0##*/} configuration.
 			Defaults=${CHATGPTRC:-${FILECONF/$HOME/\~}}
+
+	CHATINSTR 	Initial instruction set for the chatbot.
 
 	EDITOR
 	VISUAL 		Text editor for external prompt editing.
@@ -219,6 +229,8 @@ BUGS
 	has nothing to add to the input prompt or it expects mor text.
 	Try trimming spaces, appending a full stop/ellipsis, or
 	resetting temperature or adding more text. See prompt deesign.
+
+	Language models are but a mirror of human written records.
 
 
 REQUIREMENTS
@@ -385,8 +397,8 @@ function lastjsonf
 
 function token_prevf
 {
-	TKN_PREV=$(($(wc -c <<<"$*")/4))
-	printf 'Prompt tokens: ~%d; Max tokens: %d\n' "$TKN_PREV" "$OPTMAX" >&2
+	TKN_PREV="$*" TKN_PREV=$((${#TKN_PREV}/4))
+	((OPTV)) || printf 'Prompt tokens: ~%d; Max tokens: %d\n' "$TKN_PREV" "$OPTMAX" >&2
 }
 
 function check_typef
@@ -469,6 +481,7 @@ function escapef
 {
 	typeset var
  	var=${*//[\"]/\\\"}            #double quote marks
+ 	var=${var//\\\\[\"]/\\\"}      #rm excess double quote escape
 	var=${var//[$'\t']/\\t}        #tabs
 	var=${var//[$'\n\r\v\f']/\\n}  #new line/form feed
 	printf '%s\n' "$var"
@@ -492,7 +505,7 @@ function break_sessionf
 
 
 #parse opts
-while getopts a:A:cehiIjlm:n:kp:t:vxz0123456789 c
+while getopts a:A:cehiIjlm:n:kp:t:vVxz0123456789 c
 do 	[[ $OPTARG = .[0-9]* ]] && OPTARG=0$OPTARG
 	case $c in
 		[0-9]) 	OPTMAX=$OPTMAX$c;;
@@ -623,9 +636,18 @@ then 	BLOCK="{
 	prompt_printf
 else               #completions
 	((!OPTC)) || ((OPTC>1)) || break_sessionf
-	((OPTC)) && [[ $CHAT_INSTR ]] && set -- "$CHAT_INSTR\\n\\n$*"  #chatbot instructions
+	if [[ $CHATINSTR ]]  #chatbot instructions
+	then 	if ((!OPTC))
+		then 	set -- "$CHATINSTR\\n\\n$*"
+			OPTV=1 token_prevf "$*"
+		elif ((OPTC<2))
+		then 	printf '%s\t%d\t%s\n' \
+			"$(date -Isec)" "$((${#CHATINSTR}/4))" \
+			": $CHATINSTR" >> "$FILECHAT"
+		fi
+	fi
 	while :
-	do 	if [[ $OPTC ]]  #chat mode
+	do 	if ((OPTC))  #chat mode
 		then 	if (($#))  #input from pos args, first pass
 			then 	check_cmdf "$*" && continue
 				set_typef "$*" && REC_OUT="$*" \
@@ -634,14 +656,14 @@ else               #completions
 			fi
 
 			#read hist file
-			if [[ -s "${FILECHAT}" ]]
+			if [[ -s "$FILECHAT" ]]
 			then 	((max_prev=TKN_PREV+1)) ;unset HIST
 				while IFS=$'\t' read -r time token string
 				do 	[[ $time$token = *[Bb][Rr][Ee][Aa][Kk]* ]] && break
 					[[ ${string//[$IFS\"]} ]] && ((token>0)) || continue
 					if ((max_prev+token+1<OPTMAX))
 					then 	((max_prev+=token+1))
-						string="${string#[ \"]}" string="${string%[ \"]}"
+						string="${string#[ :\"]}" string="${string%[ \"]}"
 						HIST="${string#[ :]}\n\n$HIST"
 					fi
 				done < <(tac -- "$FILECHAT")
