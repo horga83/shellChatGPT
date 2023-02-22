@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash ChatGPT Shell Wrapper
-# v0.4.4  2023  by mountaineerbr  GPL+3
+# v0.4.4.1  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
 [[ $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST
 
@@ -686,6 +686,8 @@ else               #completions
 					else 	set --
 					fi ;break
 				done
+			elif ((!OPTX))
+			then 	set -- "$HIST${REC_OUT:-$*}"
 			fi
 		fi
 		#https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
