@@ -1,8 +1,8 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash ChatGPT/DALL-E Shell Wrapper
-# v0.4.5  2023  by mountaineerbr  GPL+3
+# v0.4.6  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
-[[ $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST
+[[ $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -295,13 +295,13 @@ ENDPOINTS=(
 	images/variations         #4
 	embeddings                #5
 )
-	
+
 
 
 function promptf
 {
 	((OPTVV)) && ((!OPTII)) && { 	block_printf ;return ;}
-	
+
 	curl -\# ${OPTV:+-s} -L https://api.openai.com/v1/${ENDPOINTS[$EPN]} \
 		-H "Content-Type: application/json" \
 		-H "Authorization: Bearer $OPENAI_KEY" \
@@ -433,7 +433,7 @@ function check_cmdf
 		-V|!blk|!block)
 			((OPTVV)) && unset OPTVV || OPTVV=1 ;return 0
 			;;
-		-VV|!!blk|!!block)
+		-VV|!!blk|!!block)  #debug
 			OPTVV=2 ;return 0
 			;;
 		!q|!quit|!exit|!bye)
@@ -533,7 +533,7 @@ do 	[[ $OPTARG = .[0-9]* ]] && OPTARG=0$OPTARG
 			else 	OPTT=$OPTARG
 			fi;;
 		v) 	((++OPTV));;
-		V) 	((++OPTVV));;
+		V) 	((++OPTVV));;  #debug
 		x) 	OPTX=1;;
 		z) 	OPTZ=1;;
 		\?) 	exit 1;;
