@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
-# chatgpt.sh -- Ksh93/Bash ChatGPT/DALL-E Shell Wrapper
-# v0.4.8  2023  by mountaineerbr  GPL+3
+# chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
+# v0.4.9  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
 [[ $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS
 
@@ -237,7 +237,7 @@ BUGS
 
 
 REQUIREMENTS
-	A free OpenAI GPTChat key. Ksh93 or Bash. cURL. JQ and
+	A free OpenAI GPTChat key. Ksh93, Bash or Zsh. cURL. JQ and
 	ImageMagick are optionally required.
 
 
@@ -717,10 +717,11 @@ else               #completions
 			#fallback prompt read
 			if [[ ${*//[$IFS\"]} = *($TYPE_GLOB:) ]] \
 				|| [[ ${REC_OUT//[$IFS\"]} = *($TYPE_GLOB:) ]]
-			then 	while :
-				do 	printf '\n%s[%s]: ' "Prompt" "${USER_TYPE:-$Q_TYPE}" >&2
-					if [[ $ZSH_VERSION ]]
-					then 	unset REPLY ;vared -h -c REPLY
+			then 	while printf '\n%s[%s]: ' "Prompt" "${USER_TYPE:-$Q_TYPE}" >&2
+				do 	if [[ $ZSH_VERSION ]]
+					then 	printf '\n' >&2
+						unset REPLY ;vared -h -c REPLY
+						print -s "$REPLY"
 					else 	read -r ${BASH_VERSION:+-e}
 					fi
 					if [[ $REPLY ]]

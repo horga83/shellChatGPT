@@ -39,7 +39,7 @@ Usage_: 8 + 52 = 60 tokens
 ### Required packages
 
 - Free [OpenAI GPTChat key](https://beta.openai.com/account/api-keys)
-- Ksh or Bash
+- Ksh, Bash or Zsh
 - cURL
 - JQ (optional)
 - Imagemagick (optional)
