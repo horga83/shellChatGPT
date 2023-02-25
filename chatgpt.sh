@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash ChatGPT/DALL-E Shell Wrapper
-# v0.4.7  2023  by mountaineerbr  GPL+3
+# v0.4.7b  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
 [[ $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS
 
@@ -435,19 +435,19 @@ function check_cmdf
 			fi
 			;;
 		-[Cc]|!br|!break|!session)
-			break_sessionf ;return 0
+			break_sessionf
 			;;
 		-x|!ed|!editor)
-			((OPTX)) && unset OPTX || OPTX=1 ;return 0
+			((OPTX)) && unset OPTX || OPTX=1
 			;;
 		-v|!ver|!verbose)
-			((OPTV)) && unset OPTV || OPTV=1 ;return 0
+			((OPTV)) && unset OPTV || OPTV=1
 			;;
 		-V|!blk|!block)
-			((OPTVV)) && unset OPTVV || OPTVV=1 ;return 0
+			((OPTVV)) && unset OPTVV || OPTVV=1
 			;;
 		-VV|!!blk|!!block)  #debug
-			OPTVV=2 ;return 0
+			OPTVV=2
 			;;
 		-p*|!top*) 	if [[ $* = *[0-9]* ]]
 			then 	OPTP="$*" OPTP="${OPTP//[!0-9.]}"
@@ -462,8 +462,9 @@ function check_cmdf
 			[[ $OPTT = .[0-9]* ]] && OPTT=0$OPTT
 			fi
 			;;
+		*) 	return 1;;
 	esac
-	return 1
+	return 0
 }
 
 function edf
