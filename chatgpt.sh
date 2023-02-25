@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash ChatGPT/DALL-E Shell Wrapper
-# v0.4.6  2023  by mountaineerbr  GPL+3
+# v0.4.7  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
 [[ $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS
 
@@ -105,13 +105,16 @@ COMPLETIONS
 	and interlocutor to the following text, this may be useful to
 	set intructions, and completing a previous prompt.
 
-	While in chat mode option -c, type in one of the following in
-	the new prompt to set options on the go:
+	While in chat mode option, type in one of the following (and a
+	value) in new prompt to set options on the go:
 
+		-a  |  !pre 	  Set presence.
+		-A  |  !freq 	  Set frequency.
 		-c  |  !new 	  Starts new session.
-		-x  |  !editor 	  Set/unset text editor.
-		-v  |  !verbose	  Set/unset verbose.
-		-V  |  !block	  Print prompt block.
+		-p  |  !top 	  Set top_p.
+		-t  |  !temp 	  Set temperature.
+		-v  |  !ver	  Set/unset verbose.
+		-x  |  !ed 	  Set/unset text editor.
 		!q  |  !quit	  Exit.
 
 
@@ -242,8 +245,8 @@ OPTIONS
 	-NUM 		Set maximum tokens. Max=4096, defaults=$OPTMM.
 	-a [VAL]	Set presence penalty  (completions; -2.0 - 2.0).
 	-A [VAL]	Set frequency penalty (completions; -2.0 - 2.0).
-	-cc 		Chat mode, new session (completions). Set twice
-			to continue from last history session.
+	-c 		Chat mode, new session (completions).
+	-cc 		Chat mode, continue from last history session.
 	-e [INSTRUCT] [INPUT]
 			Set Edit mode, model defaults=text-davinci-edit-001.
 	-h 		Print this help page.
@@ -421,7 +424,17 @@ function set_typef
 function check_cmdf
 {
 	case "${*//[$IFS]}" in
-		[+-][Cc]|!br|!break|!session)
+		-a*|!pre*|!presence*) 	if [[ $* = *[0-9]* ]]
+			then 	OPTA="$*" OPTA="${OPTA//[!0-9.]}"
+				[[ $OPTA = .[0-9]* ]] && OPTA=0$OPTA
+			fi
+			;;
+		-A*|!freq*|!frequency*) 	if [[ $* = *[0-9]* ]]
+			then 	OPTAA="$*" OPTAA="${OPTAA//[!0-9.]}"
+			[[ $OPTAA = .[0-9]* ]] && OPTAA=0$OPTAA
+			fi
+			;;
+		-[Cc]|!br|!break|!session)
 			break_sessionf ;return 0
 			;;
 		-x|!ed|!editor)
@@ -436,8 +449,18 @@ function check_cmdf
 		-VV|!!blk|!!block)  #debug
 			OPTVV=2 ;return 0
 			;;
+		-p*|!top*) 	if [[ $* = *[0-9]* ]]
+			then 	OPTP="$*" OPTP="${OPTP//[!0-9.]}"
+			[[ $OPTP = .[0-9]* ]] && OPTP=0$OPTP
+			fi
+			;;
 		!q|!quit|!exit|!bye)
 			exit
+			;;
+		-t*|!temp*|!temperature*) 	if [[ $* = *[0-9]* ]]
+			then 	OPTT="$*" OPTT="${OPTT//[!0-9.]}"
+			[[ $OPTT = .[0-9]* ]] && OPTT=0$OPTT
+			fi
 			;;
 	esac
 	return 1
@@ -642,7 +665,7 @@ else               #completions
 			OPTV=1 token_prevf "$*"
 		elif ((OPTC<2))
 		then 	printf '%s\t%d\t%s\n' \
-			"$(date -Isec)" "$((${#CHATINSTR}/4))" \
+			"$(date -Isec)" "1" \
 			": $CHATINSTR" >> "$FILECHAT"
 		fi
 	fi
@@ -657,17 +680,17 @@ else               #completions
 
 			#read hist file
 			if [[ -s "$FILECHAT" ]]
-			then 	((max_prev=TKN_PREV+1)) ;unset HIST
+			then 	((MAX_PREV=TKN_PREV+1)) ;unset HIST
 				while IFS=$'\t' read -r time token string
 				do 	[[ $time$token = *[Bb][Rr][Ee][Aa][Kk]* ]] && break
 					[[ ${string//[$IFS\"]} ]] && ((token>0)) || continue
-					if ((max_prev+token+1<OPTMAX))
-					then 	((max_prev+=token+1))
+					if ((MAX_PREV+token+1<OPTMAX))
+					then 	((MAX_PREV+=token+1))
 						string="${string#[ :\"]}" string="${string%[ \"]}"
 						HIST="${string#[ :]}\n\n$HIST"
 					fi
 				done < <(tac -- "$FILECHAT")
-				((max_prev-=TKN_PREV+1))
+				((MAX_PREV-=TKN_PREV+1))
 				unset REPLY time token string
 			fi
 
@@ -735,15 +758,15 @@ else               #completions
 			ans="${ans##*([$IFS]|\\[nt]|\")}" ans="${ans%\"}"
 			((${#tkn[@]}>2)) && ((${#ans}))
 			}
-		then 	check_typef "$ans" || ans="$A_TYPE: $ans"
+		then 	check_typef "$ans" || ans="$A_TYPE: $ans" OLD_TOTAL=$((OLD_TOTAL+1))
 			REC_OUT="${REC_OUT%%*([$IFS:])}" REC_OUT="${REC_OUT##*([$IFS:])}"
-			{	printf '%s\t%d\t"%s"\n' "${tkn[2]}" "$((max_prev<=tkn[0]?tkn[0]-max_prev:-1))" "$(escapef "${REC_OUT:-$*}")"
+			{	printf '%s\t%d\t"%s"\n' "${tkn[2]}" "$((OLD_TOTAL?tkn[0]-OLD_TOTAL:tkn[0]))" "$(escapef "${REC_OUT:-$*}")"
 				printf '%s\t%d\t"%s"\n' "${tkn[2]}" "${tkn[1]}" "$ans"
-			} >> "$FILECHAT"
+			} >> "$FILECHAT" ;OLD_TOTAL=$((tkn[0]+tkn[1]))
 		fi; unset tkn ans
 
-		set --  ;unset REPLY TKN_PREV REC_OUT HIST PRE
+		set --  ;unset REPLY TKN_PREV MAX_PREV REC_OUT HIST PRE
 		((OPTC)) || break
-	done
+	done ;unset OLD_TOTAL
 fi
 
