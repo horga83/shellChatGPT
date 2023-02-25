@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash ChatGPT/DALL-E Shell Wrapper
-# v0.4.7b  2023  by mountaineerbr  GPL+3
+# v0.4.8  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
 [[ $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS
 
@@ -49,7 +49,7 @@ FILEOUT="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}/chatgpt_out.png"
 # Load user defaults
 [[ -e ${CHATGPTRC:-$FILECONF} ]] && . "${CHATGPTRC:-$FILECONF}"
 
-HELP="NAME
+MAN="NAME
 	${0##*/} -- ChatGPT/DALL-E Shell Wrapper
 
 
@@ -129,12 +129,11 @@ COMPLETIONS
 	intructions at the first prompt, such as:
 
 	prompt>	\": The following is a conversation with an AI assistant.
-		  The assistant is helpful, creative, clever, and very
-		  friendly.\"
+		  The assistant is helpful, creative, clever, and friendly.\"
 
-	reply_> \"Assistant: Hello! How can I help you?\"
+	reply_> \"A: Hello! How can I help you?\"
 
-	prompt> \"Human: Hello, what is your name?\"
+	prompt> \"Q: Hello, what is your name?\"
 
 
 	For more on prompt design, see
@@ -211,7 +210,8 @@ ENVIRONMENT
 	VISUAL 		Text editor for external prompt editing.
 			Defaults=vim
 	
-	OPENAI_KEY 	Set your personal (free) OpenAI API key.
+	OPENAI_KEY
+	OPENAI_API_KEY 	Set your personal (free) OpenAI API key.
 
 
 LIMITS
@@ -326,7 +326,7 @@ function new_prompt_confirmf
 	((OPTV)) && return
 
 	printf '%s \n' "Confirm prompt? [Y]es, [n]o,${OPTX:+ [e]dit,} [r]edo or [a]bort" >&2
-	read -r -n 1
+	read -r -n ${ZSH_VERSION:+-k} 1
 	case "${REPLY:-$1}" in
 		[AaQq]*) 	return 201;;  #break
 		[Rr]*) 	return 200;;  #continue
@@ -486,8 +486,8 @@ function edf
 	if ((OPTC)) && pos=$(<"$FILETXT") && [[ "$pos" != "$PRE" ]]
 	then 	while [[ "$pos" != "$PRE"* ]]
 		do 	printf 'Warning: %s \n' 'Bad edit: [E]dit, [r]edo or [c]ontinue?' >&2
-			read -r
-			case "$REPLY" in
+			read -r -n ${ZSH_VERSION:+-k} 1
+			case "${REPLY:-$1}" in
 				[CcNnQqAa]) 	break;;  #continue
 				[Rr]*) 	return 200;;  #redo
 				[Ee]|*) OPTC= edf "$@"  #edit
@@ -537,7 +537,7 @@ do 	[[ $OPTARG = .[0-9]* ]] && OPTARG=0$OPTARG
 		A) 	OPTAA="$OPTARG";;
 		c) 	((OPTC++));;
 		e) 	OPTE=1;;
-		h) 	printf '%s\n' "$HELP" ;exit ;;
+		h) 	printf '%s\n' "$MAN" ;exit ;;
 		i|I) 	OPTI=1;;
 		j) 	OPTJ=1;;
 		l) 	OPTL=1 ;;
@@ -659,7 +659,10 @@ then 	BLOCK="{
 	promptf
 	prompt_printf
 else               #completions
-	((!OPTC)) || ((OPTC>1)) || break_sessionf
+	#if ((OPTC==1))
+	#then 	printf '%s ' "[S]tart new session or [c]ontinue from last? " ;read -r
+	#	case "$REPLY" in 	[Cc]*) 	OPTC=2;; 	[SsNn]*|*) 	break_sessionf;; esac ;fi
+	((OPTC==1)) && break_sessionf
 	if [[ $CHATINSTR ]]  #chatbot instructions
 	then 	if ((!OPTC))
 		then 	set -- "$CHATINSTR\\n\\n$*"
@@ -716,7 +719,10 @@ else               #completions
 				|| [[ ${REC_OUT//[$IFS\"]} = *($TYPE_GLOB:) ]]
 			then 	while :
 				do 	printf '\n%s[%s]: ' "Prompt" "${USER_TYPE:-$Q_TYPE}" >&2
-					read -r ${BASH_VERSION:+-e}
+					if [[ $ZSH_VERSION ]]
+					then 	unset REPLY ;vared -h -c REPLY
+					else 	read -r ${BASH_VERSION:+-e}
+					fi
 					if [[ $REPLY ]]
 					then 	check_cmdf "$REPLY" && continue
 						OPTX= new_prompt_confirmf
@@ -761,7 +767,7 @@ else               #completions
 			}
 		then 	check_typef "$ans" || ans="$A_TYPE: $ans" OLD_TOTAL=$((OLD_TOTAL+1))
 			REC_OUT="${REC_OUT%%*([$IFS:])}" REC_OUT="${REC_OUT##*([$IFS:])}"
-			{	printf '%s\t%d\t"%s"\n' "${tkn[2]}" "$((OLD_TOTAL?tkn[0]-OLD_TOTAL:tkn[0]))" "$(escapef "${REC_OUT:-$*}")"
+			{	printf '%s\t%d\t"%s"\n' "${tkn[2]}" "$((tkn[0]-OLD_TOTAL))" "$(escapef "${REC_OUT:-$*}")"
 				printf '%s\t%d\t"%s"\n' "${tkn[2]}" "${tkn[1]}" "$ans"
 			} >> "$FILECHAT" ;OLD_TOTAL=$((tkn[0]+tkn[1]))
 		fi; unset tkn ans
