@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.4.9  2023  by mountaineerbr  GPL+3
+# v0.4.10  2023  by mountaineerbr  GPL+3
 [[ $BASH_VERSION ]] && shopt -s extglob
 [[ $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS
 
@@ -721,7 +721,7 @@ else               #completions
 			then 	while printf '\n%s[%s]: ' "Prompt" "${USER_TYPE:-$Q_TYPE}" >&2
 				do 	if [[ $ZSH_VERSION ]]
 					then 	printf '\n' >&2
-						unset REPLY ;vared -h -c REPLY
+						unset REPLY ;vared -eh -c REPLY
 						print -s "$REPLY"
 					else 	read -r ${BASH_VERSION:+-e}
 					fi
