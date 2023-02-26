@@ -101,12 +101,12 @@ COMPLETIONS
 	continue from last recorded session.
 
 	The defaults chat format is \`Q & A'. A name such as \`NAME:'
-	may be introduced as interlocutor. Setting \`:' will not add
-	and interlocutor to the following text, this may be useful to
+	may be introduced as interlocutor. Setting \`:' only will not
+	add an interlocutor to the prompt. This may be useful to
 	set intructions, and completing a previous prompt.
 
-	While in chat mode option, type in one of the following (and a
-	value) in new prompt to set options on the go:
+	While in chat mode, type in one of the following (and a	value)
+	in the new prompt to set options on the go:
 
 		-a  |  !pre 	  Set presence.
 		-A  |  !freq 	  Set frequency.
@@ -123,10 +123,12 @@ COMPLETIONS
 	a single prompt. Write \`act as [technician]', add examples of
 	expected results.
 
-	For the chatbot, the only indication given is the initial \`$Q_TYPE:'
-	interlocutor flag so the initial reply may vary considerably.
-	You may try setting the bot identity and how it behaves as
-	intructions at the first prompt, such as:
+	For the chatbot, the only initial indication given is a \`$Q_TYPE: '
+	interlocutor flag. Without previous instructions, the first
+	replies may return lax but should improve with further promtps.
+	
+	Alternatively, one may try setting initial instructions prompt
+	with the bot identity and how it should behave as, such as:
 
 	prompt>	\": The following is a conversation with an AI assistant.
 		  The assistant is helpful, creative, clever, and friendly.\"
@@ -135,9 +137,8 @@ COMPLETIONS
 
 	prompt> \"Q: Hello, what is your name?\"
 
-
-	For more on prompt design, see
-	<https://platform.openai.com/docs/guides/completion/prompt-design>.
+	Also see section ENVIRONMENT to set defaults chatbot instructions.
+	For more on prompt design, see <https://platform.openai.com/docs/guides/completion/prompt-design>.
 
 
 	Settings
