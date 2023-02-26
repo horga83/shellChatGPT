@@ -97,7 +97,7 @@ COMPLETIONS
 	To keep a history of the latest context in the chat, set option
 	-c. This starts a new session, keeps a record of the latest
 	prompts and replies, and sends some history context with new
-	questions. This option respects max tokens setting. Set -C to
+	questions. This option respects max tokens setting. Set -cc to
 	continue from last recorded session.
 
 	The defaults chat format is \`Q & A'. A name such as \`NAME:'
@@ -230,7 +230,7 @@ LIMITS
 
 BUGS
 	Certain PROMPTS may return empty responses. Maybe the model
-	has nothing to add to the input prompt or it expects mor text.
+	has nothing to add to the input prompt or it expects more text.
 	Try trimming spaces, appending a full stop/ellipsis, or
 	resetting temperature or adding more text. See prompt deesign.
 
