@@ -1,8 +1,8 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.5.3  2023  by mountaineerbr  GPL+3
+# v0.5.4  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
-[[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS
+[[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS NO_NOMATCH
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -43,8 +43,8 @@ CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatgptsh"
 FILE="${CACHEDIR}/chatgpt.json"
 FILECHAT="${FILE%.*}.tsv"
 FILETXT="${FILE%.*}.txt"
-FILEIN="${FILE%.*}_in.png"
-FILEOUT="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}/chatgpt_out.png"
+FILEIN="${FILE%/*}/dalle_in.png"
+FILEOUT="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}/dalle_out.png"
 
 # Load user defaults
 [[ -e "${CHATGPTRC:-$CONFFILE}" ]] && . "${CHATGPTRC:-$CONFFILE}" \
@@ -107,8 +107,8 @@ COMPLETIONS
 	add an interlocutor to the prompt. This may be useful to
 	set intructions, and completing a previous prompt.
 
-	While in chat mode, type in one of the following (and a	value)
-	in the new prompt to set options on the go:
+	While in chat mode, type in one of the following commands, and
+	a value in the new prompt (e.g. \`!temp0.7') to set options:
 
 		!NUM |  !max 	  Set maximum tokens.
 		-a   |  !pre 	  Set presence.
@@ -447,49 +447,49 @@ function cmd_verf
 function check_cmdf
 {
 	case "${*//[$IFS]}" in
-		-[0-9]*|![0-9]*|!max*) 	if [[ $* = *[0-9]* ]]
+		-[0-9]*|[/!][0-9]*|[/!]max*) 	if [[ $* = *[0-9]* ]]
 			then 	OPTMAX="${*%.*}" OPTMAX="${OPTMAX//[!0-9]}"
 			fi ;cmd_verf 'Max tokens' $OPTMAX
 			;;
-		-a*|!pre*|!presence*) 	if [[ $* = *[0-9]* ]]
+		-a*|[/!]pre*|[/!]presence*) 	if [[ $* = *[0-9]* ]]
 			then 	OPTA="$*" OPTA="${OPTA//[!0-9.]}"
 				var_dotf OPTA
 			fi ;cmd_verf 'Presence' $OPTA
 			;;
-		-A*|!freq*|!frequency*) 	if [[ $* = *[0-9]* ]]
+		-A*|[/!]freq*|[/!]frequency*) 	if [[ $* = *[0-9]* ]]
 			then 	OPTAA="$*" OPTAA="${OPTAA//[!0-9.]}"
 				var_dotf OPTAA
 			fi ;cmd_verf 'Frequency' $OPTAA
 			;;
-		-[Cc]|!br|!break|!session)
+		-[Cc]|[/!]br|[/!]break|[/!]session)
 			break_sessionf
 			;;
-		-[Hh]|!history|!hist)
+		-[Hh]|[/!]hist*|[/!]history)
 			__edf "$FILECHAT"
 			;;
-		-p*|!top*) 	if [[ $* = *[0-9]* ]]
+		-p*|[/!]top*) 	if [[ $* = *[0-9]* ]]
 			then 	OPTP="$*" OPTP="${OPTP//[!0-9.]}"
 				var_dotf OPTP
 			fi ;cmd_verf 'Top P' $OPTP
 			;;
-		-t*|!temp*|!temperature*) 	if [[ $* = *[0-9]* ]]
+		-t*|[/!]temp*|[/!]temperature*) 	if [[ $* = *[0-9]* ]]
 			then 	OPTT="$*" OPTT="${OPTT//[!0-9.]}"
 				var_dotf OPTT
 			fi ;cmd_verf 'Temperature' $OPTT
 			;;
-		-v|!ver|!verbose)
+		-v|[/!]ver|[/!]verbose)
 			((OPTV)) && unset OPTV || OPTV=1
 			;;
-		-V|!blk|!block)
+		-V|[/!]blk|[/!]block)
 			((OPTVV)) && unset OPTVV || OPTVV=1
 			;;
-		-VV|!!blk|!!block)  #debug
+		-VV|[/!][/!]blk|[/!][/!]block)  #debug
 			OPTVV=2
 			;;
-		-x|!ed|!editor)
+		-x|[/!]ed|[/!]editor)
 			((OPTX)) && unset OPTX || OPTX=1
 			;;
-		!q|!quit|!exit|!bye)
+		!q|[/!]quit|[/!]exit|[/!]bye)
 			exit
 			;;
 		*) 	return 1;;
