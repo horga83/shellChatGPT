@@ -1,8 +1,8 @@
-#!/usr/bin/env ksh
+#!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.4.11  2023  by mountaineerbr  GPL+3
-[[ $BASH_VERSION ]] && shopt -s extglob
-[[ $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS
+# v0.5  2023  by mountaineerbr  GPL+3
+[[ -n $BASH_VERSION ]] && shopt -s extglob
+[[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -37,17 +37,18 @@ A_TYPE=A
 # CHATBOT INSTRUCTIONS
 #CHATINSTR="The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly."
 
-# CACHE FILES
+# CONF AND CACHE FILES
+CONFFILE="$HOME/.chatgptsh.conf"
 CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatgptsh"
 FILE="${CACHEDIR}/chatgpt.json"
 FILECHAT="${FILE%.*}.tsv"
-FILECONF="${FILE%.*}.conf"
 FILETXT="${FILE%.*}.txt"
 FILEIN="${FILE%.*}_in.png"
 FILEOUT="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}/chatgpt_out.png"
 
 # Load user defaults
-[[ -e ${CHATGPTRC:-$FILECONF} ]] && . "${CHATGPTRC:-$FILECONF}"
+[[ -e "${CHATGPTRC:-$CONFFILE}" ]] && . "${CHATGPTRC:-$CONFFILE}" \
+|| { 	[[ -e "${FILE%.*}.conf" ]] && . "${FILE%.*}.conf" ;}  #deprecated
 
 MAN="NAME
 	${0##*/} -- ChatGPT/DALL-E Shell Wrapper
@@ -108,14 +109,16 @@ COMPLETIONS
 	While in chat mode, type in one of the following (and a	value)
 	in the new prompt to set options on the go:
 
-		-a  |  !pre 	  Set presence.
-		-A  |  !freq 	  Set frequency.
-		-c  |  !new 	  Starts new session.
-		-p  |  !top 	  Set top_p.
-		-t  |  !temp 	  Set temperature.
-		-v  |  !ver	  Set/unset verbose.
-		-x  |  !ed 	  Set/unset text editor.
-		!q  |  !quit	  Exit.
+		!NUM |  !max 	  Set maximum tokens.
+		-a   |  !pre 	  Set presence.
+		-A   |  !freq 	  Set frequency.
+		-c   |  !new 	  Starts new session.
+		-H   |  !hist 	  Edit history file.
+		-p   |  !top 	  Set top_p.
+		-t   |  !temp 	  Set temperature.
+		-v   |  !ver	  Set/unset verbose.
+		-x   |  !ed 	  Set/unset text editor.
+		!q   |  !quit	  Exit.
 
 
 	Prompt Design
@@ -125,17 +128,18 @@ COMPLETIONS
 
 	For the chatbot, the only initial indication given is a \`$Q_TYPE: '
 	interlocutor flag. Without previous instructions, the first
-	replies may return lax but should improve with further promtps.
+	replies may return lax but should stabilise on further promtps.
 	
 	Alternatively, one may try setting initial instructions prompt
 	with the bot identity and how it should behave as, such as:
 
-	prompt>	\": The following is a conversation with an AI assistant.
-		  The assistant is helpful, creative, clever, and friendly.\"
+		prompt>	\": The following is a conversation with an AI
+			  assistant. The assistant is helpful, creative,
+			  clever, and friendly.\"
 
-	reply_> \"A: Hello! How can I help you?\"
+		reply_> \"A: Hello! How can I help you?\"
 
-	prompt> \"Q: Hello, what is your name?\"
+		prompt> \"Q: Hello, what is your name?\"
 
 	Also see section ENVIRONMENT to set defaults chatbot instructions.
 	For more on prompt design, see <https://platform.openai.com/docs/guides/completion/prompt-design>.
@@ -203,7 +207,7 @@ SKILLS
 
 ENVIRONMENT
 	CHATGPTRC 	Path to user ${0##*/} configuration.
-			Defaults=${CHATGPTRC:-${FILECONF/$HOME/\~}}
+			Defaults=${CHATGPTRC:-${CONFFILE/$HOME/\~}}
 
 	CHATINSTR 	Initial instruction set for the chatbot.
 
@@ -217,7 +221,7 @@ ENVIRONMENT
 
 LIMITS
 	For most models this is 2048 tokens, or about 1500 words).
-	Davici model limit is 4000 tokens.
+	Davici model limit is 4000 tokens (~3000 words).
 
 	Free trial users
 	Text & Embedding        Codex          Edit        Image
@@ -251,6 +255,7 @@ OPTIONS
 	-e [INSTRUCT] [INPUT]
 			Set Edit mode, model defaults=text-davinci-edit-001.
 	-h 		Print this help page.
+	-H 		Edit history file.
 	-i [PROMPT] 	Creates an image given a prompt.
 	-i [PNG_PATH] 	Creates a variation of a given image.
 	-j 		Print raw JSON data.
@@ -301,7 +306,7 @@ ENDPOINTS=(
 )
 
 
-
+#make request
 function promptf
 {
 	((OPTVV)) && ((!OPTII)) && { 	block_printf ;return ;}
@@ -313,6 +318,7 @@ function promptf
 		-o "$FILE"
 }
 
+#pretty print request body or dump and exit
 function block_printf
 {
 	if ((OPTVV>1))
@@ -321,6 +327,7 @@ function block_printf
 	fi
 }
 
+#prompt confirmation prompt
 function new_prompt_confirmf
 {
 	typeset REPLY
@@ -336,6 +343,7 @@ function new_prompt_confirmf
 	esac  #yes
 }
 
+#print response
 function prompt_printf
 {
 	if ((OPTJ)) #print raw json
@@ -347,6 +355,7 @@ function prompt_printf
 	fi
 }
 
+#make request to image endpoint
 function prompt_imgvarf
 {
 	curl -\# ${OPTV:+-s} -L https://api.openai.com/v1/${ENDPOINTS[$EPN]} \
@@ -358,6 +367,7 @@ function prompt_imgvarf
 		-o "$FILE"
 }
 
+#print image endpoint response
 function prompt_imgprintf
 {
 	typeset n m fname fout
@@ -386,7 +396,7 @@ function list_modelsf
 	curl https://api.openai.com/v1/models${1:+/}${1} \
 		-H "Authorization: Bearer $OPENAI_KEY" \
 		-o "$FILE"
-	if [[ $1 ]]
+	if [[ -n $1 ]]
 	then  	jq . "$FILE" || cat -- "$FILE"
 	else 	jq -r '.data[].id' "$FILE" | sort
 	fi
@@ -399,12 +409,14 @@ function lastjsonf
 	fi
 }
 
+#calculate token preview
 function token_prevf
 {
 	TKN_PREV="$*" TKN_PREV=$((${#TKN_PREV}/4))
 	((OPTV)) || printf 'Prompt tokens: ~%d; Max tokens: %d\n' "$TKN_PREV" "$OPTMAX" >&2
 }
 
+#check for interlocutor
 function check_typef
 {
 	TYPE_SPC1="?(*+(\\\\n|$'\n'))*([$IFS\"])"
@@ -413,6 +425,7 @@ function check_typef
 	TYPE_SPC3="*(\\\\[nt]|[$' \n\t'])"
 	[[ $* = $TYPE_SPC1$TYPE_GLOB$TYPE_SPC2:$TYPE_SPC3* ]]
 }
+#set interlocutor if none set
 function set_typef
 {
 	check_typef "$*" || return
@@ -422,24 +435,46 @@ function set_typef
 	USER_TYPE="${USER_TYPE##$TYPE_SPC1}"
 }
 
+#command run feedback
+function cmd_verf
+{
+	typeset dec ;dec="${2}." dec="${dec#*.}" dec="${dec%.}"
+	((OPTV)) || printf '%-11s => %.*f\n' "$1" "${#dec}" "$2" >&2
+}
+
+#check if input is a command
 function check_cmdf
 {
 	case "${*//[$IFS]}" in
+		-[0-9]*|![0-9]*|!max*) 	if [[ $* = *[0-9]* ]]
+			then 	OPTMAX="${*%.*}" OPTMAX="${OPTMAX//[!0-9]}"
+			fi ;cmd_verf 'Max tokens' $OPTMAX
+			;;
 		-a*|!pre*|!presence*) 	if [[ $* = *[0-9]* ]]
 			then 	OPTA="$*" OPTA="${OPTA//[!0-9.]}"
-				[[ $OPTA = .[0-9]* ]] && OPTA=0$OPTA
-			fi
+				var_dotf OPTA
+			fi ;cmd_verf 'Presence' $OPTA
 			;;
 		-A*|!freq*|!frequency*) 	if [[ $* = *[0-9]* ]]
 			then 	OPTAA="$*" OPTAA="${OPTAA//[!0-9.]}"
-			[[ $OPTAA = .[0-9]* ]] && OPTAA=0$OPTAA
-			fi
+				var_dotf OPTAA
+			fi ;cmd_verf 'Frequency' $OPTAA
 			;;
 		-[Cc]|!br|!break|!session)
 			break_sessionf
 			;;
-		-x|!ed|!editor)
-			((OPTX)) && unset OPTX || OPTX=1
+		-[Hh]|!history|!hist)
+			__edf "$FILECHAT"
+			;;
+		-p*|!top*) 	if [[ $* = *[0-9]* ]]
+			then 	OPTP="$*" OPTP="${OPTP//[!0-9.]}"
+				var_dotf OPTP
+			fi ;cmd_verf 'Top P' $OPTP
+			;;
+		-t*|!temp*|!temperature*) 	if [[ $* = *[0-9]* ]]
+			then 	OPTT="$*" OPTT="${OPTT//[!0-9.]}"
+				var_dotf OPTT
+			fi ;cmd_verf 'Temperature' $OPTT
 			;;
 		-v|!ver|!verbose)
 			((OPTV)) && unset OPTV || OPTV=1
@@ -450,24 +485,24 @@ function check_cmdf
 		-VV|!!blk|!!block)  #debug
 			OPTVV=2
 			;;
-		-p*|!top*) 	if [[ $* = *[0-9]* ]]
-			then 	OPTP="$*" OPTP="${OPTP//[!0-9.]}"
-			[[ $OPTP = .[0-9]* ]] && OPTP=0$OPTP
-			fi
+		-x|!ed|!editor)
+			((OPTX)) && unset OPTX || OPTX=1
 			;;
 		!q|!quit|!exit|!bye)
 			exit
-			;;
-		-t*|!temp*|!temperature*) 	if [[ $* = *[0-9]* ]]
-			then 	OPTT="$*" OPTT="${OPTT//[!0-9.]}"
-			[[ $OPTT = .[0-9]* ]] && OPTT=0$OPTT
-			fi
 			;;
 		*) 	return 1;;
 	esac
 	return 0
 }
 
+#main plain text editor
+function __edf
+{
+	${VISUAL:-${EDITOR:-vim}} "${1:-ERR: NO FILE}" </dev/tty >/dev/tty
+}
+
+#text editor wrapper
 function edf
 {
 	typeset ed_msg pos REPLY
@@ -482,7 +517,7 @@ function edf
 		fi >>"$FILETXT"
 	fi
 	
-	${VISUAL:-${EDITOR:-vim}} "$FILETXT" </dev/tty >/dev/tty
+	__edf "$FILETXT"
 
 	if ((OPTC)) && pos=$(<"$FILETXT") && [[ "$pos" != "$PRE" ]]
 	then 	while [[ "$pos" != "$PRE"* ]]
@@ -506,9 +541,11 @@ function escapef
 {
 	typeset var
  	var=${*//[\"]/\\\"}            #double quote marks
- 	var=${var//\\\\[\"]/\\\"}      #rm excess double quote escape
 	var=${var//[$'\t']/\\t}        #tabs
 	var=${var//[$'\n\r\v\f']/\\n}  #new line/form feed
+ 	var=${var//\\\\[\"]/\\\"}      #rm excess escapes
+ 	var=${var//\\\\[n]/\\n}
+ 	var=${var//\\\\[t]/\\t}
 	printf '%s\n' "$var"
 }
 
@@ -528,10 +565,17 @@ function break_sessionf
 	tee -a -- "$FILECHAT" >&2 <<<'SESSION BREAK'
 }
 
+#fix variable value, add zero before/after dot.
+function var_dotf
+{
+	eval "[[ \$$1 = .[0-9]* ]] && $1=0\$${1}"
+	eval "[[ \$$1 = *[0-9]. ]] && $1=\${${1}}0"
+}
+
 
 #parse opts
-while getopts a:A:cehiIjlm:n:kp:t:vVxz0123456789 c
-do 	[[ $OPTARG = .[0-9]* ]] && OPTARG=0$OPTARG
+while getopts a:A:cehHiIjlm:n:kp:t:vVxz0123456789 c
+do 	var_dotf OPTARG
 	case $c in
 		[0-9]) 	OPTMAX=$OPTMAX$c;;
 		a) 	OPTA="$OPTARG";;
@@ -539,6 +583,7 @@ do 	[[ $OPTARG = .[0-9]* ]] && OPTARG=0$OPTARG
 		c) 	((OPTC++));;
 		e) 	OPTE=1;;
 		h) 	printf '%s\n' "$MAN" ;exit ;;
+		H) 	__edf "$FILECHAT" ;exit ;;
 		i|I) 	OPTI=1;;
 		j) 	OPTJ=1;;
 		l) 	OPTL=1 ;;
@@ -569,9 +614,9 @@ shift $((OPTIND -1))
 OPTMAX=${OPTMAX:-$OPTMM}
 OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
 ((OPTC)) && ((OPTE+OPTI)) && OPTC=  ;((OPTL+OPTZ)) && OPTX= 
-[[ ${OPTT#0} ]] && [[ ${OPTP#1} ]] && printf '%s\n' "warning: temperature and top_p both set" >&2
-[[ $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA,"
-[[ $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA,"
+[[ -n ${OPTT#0} ]] && [[ -n ${OPTP#1} ]] && printf '%s\n' "warning: temperature and top_p both set" >&2
+[[ -n $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA,"
+[[ -n $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA,"
 if ((OPTI))
 then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
 	case "$1" in 	#set image size
@@ -664,7 +709,7 @@ else               #completions
 	#then 	printf '%s ' "[S]tart new session or [c]ontinue from last? " ;read -r
 	#	case "$REPLY" in 	[Cc]*) 	OPTC=2;; 	[SsNn]*|*) 	break_sessionf;; esac ;fi
 	((OPTC==1)) && break_sessionf
-	if [[ $CHATINSTR ]]  #chatbot instructions
+	if [[ -n $CHATINSTR ]]  #chatbot instructions
 	then 	if ((!OPTC))
 		then 	set -- "$CHATINSTR\\n\\n$*"
 			OPTV=1 token_prevf "$*"
@@ -688,7 +733,7 @@ else               #completions
 			then 	((MAX_PREV=TKN_PREV+1)) ;unset HIST
 				while IFS=$'\t' read -r time token string
 				do 	[[ $time$token = *[Bb][Rr][Ee][Aa][Kk]* ]] && break
-					[[ ${string//[$IFS\"]} ]] && ((token>0)) || continue
+					[[ -n ${string//[$IFS\"]} ]] && ((token>0)) || continue
 					if ((MAX_PREV+token+1<OPTMAX))
 					then 	((MAX_PREV+=token+1))
 						string="${string#[ :\"]}" string="${string%[ \"]}"
@@ -719,14 +764,17 @@ else               #completions
 			if [[ ${*//[$IFS\"]} = *($TYPE_GLOB:) ]] \
 				|| [[ ${REC_OUT//[$IFS\"]} = *($TYPE_GLOB:) ]]
 			then 	while printf '\n%s[%s]: ' "Prompt" "${USER_TYPE:-$Q_TYPE}" >&2
-				do 	if [[ $ZSH_VERSION ]]
-					then 	printf '\n' >&2 ;unset REPLY
-						vared -eh -c REPLY && print -s "$REPLY"
+				do 	if [[ -n $ZSH_VERSION ]]
+					then 	unset REPLY
+						if vared -p "Prompt[${USER_TYPE:-$Q_TYPE}]: " -eh -c REPLY
+						then 	print -s - "$REPLY"
+							check_cmdf "$REPLY" && continue
+						fi
 					else 	read -r ${BASH_VERSION:+-e}
+						check_cmdf "$REPLY" && continue
 					fi
-					if [[ $REPLY ]]
-					then 	check_cmdf "$REPLY" && continue
-						OPTX= new_prompt_confirmf
+					if [[ -n $REPLY ]]
+					then 	OPTX= new_prompt_confirmf
 						case $? in
 							201) 	break 2;;  #abort
 							200|199) 	continue;;  #redo/edit
@@ -757,7 +805,7 @@ else               #completions
 		prompt_printf
 
 		#record to hist file
-		if [[ $OPTC ]] && {
+		if [[ -n $OPTC ]] && {
 		 	tkn=($(jq -r '.usage.prompt_tokens//empty,
 				.usage.completion_tokens//empty,
 				(.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"

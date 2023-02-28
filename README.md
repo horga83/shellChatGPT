@@ -6,6 +6,7 @@ Shell wrapper for OpenAI API for ChatGPT and DALL-E.
 
 - GPT chat from the command line
 - Follow up conversations
+- Set any of multiple models available.
 - Generate images from text input
 - Generate variations of images
 - Choose amongst available models
@@ -54,6 +55,7 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 
 - Set your OpenAI API key with option `-k [KEY]` or environment variable `$OPENAI_KEY`
 - Just write your prompt after the script name `chatgpt.sh`
+- Chat mode may be configured with Instructions or not.
 - Set temperature value with `-t [VAL]` (0.0 to 2.0), defaults=0.
 - To set your model, run `chatgpt.sh -l` and then set option `-m [MODEL_NAME]`
 - Some models require a \`prompt' while others \`instructions' and \`input'
@@ -63,6 +65,6 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 
 ## Environment
 
-- Set `$OPENAI_KEY` with your OpenAI API key.
-- Set `$CHATGPTRC` with path to chatgpt.sh configuration file.
+- Set `$OPENAI_API_KEY` with your OpenAI API key.
+- Set `$CHATGPTRC` with path to the configuration file. Defaults = `~/.chatgptsh.conf`.
 
