@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.5.2  2023  by mountaineerbr  GPL+3
+# v0.5.3  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS
 
@@ -38,7 +38,7 @@ A_TYPE=A
 #CHATINSTR="The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly."
 
 # CONF AND CACHE FILES
-CONFFILE="$HOME/.chatgptsh.conf"
+CONFFILE="$HOME/.chatgpt.conf"
 CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatgptsh"
 FILE="${CACHEDIR}/chatgpt.json"
 FILECHAT="${FILE%.*}.tsv"
