@@ -446,7 +446,7 @@ function cmd_verf
 #check if input is a command
 function check_cmdf
 {
-	case "${*//[$IFS]}" in
+	case "${*//[$IFS:]}" in
 		-[0-9]*|[/!][0-9]*|[/!]max*) 	if [[ $* = *[0-9]* ]]
 			then 	OPTMAX="${*%.*}" OPTMAX="${OPTMAX//[!0-9]}"
 			fi ;cmd_verf 'Max tokens' $OPTMAX
@@ -532,7 +532,7 @@ function edf
 			esac
 		done
 		set -- "${pos#*"$PRE"}"
-		check_cmdf "$*" && return 200
+		check_cmdf "${*#*:}" && return 200
 		set_typef "$*" && REC_OUT="$*" || REC_OUT="${USER_TYPE:-$Q_TYPE}: $*"
 	fi
 	return 0
