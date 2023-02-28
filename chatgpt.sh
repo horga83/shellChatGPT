@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.5.1  2023  by mountaineerbr  GPL+3
+# v0.5.2  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS
 
@@ -81,8 +81,8 @@ SYNOPSIS
 	Stdin is supported when there is no positional arguments left
 	after option parsing. Stdin input sets a single PROMPT.
 
-	User configuration is kept at \`${CHATGPTRC:-${CONFFILE/$HOME/\~}}'.
-	Script cache is kept at \`${CACHEDIR/$HOME/\~}'.
+	User configuration is kept at \`${CHATGPTRC:-${CONFFILE/$HOME/"~"}}'.
+	Script cache is kept at \`${CACHEDIR/$HOME/"~"}'.
 
 	A personal (free) OpenAI API is required, set it with -k or
 	see ENVIRONMENT section.
@@ -208,7 +208,7 @@ SKILLS
 
 ENVIRONMENT
 	CHATGPTRC 	Path to user ${0##*/} configuration.
-			Defaults=${CHATGPTRC:-${CONFFILE/$HOME/\~}}
+			Defaults=${CHATGPTRC:-${CONFFILE/$HOME/"~"}}
 
 	CHATINSTR 	Initial instruction set for the chatbot.
 
@@ -384,7 +384,7 @@ function prompt_imgprintf
 		while jq -e ".data[${n}]" "$FILE" >/dev/null 2>&1
 		do 	fout="${FILEOUT%.*}${m}.png"
 			jq -r ".data[${n}].b64_json" "$FILE" | base64 -d > "$fout"
-			printf 'File: %s\n' "${fout/$HOME/\~}" >&2
+			printf 'File: %s\n' "${fout/$HOME/"~"}" >&2
 			((++n, ++m)) ;((n<50)) || break
 		done
 		((n)) || { 	cat -- "$FILE" ;false ;}
