@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.5  2023  by mountaineerbr  GPL+3
+# v0.5.1  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS
 
@@ -81,7 +81,8 @@ SYNOPSIS
 	Stdin is supported when there is no positional arguments left
 	after option parsing. Stdin input sets a single PROMPT.
 
-	Cache and configuration is kept at \`${CACHEDIR/$HOME/\~}'.
+	User configuration is kept at \`${CHATGPTRC:-${CONFFILE/$HOME/\~}}'.
+	Script cache is kept at \`${CACHEDIR/$HOME/\~}'.
 
 	A personal (free) OpenAI API is required, set it with -k or
 	see ENVIRONMENT section.
