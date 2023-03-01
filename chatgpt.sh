@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.5.7  2023  by mountaineerbr  GPL+3
+# v0.5.9  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS NO_NOMATCH
 
@@ -453,19 +453,17 @@ function cmd_verf
 function check_cmdf
 {
 	case "${*//[$IFS:]}" in
-		-[0-9]*|[/!][0-9]*|[/!]max*) 	if [[ $* = *[0-9]* ]]
-			then 	OPTMAX="${*%.*}" OPTMAX="${OPTMAX//[!0-9]}"
-			fi ;cmd_verf 'Max tokens' $OPTMAX
+		-[0-9]*|[/!][0-9]*|[/!]max*) 	set -- "${*%.*}"
+			set -- "${*//[!0-9]}"  ;OPTMAX="${*:-$OPTMAX}"
+			cmd_verf 'Max tokens' $OPTMAX
 			;;
-		-a*|[/!]pre*|[/!]presence*) 	if [[ $* = *[0-9]* ]]
-			then 	OPTA="$*" OPTA="${OPTA//[!0-9.]}"
-				var_dotf OPTA
-			fi ;cmd_verf 'Presence' $OPTA
+		-a*|[/!]pre*|[/!]presence*)
+			set -- "${*//[!0-9.]}" ;OPTA="${*:-$OPTA}"
+			var_dotf OPTA  ;cmd_verf 'Presence' $OPTA
 			;;
-		-A*|[/!]freq*|[/!]frequency*) 	if [[ $* = *[0-9]* ]]
-			then 	OPTAA="$*" OPTAA="${OPTAA//[!0-9.]}"
-				var_dotf OPTAA
-			fi ;cmd_verf 'Frequency' $OPTAA
+		-A*|[/!]freq*|[/!]frequency*)
+			set -- "${*//[!0-9.]}" ;OPTAA="${*:-$OPTAA}"
+			var_dotf OPTAA ;cmd_verf 'Frequency' $OPTAA
 			;;
 		-[Cc]|[/!]br|[/!]break|[/!]session)
 			break_sessionf
@@ -473,15 +471,13 @@ function check_cmdf
 		-[Hh]|[/!]hist*|[/!]history)
 			__edf "$FILECHAT"
 			;;
-		-p*|[/!]top*) 	if [[ $* = *[0-9]* ]]
-			then 	OPTP="$*" OPTP="${OPTP//[!0-9.]}"
-				var_dotf OPTP
-			fi ;cmd_verf 'Top P' $OPTP
+		-p*|[/!]top*)
+			set -- "${*//[!0-9.]}" ;OPTP="${*:-$OPTP}"
+			var_dotf OPTP  ;cmd_verf 'Top P' $OPTP
 			;;
-		-t*|[/!]temp*|[/!]temperature*) 	if [[ $* = *[0-9]* ]]
-			then 	OPTT="$*" OPTT="${OPTT//[!0-9.]}"
-				var_dotf OPTT
-			fi ;cmd_verf 'Temperature' $OPTT
+		-t*|[/!]temp*|[/!]temperature*)
+			set -- "${*//[!0-9.]}" ;OPTT="${*:-$OPTT}"
+			var_dotf OPTT  ;cmd_verf 'Temperature' $OPTT
 			;;
 		-v|[/!]ver|[/!]verbose)
 			((OPTV)) && unset OPTV || OPTV=1
