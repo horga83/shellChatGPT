@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.5.6  2023  by mountaineerbr  GPL+3
+# v0.5.7  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS NO_NOMATCH
 
@@ -28,6 +28,8 @@ OPTN=1
 OPTS=512x512
 # Image format
 OPTI_FMT=b64_json  #url
+# Minify JSON request
+#OPTMINI=
 
 # CHATBOT INTERLOCUTORS
 Q_TYPE=Q
@@ -37,18 +39,21 @@ A_TYPE=A
 # CHATBOT INSTRUCTIONS
 #CHATINSTR="The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly."
 
-# CONF AND CACHE FILES
+
+# CACHE AND OUTPUT DIRECTORIES
 CONFFILE="$HOME/.chatgpt.conf"
 CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatgptsh"
-FILE="${CACHEDIR}/chatgpt.json"
-FILECHAT="${FILE%.*}.tsv"
-FILETXT="${FILE%.*}.txt"
-FILEIN="${FILE%/*}/dalle_in.png"
-FILEOUT="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}/dalle_out.png"
+OUTDIR="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}"
 
 # Load user defaults
 [[ -e "${CHATGPTRC:-$CONFFILE}" ]] && . "${CHATGPTRC:-$CONFFILE}" \
 || { 	[[ -e "${FILE%.*}.conf" ]] && . "${FILE%.*}.conf" ;}  #deprecated
+# Set file paths
+FILE="${CACHEDIR%/}/chatgpt.json"
+FILECHAT="${FILE%.*}.tsv"
+FILETXT="${FILE%.*}.txt"
+FILEIN="${FILE%/*}/dalle_in.png"
+FILEOUT="${OUTDIR%/}/dalle_out.png"
 
 MAN="NAME
 	${0##*/} -- ChatGPT/DALL-E Shell Wrapper
@@ -310,6 +315,7 @@ ENDPOINTS=(
 #make request
 function promptf
 {
+	((OPTMINI)) && json_minif
 	((OPTVV)) && ((!OPTII)) && { 	block_printf ;return ;}
 
 	curl -\# ${OPTV:+-s} -L https://api.openai.com/v1/${ENDPOINTS[$EPN]} \
@@ -500,7 +506,7 @@ function check_cmdf
 #main plain text editor
 function __edf
 {
-	${VISUAL:-${EDITOR:-vim}} "${1:-ERR: NO FILE}" </dev/tty >/dev/tty
+	${VISUAL:-${EDITOR:-vim}} "$1" </dev/tty >/dev/tty
 }
 
 #text editor wrapper
@@ -571,6 +577,17 @@ function var_dotf
 {
 	eval "[[ \$$1 = .[0-9]* ]] && $1=0\$${1}"
 	eval "[[ \$$1 = *[0-9]. ]] && $1=\${${1}}0"
+}
+
+#minify json
+json_minif()
+{
+	typeset blk
+	blk=$(jq -c . <<<"$BLOCK") || {
+		blk=${BLOCK//[$'\t\n\r\v\f']} blk=${blk//\": \"/\":\"}
+		blk=${blk//, \"/,\"} blk=${blk//\" ,\"/\",\"}
+	}
+	BLOCK=$blk
 }
 
 
@@ -706,9 +723,6 @@ then 	BLOCK="{
 	promptf
 	prompt_printf
 else               #completions
-	#if ((OPTC==1))
-	#then 	printf '%s ' "[S]tart new session or [c]ontinue from last? " ;read -r
-	#	case "$REPLY" in 	[Cc]*) 	OPTC=2;; 	[SsNn]*|*) 	break_sessionf;; esac ;fi
 	((OPTC==1)) && break_sessionf
 	if [[ -n $CHATINSTR ]]  #chatbot instructions
 	then 	if ((!OPTC))
