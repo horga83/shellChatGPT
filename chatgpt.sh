@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.5.9  2023  by mountaineerbr  GPL+3
+# v0.5.10  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS NO_NOMATCH
 
@@ -113,13 +113,14 @@ COMPLETIONS
 	set intructions, and completing a previous prompt.
 
 	While in chat mode, type in one of the following commands, and
-	a value in the new prompt (e.g. \`!temp0.7') to set options:
+	a value in the new prompt (e.g. \`!temp0.7', \`!mod1'):
 
 		!NUM |  !max 	  Set maximum tokens.
 		-a   |  !pre 	  Set presence.
 		-A   |  !freq 	  Set frequency.
 		-c   |  !new 	  Starts new session.
 		-H   |  !hist 	  Edit history file.
+		-m   |  !mod 	  Set model by num or full name.
 		-p   |  !top 	  Set top_p.
 		-t   |  !temp 	  Set temperature.
 		-v   |  !ver	  Set/unset verbose.
@@ -295,8 +296,8 @@ MODELS=(
 	code-davinci-002          #4
 	code-cushman-001          #5
 	#moderated
-	text-moderation-latest    #6
-	text-moderation-stable    #7
+	text-moderation-latest    #6  #may be n/a
+	text-moderation-stable    #7  #may be n/a
 	#EDITS
 	text-davinci-edit-001     #8
 	code-davinci-edit-001     #9
@@ -311,6 +312,28 @@ ENDPOINTS=(
 	embeddings                #5
 )
 
+
+#set model endpoint based on its name
+function set_model_epnf
+{
+	unset EPN OPTE OPTEMBED
+	case "$1" in
+		image-var) 	EPN=4;;
+		image) 		EPN=3;;
+		code-*) 	case "$1" in
+					*search*) 	EPN=5 OPTEMBED=1;;
+					*edit*) 	EPN=2 OPTE=1;;
+					*) 		EPN=0;;
+				esac;;
+		text-*) 	case "$1" in
+					*embedding*|*similarity*|*search*) 	EPN=5 OPTEMBED=1;;
+					*edit*) 	EPN=2 OPTE=1;;
+					*moderation*) 	EPN=1;;
+					*) 		EPN=0;;
+				esac;;
+		*) 		EPN=0;;
+	esac
+}
 
 #make request
 function promptf
@@ -445,8 +468,7 @@ function set_typef
 #command run feedback
 function cmd_verf
 {
-	typeset dec ;dec="${2}." dec="${dec#*.}" dec="${dec%.}"
-	((OPTV)) || printf '%-11s => %.*f\n' "$1" "${#dec}" "$2" >&2
+	((OPTV)) || printf '%-11s => %s\n' "$1" "$2" >&2
 }
 
 #check if input is a command
@@ -459,11 +481,11 @@ function check_cmdf
 			;;
 		-a*|[/!]pre*|[/!]presence*)
 			set -- "${*//[!0-9.]}" ;OPTA="${*:-$OPTA}"
-			var_dotf OPTA  ;cmd_verf 'Presence' $OPTA
+			fix_dotf OPTA  ;cmd_verf 'Presence' $OPTA
 			;;
 		-A*|[/!]freq*|[/!]frequency*)
 			set -- "${*//[!0-9.]}" ;OPTAA="${*:-$OPTAA}"
-			var_dotf OPTAA ;cmd_verf 'Frequency' $OPTAA
+			fix_dotf OPTAA ;cmd_verf 'Frequency' $OPTAA
 			;;
 		-[Cc]|[/!]br|[/!]break|[/!]session)
 			break_sessionf
@@ -471,13 +493,20 @@ function check_cmdf
 		-[Hh]|[/!]hist*|[/!]history)
 			__edf "$FILECHAT"
 			;;
+		-m*|[/!]mod*|[/!]model*)
+			set -- "${*#-m}" ;set -- "${*#[/!]model}" ;set -- "${*#[/!]mod}"
+			if [[ $* = *[a-zA-Z]* ]]
+			then 	MOD="${*//[$IFS]}"  #set model by its name
+			else 	MOD="${MODELS[${*//[!0-9]}]}" #set model by index
+			fi ;set_model_epnf "$MOD" ;cmd_verf 'Model' $MOD
+			;;
 		-p*|[/!]top*)
 			set -- "${*//[!0-9.]}" ;OPTP="${*:-$OPTP}"
-			var_dotf OPTP  ;cmd_verf 'Top P' $OPTP
+			fix_dotf OPTP  ;cmd_verf 'Top P' $OPTP
 			;;
 		-t*|[/!]temp*|[/!]temperature*)
 			set -- "${*//[!0-9.]}" ;OPTT="${*:-$OPTT}"
-			var_dotf OPTT  ;cmd_verf 'Temperature' $OPTT
+			fix_dotf OPTT  ;cmd_verf 'Temperature' $OPTT
 			;;
 		-v|[/!]ver|[/!]verbose)
 			((OPTV)) && unset OPTV || OPTV=1
@@ -569,14 +598,14 @@ function break_sessionf
 }
 
 #fix variable value, add zero before/after dot.
-function var_dotf
+function fix_dotf
 {
 	eval "[[ \$$1 = .[0-9]* ]] && $1=0\$${1}"
 	eval "[[ \$$1 = *[0-9]. ]] && $1=\${${1}}0"
 }
 
 #minify json
-json_minif()
+function json_minif
 {
 	typeset blk
 	blk=$(jq -c . <<<"$BLOCK") || {
@@ -589,7 +618,7 @@ json_minif()
 
 #parse opts
 while getopts a:A:cehHiIjlm:n:kp:t:vVxz0123456789 c
-do 	var_dotf OPTARG
+do 	fix_dotf OPTARG
 	case $c in
 		[0-9]) 	OPTMAX=$OPTMAX$c;;
 		a) 	OPTA="$OPTARG";;
@@ -642,23 +671,8 @@ then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
 	[[ -e "$1" ]] && OPTII=1 MOD=image-var
 fi
 ((OPTE)) && ((!OPTMSET)) && OPTM=8
-MOD="${MOD:-${MODELS[$OPTM]}}"
-case "$MOD" in  #set model endpoint
-	image-var) 	EPN=4;;
-	image) 		EPN=3;;
-	code-*) 	case "$MOD" in
-				*search*) 	EPN=5 OPTEMBED=1;;
-				*edit*) 	EPN=2 OPTE=1;;
-				*) 		EPN=0;;
-			esac;;
-	text-*) 	case "$MOD" in
-				*embedding*|*similarity*|*search*) 	EPN=5 OPTEMBED=1;;
-				*edit*) 	EPN=2 OPTE=1;;
-				*moderations*) 	EPN=1;;
-				*) 		EPN=0;;
-			esac;;
-	*) 		EPN=0;;
-esac
+MOD="${MOD:-${MODELS[OPTM]}}"
+set_model_epnf "$MOD"
 
 (($#)) || [[ -t 0 ]] || set -- "$(</dev/stdin)"
 ((OPTX)) && ((!OPTC)) && edf "$@" && set -- "$(<"$FILETXT")"  #editor
