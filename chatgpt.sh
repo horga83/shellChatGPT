@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.5.10  2023  by mountaineerbr  GPL+3
+# v0.5.11  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS NO_NOMATCH
 
@@ -120,7 +120,7 @@ COMPLETIONS
 		-A   |  !freq 	  Set frequency.
 		-c   |  !new 	  Starts new session.
 		-H   |  !hist 	  Edit history file.
-		-m   |  !mod 	  Set model by num or full name.
+		-m   |  !mod 	  Set model by index number.
 		-p   |  !top 	  Set top_p.
 		-t   |  !temp 	  Set temperature.
 		-v   |  !ver	  Set/unset verbose.
@@ -269,7 +269,7 @@ OPTIONS
 	-k [KEY] 	Set API key (free).
 	-l 		List models.
 	-m [MOD_NAME] 	Set a model name, check with -l.
-	-m [NUM] 	Set model by NUM:
+	-m [NUM] 	Set model by index NUM:
 		  # Completions           # Moderation
 		  0. text-davinci-003     6. text-moderation-latest
 		  1. text-curie-001       7. text-moderation-stable
@@ -496,8 +496,8 @@ function check_cmdf
 		-m*|[/!]mod*|[/!]model*)
 			set -- "${*#-m}" ;set -- "${*#[/!]model}" ;set -- "${*#[/!]mod}"
 			if [[ $* = *[a-zA-Z]* ]]
-			then 	MOD="${*//[$IFS]}"  #set model by its name
-			else 	MOD="${MODELS[${*//[!0-9]}]}" #set model by index
+			then 	MOD="${*//[$IFS]}"  #by name
+			else 	MOD="${MODELS[${*//[!0-9]}]}" #by index
 			fi ;set_model_epnf "$MOD" ;cmd_verf 'Model' $MOD
 			;;
 		-p*|[/!]top*)
