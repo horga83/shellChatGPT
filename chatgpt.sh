@@ -1,8 +1,8 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.5.11  2023  by mountaineerbr  GPL+3
+# v0.5.12  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
-[[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_POSIX_BUILTINS NO_NOMATCH
+[[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -46,8 +46,8 @@ CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatgptsh"
 OUTDIR="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}"
 
 # Load user defaults
-[[ -e "${CHATGPTRC:-$CONFFILE}" ]] && . "${CHATGPTRC:-$CONFFILE}" \
-|| { 	[[ -e "${FILE%.*}.conf" ]] && . "${FILE%.*}.conf" ;}  #deprecated
+((OPTF)) || { 	[[ -e "${CHATGPTRC:-$CONFFILE}" ]] && . "${CHATGPTRC:-$CONFFILE}" ;}
+
 # Set file paths
 FILE="${CACHEDIR%/}/chatgpt.json"
 FILECHAT="${FILE%.*}.tsv"
@@ -91,6 +91,8 @@ SYNOPSIS
 
 	A personal (free) OpenAI API is required, set it with -k or
 	see ENVIRONMENT section.
+
+	For the skill list, see <https://platform.openai.com/examples>.
 
 	For complete model and settings information, refer to OPENAI
 	API docs at <https://beta.openai.com/docs/guides>.
@@ -189,41 +191,18 @@ IMAGES
 	input image will be converted to square before upload.
 
 
-SKILLS
-	Q&A, Grammar correction, Summarize for a 2nd grader, Natural
-	language to OpenAI API, Text to command, English to other
-	languages, Natural language to Stripe API, SQL translate, Parse
-	unstructured data, Classification, Python to natural language,
-	Movie to Emoji, Calculate Time Complexity, Translate programming
-	languages, Advanced tweet classifier, Explain code, Keywords,
-	Factual answering, Ad from product description, Product name
-	generator, TL;DR summarization, Python bug fixer, Spreadsheet
-	creator, JavaScript helper chatbot, ML/AI language model tutor,
-	Science fiction book list maker, Tweet classifier, Airport code
-	extractor, SQL request, Extract contact information, JavaScript
-	to Python, Friend chat, Mood to color, Write a Python docstring,
-	Analogy maker, JavaScript one line function, Micro horror story
-	creator, Third-person converter, Notes to summary, VR fitness
-	idea generator, Essay outline, Recipe creator (eat at your own
-	risk), Chat, Marv the sarcastic chat bot, Turn by turn directions,
-	Restaurant review creator, Create study notes, and Interview
-	questions.
-
-	See examples at <https://platform.openai.com/examples>.
-
-
 ENVIRONMENT
 	CHATGPTRC 	Path to user ${0##*/} configuration.
 			Defaults=${CHATGPTRC:-${CONFFILE/$HOME/"~"}}
 
 	CHATINSTR 	Initial instruction set for the chatbot.
 
-	EDITOR
-	VISUAL 		Text editor for external prompt editing.
+	OPENAI_API_KEY
+	OPENAI_KEY 	Set your personal (free) OpenAI API key.
+
+	VISUAL
+	EDITOR 		Text editor for external prompt editing.
 			Defaults=vim
-	
-	OPENAI_KEY
-	OPENAI_API_KEY 	Set your personal (free) OpenAI API key.
 
 
 LIMITS
@@ -243,9 +222,11 @@ BUGS
 	Certain PROMPTS may return empty responses. Maybe the model
 	has nothing to add to the input prompt or it expects more text.
 	Try trimming spaces, appending a full stop/ellipsis, or
-	resetting temperature or adding more text. See prompt deesign.
+	resetting temperature or adding more text. See prompt design.
 
-	Language models are but a mirror of human written records.
+	Language models are but a mirror of human written records, they
+	do not \`understand' your questions or \`know' the answers to it.
+	Garbage in, garbage out.
 
 
 REQUIREMENTS
@@ -261,6 +242,7 @@ OPTIONS
 	-cc 		Chat mode, continue from last history session.
 	-e [INSTRUCT] [INPUT]
 			Set Edit mode, model defaults=text-davinci-edit-001.
+	-f 		Skip sourcing user configuration file.
 	-h 		Print this help page.
 	-H 		Edit history file.
 	-i [PROMPT] 	Creates an image given a prompt.
@@ -474,53 +456,55 @@ function cmd_verf
 #check if input is a command
 function check_cmdf
 {
-	case "${*//[$IFS:]}" in
-		-[0-9]*|[/!][0-9]*|[/!]max*) 	set -- "${*%.*}"
+	[[ ${*//[$IFS:]} = [/!-]* ]] || return
+	set -- "${*//[$IFS\/!]}" ;set -- "${*##[:]}"
+	case "$*" in
+		-[0-9]*|[0-9]*|max*) 	set -- "${*%.*}"
 			set -- "${*//[!0-9]}"  ;OPTMAX="${*:-$OPTMAX}"
 			cmd_verf 'Max tokens' $OPTMAX
 			;;
-		-a*|[/!]pre*|[/!]presence*)
+		-a*|pre*|presence*)
 			set -- "${*//[!0-9.]}" ;OPTA="${*:-$OPTA}"
 			fix_dotf OPTA  ;cmd_verf 'Presence' $OPTA
 			;;
-		-A*|[/!]freq*|[/!]frequency*)
+		-A*|freq*|frequency*)
 			set -- "${*//[!0-9.]}" ;OPTAA="${*:-$OPTAA}"
 			fix_dotf OPTAA ;cmd_verf 'Frequency' $OPTAA
 			;;
-		-[Cc]|[/!]br|[/!]break|[/!]session)
+		-[Cc]|br|break|session)
 			break_sessionf
 			;;
-		-[Hh]|[/!]hist*|[/!]history)
+		-[Hh]|hist*|history)
 			__edf "$FILECHAT"
 			;;
-		-m*|[/!]mod*|[/!]model*)
-			set -- "${*#-m}" ;set -- "${*#[/!]model}" ;set -- "${*#[/!]mod}"
+		-m*|mod*|model*)
+			set -- "${*#-m}" ;set -- "${*#model}" ;set -- "${*#mod}"
 			if [[ $* = *[a-zA-Z]* ]]
 			then 	MOD="${*//[$IFS]}"  #by name
 			else 	MOD="${MODELS[${*//[!0-9]}]}" #by index
 			fi ;set_model_epnf "$MOD" ;cmd_verf 'Model' $MOD
 			;;
-		-p*|[/!]top*)
+		-p*|top*)
 			set -- "${*//[!0-9.]}" ;OPTP="${*:-$OPTP}"
 			fix_dotf OPTP  ;cmd_verf 'Top P' $OPTP
 			;;
-		-t*|[/!]temp*|[/!]temperature*)
+		-t*|temp*|temperature*)
 			set -- "${*//[!0-9.]}" ;OPTT="${*:-$OPTT}"
 			fix_dotf OPTT  ;cmd_verf 'Temperature' $OPTT
 			;;
-		-v|[/!]ver|[/!]verbose)
+		-v|ver|verbose)
 			((OPTV)) && unset OPTV || OPTV=1
 			;;
-		-V|[/!]blk|[/!]block)
+		-V|blk|block)
 			((OPTVV)) && unset OPTVV || OPTVV=1
 			;;
-		-VV|[/!][/!]blk|[/!][/!]block)  #debug
+		-VV|[/!]blk|[/!]block)  #debug
 			OPTVV=2
 			;;
-		-x|[/!]ed|[/!]editor)
+		-x|ed|editor)
 			((OPTX)) && unset OPTX || OPTX=1
 			;;
-		!q|[/!]quit|[/!]exit|[/!]bye)
+		q|quit|exit|bye)
 			exit
 			;;
 		*) 	return 1;;
@@ -617,7 +601,7 @@ function json_minif
 
 
 #parse opts
-while getopts a:A:cehHiIjlm:n:kp:t:vVxz0123456789 c
+while getopts a:A:cefhHiIjlm:n:kp:t:vVxz0123456789 c
 do 	fix_dotf OPTARG
 	case $c in
 		[0-9]) 	OPTMAX=$OPTMAX$c;;
@@ -625,6 +609,8 @@ do 	fix_dotf OPTARG
 		A) 	OPTAA="$OPTARG";;
 		c) 	((OPTC++));;
 		e) 	OPTE=1;;
+		f$OPTF) 	unset CHATINSTR OPTA OPTAA OPTMINI
+			OPTF=1 . "$0" "$@" ;exit;;
 		h) 	printf '%s\n' "$MAN" ;exit ;;
 		H) 	__edf "$FILECHAT" ;exit ;;
 		i|I) 	OPTI=1;;
