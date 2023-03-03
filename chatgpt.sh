@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.6.9  2023  by mountaineerbr  GPL+3
+# v0.6.10  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -123,7 +123,8 @@ COMPLETIONS
 
 	The defaults chat format is \`Q & A'. A name such as \`NAME:'
 	may be introduced as interlocutor. Setting only \`:' works as
-	an instruction prompt or to complete the previous answer prompt.
+	an instruction prompt, send an empty prompt or complete the
+	previous answer prompt.
 
 	While in chat mode, type in one of the following commands, and
 	a value in the new prompt (e.g. \`!temp0.7', \`!mod1'):
@@ -132,14 +133,17 @@ COMPLETIONS
 		-a   |  !pre 	  Set presence.
 		-A   |  !freq 	  Set frequency.
 		-c   |  !new 	  Starts new session.
-		-H   |  !hist 	  Edit history file.
+		-H   |  !hist 	  Edit history.
 		-m   |  !mod 	  Set model by index number.
 		-p   |  !top 	  Set top_p.
 		-t   |  !temp 	  Set temperature.
 		-v   |  !ver	  Set/unset verbose.
 		-x   |  !ed 	  Set/unset text editor.
 		!q   |  !quit	  Exit.
-
+	
+	
+	To change chat history, the history file must be edited with
+	\`!hist'. Delete entries or comment them out with \`#'.
 
 	Prompt Design
 	Make a good prompt. May use bullets for multiple questions in
@@ -838,6 +842,7 @@ else               #completions
 			then 	((MAX_PREV=TKN_PREV+1)) ;unset HIST HIST_C
 				while IFS=$'\t' read -r time token string
 				do 	[[ $time$token = *[Bb][Rr][Ee][Aa][Kk]* ]] && break
+					[[ ${time//[$IFS]} = \#* ]] && continue
 					[[ -n ${string//[$IFS\"]} ]] && ((token>0)) || continue
 					if ((MAX_PREV+token+1<OPTMAX))
 					then 	((MAX_PREV+=token+1))
