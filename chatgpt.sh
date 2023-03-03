@@ -593,10 +593,12 @@ function edf
 		then 	printf "${PRE:+\\n}%s\n" "$*"
 		else 	printf "${PRE:+\\n}%s: \n" "${SET_TYPE:-$Q_TYPE}"
 		fi >>"$FILETXT"
+	elif ((!OPTC))
+	then 	: > "$FILETXT"
 	fi
 	
 	__edf "$FILETXT"
-
+	
 	if ((OPTC)) && pos=$(<"$FILETXT") && [[ "$pos" != "$PRE" ]]
 	then 	while [[ "$pos" != "$PRE"* ]]
 		do 	printf 'Warning: %s \n' 'Bad edit: [E]dit, [r]edo or [c]ontinue?' >&2
@@ -809,6 +811,7 @@ then 	BLOCK="{
 	promptf
 	prompt_printf
 else               #completions
+	((${#CHATINSTR})) && ((!OPTC)) && [[ -z ${*//@([$IFS]|\\[nt])} ]] && : ${ERR:?PROMPT}
 	((OPTCC)) || { 	((OPTC)) && break_sessionf ;}
 	if ((${#CHATINSTR}))  #chatbot instructions
 	then 	CHATINSTR=$(escapef "$CHATINSTR")
