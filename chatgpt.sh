@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.6.7  2023  by mountaineerbr  GPL+3
+# v0.6.9  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -441,7 +441,6 @@ function prompt_imgprintf
 
 function prompt_audiof
 {
-
 	curl -\# ${OPTV:+-s} -L https://api.openai.com/v1/${ENDPOINTS[EPN]} \
 		-X POST \
 		-H "Authorization: Bearer $OPENAI_KEY" \
@@ -815,7 +814,7 @@ else               #completions
 	((OPTCC)) || { 	((OPTC)) && break_sessionf ;}
 	if ((${#CHATINSTR}))  #chatbot instructions
 	then 	CHATINSTR=$(escapef "$CHATINSTR")
-		if ((!OPTC))
+		if ((!OPTC)) && (($#))
 		then 	OPTV=1 token_prevf "$CHATINSTR\\n\\n$*"
 			if ((EPN==6))
 			then 	set -- "$(fmt_ccf "$CHATINSTR" system),$(fmt_ccf "$*" user)"
@@ -824,8 +823,6 @@ else               #completions
 		elif ((!OPTCC)) && ((OPTC))
 		then 	printf '%s\t%d\t%s\n' "$(date -Isec)" "1" ": $CHATINSTR" >> "$FILECHAT"
 		fi
-	elif ((EPN==6))
-	then 	set -- "$(fmt_ccf "$*" user)"
 	fi
 	while :
 	do 	if ((OPTC))  #chat mode
@@ -845,10 +842,9 @@ else               #completions
 					if ((MAX_PREV+token+1<OPTMAX))
 					then 	((MAX_PREV+=token+1))
 						string="${string##[ \"]}" string="${string%%[ \"]}"
-						string="${string##$SPC3}"
-						HIST="${string#[ :]}\n\n$HIST"
+						string="${string##$SPC3}" HIST="${string#[ :]}\n\n$HIST"
 						
-						if ((OPTC>1))  #gpt-3.5-turbo
+						if ((EPN==6))  #gpt-3.5-turbo
 						then 	USER_TYPE="$SET_TYPE"
 							set_typef "$string" \
 							&& string="${string/$SPC1${SET_TYPE:-$Q_TYPE}}" 
@@ -875,7 +871,7 @@ else               #completions
 						201) 	break 2;;  #abort
 						200) 	continue 2;;  #redo
 						199) 	OPTC=-1 edf "$@" || break 2;;  #edit
-						0) 	if ((OPTC>1))
+						0) 	if ((EPN==6))
 							then 	set -- "${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${REC_OUT/$SPC1${SET_TYPE:-$Q_TYPE}$SPC2:$SPC3}")" user)"
 							else 	set -- "$(escapef "$(<"$FILETXT")")"
 							fi
@@ -910,7 +906,7 @@ else               #completions
 						|| REC_OUT="${SET_TYPE:-$Q_TYPE}: $REPLY"
 						
 						REPLY=$(escapef "$REPLY")
-						if ((OPTC>1))
+						if ((EPN==6))
 						then 	set -- "${HIST_C}${HIST_C:+,}$(fmt_ccf "$REPLY" user)"
 						else 	set -- "$HIST$REPLY"
 						fi
@@ -918,7 +914,7 @@ else               #completions
 					fi ;break
 				done
 			elif ((!OPTX))
-			then 	if ((OPTC>1))
+			then 	if ((EPN==6))
 				then 	set -- "${HIST_C}${HIST_C:+,}$(fmt_ccf "${REC_OUT/$SPC1${SET_TYPE:-$Q_TYPE}:$SPC2$SPC3}" user)"
 				else 	set -- "$HIST${REC_OUT:-$*}"
 				fi
