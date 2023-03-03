@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.5.12  2023  by mountaineerbr  GPL+3
+# v0.6  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -31,14 +31,12 @@ OPTI_FMT=b64_json  #url
 # Minify JSON request
 #OPTMINI=
 
-# CHATBOT INTERLOCUTORS
-Q_TYPE=Q
-A_TYPE=A
-# Obs: no spaces allowed
-
 # CHATBOT INSTRUCTIONS
 #CHATINSTR="The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly."
 
+# CHATBOT INTERLOCUTORS
+Q_TYPE=Q
+A_TYPE=A
 
 # CACHE AND OUTPUT DIRECTORIES
 CONFFILE="$HOME/.chatgpt.conf"
@@ -66,14 +64,22 @@ SYNOPSIS
 	${0##*/} -i [opt] [256|512|1024|S|M|L] [PROMPT]
 	${0##*/} -i [opt] [INPUT_PNG_PATH]
 	${0##*/} -l [MODEL_NAME]
+	${0##*/} -w [opt] [AUDIO_FILE] [LANG] [PROMPT]
+
 
 	All positional arguments are read as a single PROMPT. If the
 	chosen model requires an INTRUCTION and INPUT prompts, first
 	positional argument is taken as INSTRUCTIONS and the following
 	ones as INPUT or PROMPT.
 
-	Set option -c to start the chatbot and keep a record of the
-	conversation in a history file.
+	Set option -c to start the chatbot via the text completion
+	endpoint and record the conversation. This option accepts various
+	models, defaults to \`text-davinci-003' if none set.
+	
+	Set option -cc to start the chatbot via the chat endpoint,
+	currenly only models are \`gpt-3.5-turbo' and \`gpt-3.5-turbo-0301'
+
+	Set -C (with -cc) to resume from last history session.
 
 	Option -e sets the \`edits' endpoint. That endpoint requires
 	both INSTRUCTIONS and INPUT prompts. This option requires
@@ -82,6 +88,12 @@ SYNOPSIS
 	Option -i generates images according to PROMPT. If first
 	positional argument is a picture file, then generate variation
 	of it.
+
+	Option -w transcribes audio from mp3, mp4, mpeg, mpga, m4a, wav,
+	and webm files. First positional argument must be an audio file.
+	Optionally, set a two letter input language (ISO-639-1) as second
+	argument. A prompt may also be set after language (must be in the
+	same language as the audio).
 
 	Stdin is supported when there is no positional arguments left
 	after option parsing. Stdin input sets a single PROMPT.
@@ -100,19 +112,18 @@ SYNOPSIS
 
 COMPLETIONS
 	Given a prompt, the model will return one or more predicted
-	completions, and can also return the probabilities of
-	alternative tokens at each position.
+	completions. It can be used a chatbot.
 
-	To keep a history of the latest context in the chat, set option
-	-c. This starts a new session, keeps a record of the latest
-	prompts and replies, and sends some history context with new
-	questions. This option respects max tokens setting. Set -cc to
-	continue from last recorded session.
+	Set option -c to enter text completion chat and keep a history
+	of the conversation and works with a variety of models.
+
+	Set option -cc to use the chat completion endpoint. Works the
+	same as the text completion chat, however the only available
+	models are \`gpt-3.5-turbo' and \`gpt-3.5-turbo-0301'.
 
 	The defaults chat format is \`Q & A'. A name such as \`NAME:'
-	may be introduced as interlocutor. Setting \`:' only will not
-	add an interlocutor to the prompt. This may be useful to
-	set intructions, and completing a previous prompt.
+	may be introduced as interlocutor. Setting only \`:' works as
+	an instruction prompt or to complete the previous answer prompt.
 
 	While in chat mode, type in one of the following commands, and
 	a value in the new prompt (e.g. \`!temp0.7', \`!mod1'):
@@ -151,7 +162,9 @@ COMPLETIONS
 		prompt> \"Q: Hello, what is your name?\"
 
 	Also see section ENVIRONMENT to set defaults chatbot instructions.
-	For more on prompt design, see <https://platform.openai.com/docs/guides/completion/prompt-design>.
+	For more on prompt design, see:
+	<https://platform.openai.com/docs/guides/completion/prompt-design>
+	<https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
 
 
 	Settings
@@ -178,7 +191,7 @@ EDITS
 	completions endpoint. 
 
 
-IMAGES
+IMAGES / DALL-E
 	The first positional parameter sets the output image size
 	256x256/small, 512x512/medium or 1024x1024/large. Defaults=$OPTS.
 
@@ -189,6 +202,15 @@ IMAGES
 	to use as the basis for the variation(s). Must be a valid PNG
 	file, less than 4MB and square. If Imagemagick is available,
 	input image will be converted to square before upload.
+
+
+AUDIO / WHISPER
+	Transcribes audio into the input language. May set a two letter
+	ISO-639-1 language as the second positional parameter. A prompt
+	may also be set after language to help the model.
+	
+	Setting temperature has an effect. Currently, only one audio model
+	is available.
 
 
 ENVIRONMENT
@@ -207,7 +229,7 @@ ENVIRONMENT
 
 LIMITS
 	For most models this is 2048 tokens, or about 1500 words).
-	Davici model limit is 4000 tokens (~3000 words).
+	Davici model limit is 4096 tokens (~3000 words).
 
 	Free trial users
 	Text & Embedding        Codex          Edit        Image
@@ -238,8 +260,9 @@ OPTIONS
 	-NUM 		Set maximum tokens. Max=4096, defaults=$OPTMM.
 	-a [VAL]	Set presence penalty  (completions; -2.0 - 2.0).
 	-A [VAL]	Set frequency penalty (completions; -2.0 - 2.0).
-	-c 		Chat mode, new session (completions).
-	-cc 		Chat mode, continue from last history session.
+	-c 		Chat mode in text completion, new session.
+	-cc 		Chat mode in chat endpoint, new session.
+	-C 		Continue from last session (with -cc).
 	-e [INSTRUCT] [INPUT]
 			Set Edit mode, model defaults=text-davinci-edit-001.
 	-f 		Skip sourcing user configuration file.
@@ -253,20 +276,21 @@ OPTIONS
 	-m [MOD_NAME] 	Set a model name, check with -l.
 	-m [NUM] 	Set model by index NUM:
 		  # Completions           # Moderation
-		  0. text-davinci-003     6. text-moderation-latest
-		  1. text-curie-001       7. text-moderation-stable
-		  2. text-babbage-001
-		  3. text-ada-001
-		  # Codex                 # Edits
-		  4. code-davinci-002     8. text-davinci-edit-001
-		  5. code-cushman-001     9. code-davinci-edit-001
+		  0.  text-davinci-003    6.  text-moderation-latest
+		  1.  text-curie-001      7.  text-moderation-stable
+		  2.  text-babbage-001    # Edits                  
+		  3.  text-ada-001        8.  text-davinci-edit-001
+		  # Codex                 9.  code-davinci-edit-001
+		  4.  code-davinci-002    # Chat
+		  5.  code-cushman-001    10. gpt-3.5-turbo
 	-n [NUM] 	Set number of results. Defaults=$OPTN.
 	-p [VAL] 	Set top_p value (0.0 - 1.0). Defaults=$OPTP.
 	-t [VAL] 	Set temperature value (0.0 - 2.0). Defaults=$OPTT.
 	-v 		Less verbose in chat mode.
 	-VV 		View request body. Set twice to dump and exit.
 	-x 		Edit prompt in text editor.
-	-z 		Print last call JSON file backup."
+	-w 		Transcribe audio file.
+	-z 		Print last response JSON data."
 
 MODELS=(
 	#COMPLETIONS
@@ -278,11 +302,16 @@ MODELS=(
 	code-davinci-002          #4
 	code-cushman-001          #5
 	#moderated
-	text-moderation-latest    #6  #may be n/a
-	text-moderation-stable    #7  #may be n/a
+	text-moderation-latest    #6
+	text-moderation-stable    #7
 	#EDITS
 	text-davinci-edit-001     #8
 	code-davinci-edit-001     #9
+	#chat
+	gpt-3.5-turbo             #10
+	gpt-3.5-turbo-0301        #11
+	#audio
+	whisper-1                 #12
 )
 
 ENDPOINTS=(
@@ -292,6 +321,9 @@ ENDPOINTS=(
 	images/generations        #3
 	images/variations         #4
 	embeddings                #5
+	chat/completions          #6
+	audio/transcriptions      #7
+	audio/translations
 )
 
 
@@ -302,6 +334,8 @@ function set_model_epnf
 	case "$1" in
 		image-var) 	EPN=4;;
 		image) 		EPN=3;;
+		*whisper*) 		EPN=7;;
+		gpt-*) 		EPN=6 ;((OPTC)) && OPTC=2;;
 		code-*) 	case "$1" in
 					*search*) 	EPN=5 OPTEMBED=1;;
 					*edit*) 	EPN=2 OPTE=1;;
@@ -310,7 +344,7 @@ function set_model_epnf
 		text-*) 	case "$1" in
 					*embedding*|*similarity*|*search*) 	EPN=5 OPTEMBED=1;;
 					*edit*) 	EPN=2 OPTE=1;;
-					*moderation*) 	EPN=1;;
+					*moderation*) 	EPN=1 OPTEMBED=1;;
 					*) 		EPN=0;;
 				esac;;
 		*) 		EPN=0;;
@@ -323,7 +357,7 @@ function promptf
 	((OPTMINI)) && json_minif
 	((OPTVV)) && ((!OPTII)) && { 	block_printf ;return ;}
 
-	curl -\# ${OPTV:+-s} -L https://api.openai.com/v1/${ENDPOINTS[$EPN]} \
+	curl -\# ${OPTV:+-s} -L https://api.openai.com/v1/${ENDPOINTS[EPN]} \
 		-H "Content-Type: application/json" \
 		-H "Authorization: Bearer $OPENAI_KEY" \
 		-d "$BLOCK" \
@@ -362,15 +396,16 @@ function prompt_printf
 	then 	cat -- "$FILE"
 	else 	((OPTV)) || jq -r '"Model_: \(.model//"?") (\(.object//"?"))",
 			"Usage_: \(.usage.prompt_tokens) + \(.usage.completion_tokens) = \(.usage.total_tokens//empty) tokens"' "$FILE" >&2
-		jq -r '.choices[1] as $sep | .choices[] | (.text, if $sep != null then "---" else empty end)' "$FILE" \
-		|| jq -r '.choices[].text' "$FILE" || cat -- "$FILE"
+		jq -r '.choices[1] as $sep | .choices[] | (.text//.message.content, if $sep != null then "---" else empty end)' "$FILE" 2>/dev/null \
+		|| jq -r '.choices[]|.text//.message.content' "$FILE" 2>/dev/null \
+		|| jq . "$FILE" 2>/dev/null || cat -- "$FILE"
 	fi
 }
 
 #make request to image endpoint
 function prompt_imgvarf
 {
-	curl -\# ${OPTV:+-s} -L https://api.openai.com/v1/${ENDPOINTS[$EPN]} \
+	curl -\# ${OPTV:+-s} -L https://api.openai.com/v1/${ENDPOINTS[EPN]} \
 		-H "Authorization: Bearer $OPENAI_KEY" \
 		-F image="@$1" \
 		-F response_format="$OPTI_FMT" \
@@ -401,6 +436,20 @@ function prompt_imgprintf
 		((n)) || { 	cat -- "$FILE" ;false ;}
 	else 	jq -r '.data[].url' "$FILE" || cat -- "$FILE"
 	fi
+}
+
+function prompt_audiof
+{
+
+	curl -\# ${OPTV:+-s} -L https://api.openai.com/v1/${ENDPOINTS[EPN]} \
+		-X POST \
+		-H "Authorization: Bearer $OPENAI_KEY" \
+		-H 'Content-Type: multipart/form-data' \
+		-F file="@$1" \
+		-F model=$MOD \
+		-F temperature=$OPTT \
+		"${@:2}" \
+		-o "$FILE"
 }
 
 function list_modelsf
@@ -441,10 +490,10 @@ function check_typef
 function set_typef
 {
 	check_typef "$*" || return
-	USER_TYPE="$*"
-	USER_TYPE="${USER_TYPE%%:*}"
-	USER_TYPE="${USER_TYPE%%$TYPE_SPC2}"
-	USER_TYPE="${USER_TYPE##$TYPE_SPC1}"
+	SET_TYPE="$*"
+	SET_TYPE="${SET_TYPE%%:*}"
+	SET_TYPE="${SET_TYPE%%$TYPE_SPC2}"
+	SET_TYPE="${SET_TYPE##$TYPE_SPC1}"
 }
 
 #command run feedback
@@ -471,7 +520,7 @@ function check_cmdf
 			set -- "${*//[!0-9.]}" ;OPTAA="${*:-$OPTAA}"
 			fix_dotf OPTAA ;cmd_verf 'Frequency' $OPTAA
 			;;
-		-[Cc]|br|break|session)
+		-c|br|break|session)
 			break_sessionf
 			;;
 		-[Hh]|hist*|history)
@@ -483,6 +532,7 @@ function check_cmdf
 			then 	MOD="${*//[$IFS]}"  #by name
 			else 	MOD="${MODELS[${*//[!0-9]}]}" #by index
 			fi ;set_model_epnf "$MOD" ;cmd_verf 'Model' $MOD
+			[[ $MOD = gpt-* ]] && OPTC=2 || OPTC=1
 			;;
 		-p*|top*)
 			set -- "${*//[!0-9.]}" ;OPTP="${*:-$OPTP}"
@@ -529,7 +579,7 @@ function edf
 		printf "%s${PRE:+\\n}" "$PRE" >"$FILETXT"
 		if (($#))
 		then 	printf "${PRE:+\\n}%s\n" "$*"
-		else 	printf "${PRE:+\\n}%s: \n" "${USER_TYPE:-$Q_TYPE}"
+		else 	printf "${PRE:+\\n}%s: \n" "${SET_TYPE:-$Q_TYPE}"
 		fi >>"$FILETXT"
 	fi
 	
@@ -548,7 +598,8 @@ function edf
 		done
 		set -- "${pos#*"$PRE"}"
 		check_cmdf "${*#*:}" && return 200
-		set_typef "$*" && REC_OUT="$*" || REC_OUT="${USER_TYPE:-$Q_TYPE}: $*"
+		set_typef "$*" && REC_OUT="$*" \
+		|| REC_OUT="${SET_TYPE:-$Q_TYPE}: $*"
 	fi
 	return 0
 }
@@ -577,8 +628,8 @@ function unescapef
 function break_sessionf
 {
 	[[ -e "$FILECHAT" ]] || return
-	[[ $(<"$FILECHAT") = *[Bb][Rr][Ee][Aa][Kk] ]] ||
-	tee -a -- "$FILECHAT" >&2 <<<'SESSION BREAK'
+	[[ $(<"$FILECHAT") = *[Bb][Rr][Ee][Aa][Kk] ]] \
+	|| tee -a -- "$FILECHAT" >&2 <<<'SESSION BREAK'
 }
 
 #fix variable value, add zero before/after dot.
@@ -601,13 +652,14 @@ function json_minif
 
 
 #parse opts
-while getopts a:A:cefhHiIjlm:n:kp:t:vVxz0123456789 c
+while getopts a:A:cCefhHiIjlm:n:kp:t:vVxwz0123456789 c
 do 	fix_dotf OPTARG
 	case $c in
 		[0-9]) 	OPTMAX=$OPTMAX$c;;
 		a) 	OPTA="$OPTARG";;
 		A) 	OPTAA="$OPTARG";;
-		c) 	((OPTC++));;
+		c) 	((OPTC)) && OPTM=10 ;((OPTC++));;
+		C) 	((OPTCC++));;
 		e) 	OPTE=1;;
 		f$OPTF) 	unset CHATINSTR OPTA OPTAA OPTMINI
 			OPTF=1 . "$0" "$@" ;exit;;
@@ -634,6 +686,7 @@ do 	fix_dotf OPTARG
 		v) 	((++OPTV));;
 		V) 	((++OPTVV));;  #debug
 		x) 	OPTX=1;;
+		w) 	OPTW=1 MOD=${MODELS[12]};;
 		z) 	OPTZ=1;;
 		\?) 	exit 1;;
 	esac
@@ -642,6 +695,7 @@ shift $((OPTIND -1))
 
 OPTMAX=${OPTMAX:-$OPTMM}
 OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
+((OPTCC)) && { 	((OPTC)) || ((OPTC++)) ;}
 ((OPTC)) && ((OPTE+OPTI)) && OPTC=  ;((OPTL+OPTZ)) && OPTX= 
 [[ -n ${OPTT#0} ]] && [[ -n ${OPTP#1} ]] && printf '%s\n' "warning: temperature and top_p both set" >&2
 [[ -n $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA,"
@@ -675,6 +729,24 @@ if ((OPTZ))
 then 	lastjsonf
 elif ((OPTL))
 then 	list_modelsf "$@"
+elif ((OPTW))  #audio transcribe
+then 	if [[ $1 != *@(mp3|mp4|mpeg|mpga|m4a|wav|webm) ]]
+	then 	printf 'err: %s\n' 'file format not supported' >&2 ;exit 1
+	elif [[ ! -e $1 ]]
+	then 	printf 'err: %s\n' 'audio file required' >&2 ;exit 1
+	else 	file="$1" ;shift
+	fi
+	#set language ISO-639-1 (two letters)
+	if [[ $1 = [a-z][a-z] ]]
+	then 	lang="-F language=$1"
+		((OPTV)) || printf 'Audio language -- %s\n' "$1" >&2
+		shift
+	fi
+	#set a prompt
+	(($#)) && set -- -F prompt="$(escapef "$*")"
+	prompt_audiof "$file" $lang "$@"
+	jq -r '.text' "$FILE" || cat -- "$FILE"
+	unset file lang
 elif ((OPTII))     #image variations
 then 	[[ -e ${1:?input PNG path required} ]] || exit
 	if command -v magick >/dev/null 2>&1  #convert img to 'square png'
@@ -719,40 +791,52 @@ then 	BLOCK="{
 	promptf
 	prompt_printf
 else               #completions
-	((OPTC==1)) && break_sessionf
+	((OPTCC)) || { 	((OPTC)) && break_sessionf ;}
 	if [[ -n $CHATINSTR ]]  #chatbot instructions
-	then 	if ((!OPTC))
-		then 	set -- "$CHATINSTR\\n\\n$*"
-			OPTV=1 token_prevf "$*"
-		elif ((OPTC<2))
-		then 	printf '%s\t%d\t%s\n' \
-			"$(date -Isec)" "1" \
-			": $CHATINSTR" >> "$FILECHAT"
+	then 	CHATINSTR=$(escapef "$CHATINSTR")
+		if ((!OPTC))
+		then 	set -- "$CHATINSTR\\n\\n$*" ;OPTV=1 token_prevf "$*"
+		elif ((!OPTCC)) && ((OPTC))
+		then 	printf '%s\t%d\t%s\n' "$(date -Isec)" "1" ": $CHATINSTR" >> "$FILECHAT"
 		fi
 	fi
 	while :
 	do 	if ((OPTC))  #chat mode
 		then 	if (($#))  #input from pos args, first pass
-			then 	check_cmdf "$*" && continue
+			then 	check_cmdf "$*" && { 	set -- ;continue ;}
 				set_typef "$*" && REC_OUT="$*" \
-					|| REC_OUT="${USER_TYPE:-$Q_TYPE}: $*"
+				|| REC_OUT="${SET_TYPE:-$Q_TYPE}: $*"
 				set -- "$REC_OUT"
 			fi
 
-			#read hist file
+			#read history file
 			if [[ -s "$FILECHAT" ]]
-			then 	((MAX_PREV=TKN_PREV+1)) ;unset HIST
+			then
+				((MAX_PREV=TKN_PREV+1)) ;unset HIST HIST_C
 				while IFS=$'\t' read -r time token string
 				do 	[[ $time$token = *[Bb][Rr][Ee][Aa][Kk]* ]] && break
 					[[ -n ${string//[$IFS\"]} ]] && ((token>0)) || continue
 					if ((MAX_PREV+token+1<OPTMAX))
 					then 	((MAX_PREV+=token+1))
-						string="${string#[ :\"]}" string="${string%[ \"]}"
+						string="${string#[ \"]}" string="${string%[ \"]}"
 						HIST="${string#[ :]}\n\n$HIST"
+						
+						if ((OPTC>1))  #gpt-3.5-turbo
+						then 	USER_TYPE="$SET_TYPE"
+							set_typef "${string#[ ]}" \
+							&& string="${string/${SET_TYPE:-$Q_TYPE}}" 
+							case "${SET_TYPE:-:}" in
+								:) 	role=system;;
+								${USER_TYPE:-$Q_TYPE}|$Q_TYPE) 	role=user;;
+								*) 	role=assistant;;
+							esac
+							HIST_C="{\"role\": \"$role\", \"content\":\"${string#[ :]}\"},$HIST_C"
+							SET_TYPE="$USER_TYPE"
+						fi
 					fi
 				done < <(tac -- "$FILECHAT")
 				((MAX_PREV-=TKN_PREV+1))
-				unset REPLY time token string
+				unset REPLY USER_TYPE time token string role
 			fi
 
 			#text editor
@@ -774,10 +858,10 @@ else               #completions
 			#fallback prompt read
 			if [[ ${*//[$IFS\"]} = *($TYPE_GLOB:) ]] \
 				|| [[ ${REC_OUT//[$IFS\"]} = *($TYPE_GLOB:) ]]
-			then 	while printf '\n%s[%s]: ' "Prompt" "${USER_TYPE:-$Q_TYPE}" >&2
+			then 	while printf '\n%s[%s]: ' "Prompt" "${SET_TYPE:-$Q_TYPE}" >&2
 				do 	if [[ -n $ZSH_VERSION ]]
 					then 	unset REPLY
-						if vared -p "Prompt[${USER_TYPE:-$Q_TYPE}]: " -eh -c REPLY
+						if vared -p "Prompt[${SET_TYPE:-$Q_TYPE}]: " -eh -c REPLY
 						then 	print -s - "$REPLY"
 							check_cmdf "$REPLY" && continue 2
 						fi
@@ -793,20 +877,30 @@ else               #completions
 							*) 	unset REPLY; set -- ;break;;  #no
 						esac
 						set_typef "$REPLY" && REC_OUT="$REPLY" \
-							|| REC_OUT="${USER_TYPE:-$Q_TYPE}: $REPLY"
-						set -- "$HIST$REC_OUT"
+						|| REC_OUT="${SET_TYPE:-$Q_TYPE}: $REPLY"
+						
+						REPLY=$(escapef "$REPLY")
+						if ((OPTC>1))
+						then 	set -- "${HIST_C%,},{\"role\": \"user\", \"content\":\"$REPLY\"}"
+						else 	set -- "$HIST$REPLY"
+						fi
 					else 	set --
 					fi ;break
 				done
 			elif ((!OPTX))
-			then 	set -- "$HIST${REC_OUT:-$*}"
+			then 	if ((OPTC>1))
+				then 	set -- "${HIST_C%,},{\"role\": \"user\", \"content\":\"${REC_OUT:-$*}\"}"
+				else 	set -- "$HIST${REC_OUT:-$*}"
+				fi
 			fi
 		fi
 		#https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
 
-		BLOCK="{
+		: "${*:?PROMPT ERR}"
+		((OPTC>1)) && BLOCK="{\"messages\": [${*%,}]," \
+		|| BLOCK="{\"prompt\": \"${*}\","
+		BLOCK="$BLOCK
 			\"model\": \"$MOD\",
-			\"prompt\": \"${*:?PROMPT ERR}\",
 			\"temperature\": $OPTT,
 			\"top_p\": $OPTP, $OPTA_OPT $OPTAA_OPT
 			\"max_tokens\": $OPTMAX,
@@ -816,12 +910,12 @@ else               #completions
 		prompt_printf
 
 		#record to hist file
-		if [[ -n $OPTC ]] && {
+		if ((OPTC)) && {
 		 	tkn=($(jq -r '.usage.prompt_tokens//empty,
 				.usage.completion_tokens//empty,
 				(.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"
 			) )
-			ans=$(jq '.choices[0].text' "$FILE")
+			ans=$(jq '.choices[0]|.text//.message.content' "$FILE")
 			ans="${ans##*([$IFS]|\\[nt]|\")}" ans="${ans%\"}"
 			((${#tkn[@]}>2)) && ((${#ans}))
 			}
@@ -832,7 +926,7 @@ else               #completions
 			} >> "$FILECHAT" ;OLD_TOTAL=$((tkn[0]+tkn[1]))
 		fi; unset tkn ans
 
-		set --  ;unset REPLY TKN_PREV MAX_PREV REC_OUT HIST PRE
+		set --  ;unset REPLY TKN_PREV MAX_PREV REC_OUT HIST PRE USER_TYPE HIST_C
 		((OPTC)) || break
 	done ;unset OLD_TOTAL
 fi
