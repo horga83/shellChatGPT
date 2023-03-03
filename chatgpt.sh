@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.6.2  2023  by mountaineerbr  GPL+3
+# v0.6.3  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -299,19 +299,19 @@ MODELS=(
 	text-curie-001            #1
 	text-babbage-001          #2
 	text-ada-001              #3
-	#codex
+	#CODEX
 	code-davinci-002          #4
 	code-cushman-001          #5
-	#moderated
+	#MODERATIONS
 	text-moderation-latest    #6
 	text-moderation-stable    #7
 	#EDITS
 	text-davinci-edit-001     #8
 	code-davinci-edit-001     #9
-	#chat
+	#CHAT
 	gpt-3.5-turbo             #10
 	gpt-3.5-turbo-0301        #11
-	#audio
+	#AUDIO
 	whisper-1                 #12
 )
 
@@ -479,13 +479,13 @@ function token_prevf
 }
 
 #check for interlocutor
+SPC1="?(*+(\\\\n|$'\n'))*([$IFS\"])"
+TYPE_GLOB="*([A-Za-z0-9@_/.+-])"
+SPC2="*(\\\\t|[$' \t'])"
+SPC3="*(\\\\[nt]|[$' \n\t'])"
 function check_typef
 {
-	TYPE_SPC1="?(*+(\\\\n|$'\n'))*([$IFS\"])"
-	TYPE_GLOB="*([A-Za-z0-9@_/.+-])"
-	TYPE_SPC2="*(\\\\t|[$' \t'])"
-	TYPE_SPC3="*(\\\\[nt]|[$' \n\t'])"
-	[[ $* = $TYPE_SPC1$TYPE_GLOB$TYPE_SPC2:$TYPE_SPC3* ]]
+	[[ $* = $SPC1$TYPE_GLOB$SPC2:$SPC3* ]]
 }
 #set interlocutor if none set
 function set_typef
@@ -493,8 +493,8 @@ function set_typef
 	check_typef "$*" || return
 	SET_TYPE="$*"
 	SET_TYPE="${SET_TYPE%%:*}"
-	SET_TYPE="${SET_TYPE%%$TYPE_SPC2}"
-	SET_TYPE="${SET_TYPE##$TYPE_SPC1}"
+	SET_TYPE="${SET_TYPE%%$SPC2}"
+	SET_TYPE="${SET_TYPE##$SPC1}"
 }
 
 #command run feedback
@@ -812,26 +812,26 @@ else               #completions
 
 			#read history file
 			if [[ -s "$FILECHAT" ]]
-			then
-				((MAX_PREV=TKN_PREV+1)) ;unset HIST HIST_C
+			then 	((MAX_PREV=TKN_PREV+1)) ;unset HIST HIST_C
 				while IFS=$'\t' read -r time token string
 				do 	[[ $time$token = *[Bb][Rr][Ee][Aa][Kk]* ]] && break
 					[[ -n ${string//[$IFS\"]} ]] && ((token>0)) || continue
 					if ((MAX_PREV+token+1<OPTMAX))
 					then 	((MAX_PREV+=token+1))
-						string="${string#[ \"]}" string="${string%[ \"]}"
+						string="${string##[ \"]}" string="${string%%[ \"]}"
+						string="${string##$SPC3}"
 						HIST="${string#[ :]}\n\n$HIST"
 						
 						if ((OPTC>1))  #gpt-3.5-turbo
 						then 	USER_TYPE="$SET_TYPE"
-							set_typef "${string#[ ]}" \
-							&& string="${string/${SET_TYPE:-$Q_TYPE}}" 
+							set_typef "$string" \
+							&& string="${string/$SPC1${SET_TYPE:-$Q_TYPE}}" 
 							case "${SET_TYPE:-:}" in
 								:) 	role=system;;
 								${USER_TYPE:-$Q_TYPE}|$Q_TYPE) 	role=user;;
 								*) 	role=assistant;;
 							esac
-							HIST_C="{\"role\": \"$role\", \"content\":\"${string#[ :]}\"}${HIST_C:+,}$HIST_C"
+							HIST_C="{\"role\": \"$role\", \"content\":\"${string##$SPC2:$SPC3}\"}${HIST_C:+,}$HIST_C"
 							SET_TYPE="$USER_TYPE"
 						fi
 					fi
@@ -850,7 +850,7 @@ else               #completions
 						200) 	continue 2;;  #redo
 						199) 	OPTC=-1 edf "$@" || break 2;;  #edit
 						0) 	if ((OPTC>1))
-							then 	set -- "${HIST_C}${HIST_C:+,}{\"role\": \"user\", \"content\":\"$(escapef "${REC_OUT/${SET_TYPE:-$Q_TYPE}:*([$IFS])}")\"}"
+							then 	set -- "${HIST_C}${HIST_C:+,}{\"role\": \"user\", \"content\":\"$(escapef "${REC_OUT/$SPC1${SET_TYPE:-$Q_TYPE}$SPC2:$SPC3}")\"}"
 							else 	set -- "$(escapef "$(<"$FILETXT")")"
 							fi
 							break;;  #yes
@@ -894,8 +894,7 @@ else               #completions
 				done
 			elif ((!OPTX))
 			then 	if ((OPTC>1))
-				then 	set -- "${HIST_C}${HIST_C:+,}{\"role\": \"user\", \"content\":\"${REC_OUT:-$*}\"}"
-					set -- "${*##,}"
+				then 	set -- "${HIST_C}${HIST_C:+,}{\"role\": \"user\", \"content\":\"${REC_OUT/$SPC1${SET_TYPE:-$Q_TYPE}:$SPC2$SPC3}\"}"
 				else 	set -- "$HIST${REC_OUT:-$*}"
 				fi
 			fi
