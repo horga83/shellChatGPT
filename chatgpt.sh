@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.6.3  2023  by mountaineerbr  GPL+3
+# v0.6.4  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -61,8 +61,8 @@ SYNOPSIS
 	${0##*/} [-m [MODEL_NAME|NUMBER]] [opt] [PROMPT]
 	${0##*/} [-m [MODEL_NAME|NUMBER]] [opt] [INSTRUCTIONS] [INPUT]
 	${0##*/} -e [opt] [INSTRUCTIONS] [INPUT]
-	${0##*/} -i [opt] [256|512|1024|S|M|L] [PROMPT]
-	${0##*/} -i [opt] [INPUT_PNG_PATH]
+	${0##*/} -i [opt] [S|M|L] [PROMPT]
+	${0##*/} -i [opt] [S|M|L] [INPUT_PNG_PATH]
 	${0##*/} -l [MODEL_NAME]
 	${0##*/} -w [opt] [AUDIO_FILE] [LANG] [PROMPT]
 
@@ -87,7 +87,7 @@ SYNOPSIS
 
 	Option -i generates images according to PROMPT. If first
 	positional argument is a picture file, then generate variation
-	of it.
+	of it. A size of output image may se set, such as S, M or L.
 
 	Option -w transcribes audio from mp3, mp4, mpeg, mpga, m4a, wav,
 	and webm files. First positional argument must be an audio file.
@@ -193,7 +193,7 @@ EDITS
 
 IMAGES / DALL-E
 	The first positional parameter sets the output image size
-	256x256/small, 512x512/medium or 1024x1024/large. Defaults=$OPTS.
+	256x256/Small, 512x512/Medium or 1024x1024/Large. Defaults=$OPTS.
 
 	An image can be created given a prompt. A text description of
 	the desired image(s). The maximum length is 1000 characters.
@@ -497,6 +497,17 @@ function set_typef
 	SET_TYPE="${SET_TYPE##$SPC1}"
 }
 
+#set output image size
+function set_sizef
+{
+	case "$1" in
+		1024*|[Ll]arge|[Ll]) 	OPTS=1024x1024;;
+		512*|[Mm]edium|[Mm]) 	OPTS=512x512;;
+		256*|[Ss]mall|[Ss]) 	OPTS=256x256;;
+		*) 	return 1;;
+	esac ;return 0
+}
+
 #command run feedback
 function cmd_verf
 {
@@ -703,12 +714,12 @@ OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key requ
 [[ -n $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA,"
 if ((OPTI))
 then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
-	case "$1" in 	#set image size
-		1024*|[Ll]arge|[Ll]) 	OPTS=1024x1024 ;shift;;
-		512*|[Mm]edium|[Mm]) 	OPTS=512x512 ;shift;;
-		256*|[Ss]mall|[Ss]) 	OPTS=256x256 ;shift;;
-	esac ;MOD=image
-	#set upload image instead
+	if set_sizef "$1"
+	then 	shift
+	elif set_sizef "$2"
+	then 	set -- "$1" "${@:3}"
+	fi ;MOD=image
+	#set file upload, image variations
 	[[ -e "$1" ]] && OPTII=1 MOD=image-var
 fi
 ((OPTE)) && ((!OPTMSET)) && OPTM=8
