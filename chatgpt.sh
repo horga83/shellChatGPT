@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.6.1  2023  by mountaineerbr  GPL+3
+# v0.6.2  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -831,7 +831,7 @@ else               #completions
 								${USER_TYPE:-$Q_TYPE}|$Q_TYPE) 	role=user;;
 								*) 	role=assistant;;
 							esac
-							HIST_C="{\"role\": \"$role\", \"content\":\"${string#[ :]}\"},$HIST_C"
+							HIST_C="{\"role\": \"$role\", \"content\":\"${string#[ :]}\"}${HIST_C:+,}$HIST_C"
 							SET_TYPE="$USER_TYPE"
 						fi
 					fi
@@ -850,7 +850,7 @@ else               #completions
 						200) 	continue 2;;  #redo
 						199) 	OPTC=-1 edf "$@" || break 2;;  #edit
 						0) 	if ((OPTC>1))
-							then 	set -- "{\"role\": \"user\", \"content\":\"$(escapef "$(<"$FILETXT")")\"}"
+							then 	set -- "${HIST_C}${HIST_C:+,}{\"role\": \"user\", \"content\":\"$(escapef "${REC_OUT/${SET_TYPE:-$Q_TYPE}:*([$IFS])}")\"}"
 							else 	set -- "$(escapef "$(<"$FILETXT")")"
 							fi
 							break;;  #yes
@@ -885,7 +885,7 @@ else               #completions
 						
 						REPLY=$(escapef "$REPLY")
 						if ((OPTC>1))
-						then 	set -- "${HIST_C%,},{\"role\": \"user\", \"content\":\"$REPLY\"}"
+						then 	set -- "${HIST_C}${HIST_C:+,}{\"role\": \"user\", \"content\":\"$REPLY\"}"
 							set -- "${*##,}"
 						else 	set -- "$HIST$REPLY"
 						fi
@@ -894,7 +894,7 @@ else               #completions
 				done
 			elif ((!OPTX))
 			then 	if ((OPTC>1))
-				then 	set -- "${HIST_C%,},{\"role\": \"user\", \"content\":\"${REC_OUT:-$*}\"}"
+				then 	set -- "${HIST_C}${HIST_C:+,}{\"role\": \"user\", \"content\":\"${REC_OUT:-$*}\"}"
 					set -- "${*##,}"
 				else 	set -- "$HIST${REC_OUT:-$*}"
 				fi
