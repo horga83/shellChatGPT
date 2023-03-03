@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.6.4  2023  by mountaineerbr  GPL+3
+# v0.6.6  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -544,7 +544,7 @@ function check_cmdf
 			then 	MOD="${*//[$IFS]}"  #by name
 			else 	MOD="${MODELS[${*//[!0-9]}]}" #by index
 			fi ;set_model_epnf "$MOD" ;cmd_verf 'Model' $MOD
-			[[ $MOD = gpt-* ]] && OPTC=2 || OPTC=1
+			((EPN==6)) && OPTC=2 || OPTC=1
 			;;
 		-p*|top*)
 			set -- "${*//[!0-9.]}" ;OPTP="${*:-$OPTP}"
@@ -660,6 +660,12 @@ function json_minif
 		blk=${blk//, \"/,\"} blk=${blk//\" ,\"/\",\"}
 	}
 	BLOCK=$blk
+}
+
+#format for chat completion endpoint
+function fmt_ccf
+{
+	printf '{"role": "%s", "content": "%s"}\n' "${2:-user}" "$1"
 }
 
 
@@ -804,13 +810,19 @@ then 	BLOCK="{
 	prompt_printf
 else               #completions
 	((OPTCC)) || { 	((OPTC)) && break_sessionf ;}
-	if [[ -n $CHATINSTR ]]  #chatbot instructions
+	if ((${#CHATINSTR}))  #chatbot instructions
 	then 	CHATINSTR=$(escapef "$CHATINSTR")
 		if ((!OPTC))
-		then 	set -- "$CHATINSTR\\n\\n$*" ;OPTV=1 token_prevf "$*"
+		then 	OPTV=1 token_prevf "$CHATINSTR\\n\\n$*"
+			if ((EPN==6))
+			then 	set -- "$(fmt_ccf "$CHATINSTR" system),$(fmt_ccf "$*" user)"
+			else 	set -- "$CHATINSTR\\n\\n$*"
+			fi
 		elif ((!OPTCC)) && ((OPTC))
 		then 	printf '%s\t%d\t%s\n' "$(date -Isec)" "1" ": $CHATINSTR" >> "$FILECHAT"
 		fi
+	elif ((EPN==6))
+	then 	set -- "$(fmt_ccf "$*" user)"
 	fi
 	while :
 	do 	if ((OPTC))  #chat mode
@@ -842,7 +854,7 @@ else               #completions
 								${USER_TYPE:-$Q_TYPE}|$Q_TYPE) 	role=user;;
 								*) 	role=assistant;;
 							esac
-							HIST_C="{\"role\": \"$role\", \"content\":\"${string##$SPC2:$SPC3}\"}${HIST_C:+,}$HIST_C"
+							HIST_C="$(fmt_ccf "${string##$SPC2:$SPC3}" "$role")${HIST_C:+,}$HIST_C"
 							SET_TYPE="$USER_TYPE"
 						fi
 					fi
@@ -861,7 +873,7 @@ else               #completions
 						200) 	continue 2;;  #redo
 						199) 	OPTC=-1 edf "$@" || break 2;;  #edit
 						0) 	if ((OPTC>1))
-							then 	set -- "${HIST_C}${HIST_C:+,}{\"role\": \"user\", \"content\":\"$(escapef "${REC_OUT/$SPC1${SET_TYPE:-$Q_TYPE}$SPC2:$SPC3}")\"}"
+							then 	set -- "${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${REC_OUT/$SPC1${SET_TYPE:-$Q_TYPE}$SPC2:$SPC3}")" user)"
 							else 	set -- "$(escapef "$(<"$FILETXT")")"
 							fi
 							break;;  #yes
@@ -896,8 +908,7 @@ else               #completions
 						
 						REPLY=$(escapef "$REPLY")
 						if ((OPTC>1))
-						then 	set -- "${HIST_C}${HIST_C:+,}{\"role\": \"user\", \"content\":\"$REPLY\"}"
-							set -- "${*##,}"
+						then 	set -- "${HIST_C}${HIST_C:+,}$(fmt_ccf "$REPLY" user)"
 						else 	set -- "$HIST$REPLY"
 						fi
 					else 	set --
@@ -905,7 +916,7 @@ else               #completions
 				done
 			elif ((!OPTX))
 			then 	if ((OPTC>1))
-				then 	set -- "${HIST_C}${HIST_C:+,}{\"role\": \"user\", \"content\":\"${REC_OUT/$SPC1${SET_TYPE:-$Q_TYPE}:$SPC2$SPC3}\"}"
+				then 	set -- "${HIST_C}${HIST_C:+,}$(fmt_ccf "${REC_OUT/$SPC1${SET_TYPE:-$Q_TYPE}:$SPC2$SPC3}" user)"
 				else 	set -- "$HIST${REC_OUT:-$*}"
 				fi
 			fi
@@ -913,8 +924,10 @@ else               #completions
 		#https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
 
 		: "${*:?PROMPT ERR}"
-		((OPTC>1)) && BLOCK="{\"messages\": [${*%,}]," \
-		|| BLOCK="{\"prompt\": \"${*}\","
+		if ((EPN==6))
+		then 	BLOCK="{\"messages\": [${*%,}],"
+		else 	BLOCK="{\"prompt\": \"${*}\","
+		fi
 		BLOCK="$BLOCK
 			\"model\": \"$MOD\",
 			\"temperature\": $OPTT,
