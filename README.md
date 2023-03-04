@@ -132,7 +132,7 @@ Below is a copy of it.
 
 
 All positional arguments are read as a single PROMPT. If the
-chosen model requires an INTRUCTION and INPUT prompts, first
+chosen model requires an INSTRUCTION and INPUT prompts, first
 positional argument is taken as INSTRUCTIONS and the following
 ones as INPUT or PROMPT.
 
@@ -204,6 +204,10 @@ a value in the new prompt (e.g. \`!temp0.7', \`!mod1'):
 	-v   |  !ver	  Set/unset verbose.
 	-x   |  !ed 	  Set/unset text editor.
 	!q   |  !quit	  Exit.
+	
+
+    To change chat history, the history file must be edited with
+	`!hist'. Delete entries or comment them out with `#'.
 
 
 #### Prompt Design
