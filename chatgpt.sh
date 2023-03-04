@@ -949,7 +949,8 @@ else               #completions
 				(.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"
 			) )
 			ans=$(jq '.choices[0]|.text//.message.content' "$FILE")
-			ans="${ans##*([$IFS]|\\[nt]|\")}" ans="${ans%\"}"
+			ans="${ans##*([$IFS]|\\[nt]|\")}"
+			ans="${ans//\\\"/''}" ans="${ans%\"}"
 			((${#tkn[@]}>2)) && ((${#ans}))
 			}
 		then 	check_typef "$ans" || ans="$A_TYPE: $ans" OLD_TOTAL=$((OLD_TOTAL+1))
