@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.6.13  2023  by mountaineerbr  GPL+3
+# v0.6.14  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -877,7 +877,9 @@ else               #completions
 						200) 	continue 2;;  #redo
 						199) 	OPTC=-1 edf "$@" || break 2;;  #edit
 						0) 	if ((EPN==6))
-							then 	set -- "${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${REC_OUT/$SPC1${SET_TYPE:-$Q_TYPE}$SPC2:$SPC3}")" "$(if [[ $* = *([$IFS]): ]] ;then 	echo system; else 	echo user ;fi)")"
+							then 	[[ ${REC_OUT//[$IFS]} = :* ]] && role=system || role=user
+								set -- "${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${REC_OUT/$SPC1${SET_TYPE:-$Q_TYPE}$SPC2:$SPC3}")" "$role")"
+								unset role
 							else 	set -- "$(escapef "$(<"$FILETXT")")"
 							fi
 							break;;  #yes
