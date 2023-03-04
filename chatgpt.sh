@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.6.14  2023  by mountaineerbr  GPL+3
+# v0.6.16  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -360,7 +360,7 @@ function set_model_epnf
 function promptf
 {
 	((OPTMINI)) && json_minif
-	((OPTVV)) && ((!OPTII)) && { 	block_printf ;return ;}
+	((OPTVV)) && ((!OPTII)) && block_printf
 
 	curl -\# ${OPTV:+-s} -L https://api.openai.com/v1/${ENDPOINTS[EPN]} \
 		-H "Content-Type: application/json" \
@@ -374,7 +374,8 @@ function block_printf
 {
 	if ((OPTVV>1))
 	then 	printf '%s\n' "$BLOCK" ;exit
-	else	jq -r '.instruction//empty, .input//empty, .prompt//empty' <<<"$BLOCK" || printf '%s\n' "$BLOCK"
+	else	jq -r '.instruction//empty, .input//empty, .prompt//(.messages[]|"\(.role):\t\(.content)")//empty' <<<"$BLOCK" \
+		|| printf '%s\n' "$BLOCK"
 	fi
 }
 
@@ -485,7 +486,7 @@ function token_prevf
 SPC1="?(*+(\\\\n|$'\n'))*([$IFS\"])"
 TYPE_GLOB="*([A-Za-z0-9@_/.+-])"
 SPC2="*(\\\\t|[$' \t'])"
-SPC3="*(\\\\[nt]|[$' \n\t'])"
+SPC3="*(\\\\[nt]|[$IFS])"
 function check_typef
 {
 	[[ $* = $SPC1$TYPE_GLOB$SPC2:$SPC3* ]]
@@ -818,11 +819,11 @@ else               #completions
 	((OPTCC)) || { 	((OPTC)) && break_sessionf ;}
 	if ((${#CHATINSTR}))  #chatbot instructions
 	then 	CHATINSTR=$(escapef "$CHATINSTR")
-		if ((!OPTC)) && (($#))
+		if ((!OPTC)) && (($#))  #one-shot
 		then 	OPTV=1 token_prevf "$CHATINSTR\\n\\n$*"
 			if ((EPN==6))
-			then 	set -- "$(fmt_ccf "$CHATINSTR" system),$(fmt_ccf "$*" user)"
-			else 	set -- "$CHATINSTR\\n\\n$*"
+			then 	set -- "$(fmt_ccf "$CHATINSTR" system),$(fmt_ccf "${*##*([$IFS:])}" user)"
+			else 	set -- "$CHATINSTR\\n\\n${*##*([$IFS:])}"
 			fi
 		elif ((!OPTCC)) && ((OPTC))
 		then 	printf '%s\t%d\t%s\n' "$(date -Isec)" "1" ": $CHATINSTR" >> "$FILECHAT"
@@ -834,7 +835,7 @@ else               #completions
 			then 	check_cmdf "$*" && { 	set -- ;continue ;}
 				set_typef "$*" && REC_OUT="$*" \
 				|| REC_OUT="${SET_TYPE:-$Q_TYPE}: $*"
-				set -- "$REC_OUT"
+				set -- "${REC_OUT##*([$IFS:])}"
 			fi
 
 			#read history file
@@ -847,7 +848,7 @@ else               #completions
 					if ((MAX_PREV+token+1<OPTMAX))
 					then 	((MAX_PREV+=token+1))
 						string="${string##[ \"]}" string="${string%%[ \"]}"
-						string="${string##$SPC3}" HIST="${string#[ :]}\n\n$HIST"
+						string="${string##$SPC3:$SPC3}" HIST="$string\n\n$HIST"
 						
 						if ((EPN==6))  #gpt-3.5-turbo
 						then 	USER_TYPE="$SET_TYPE"
@@ -896,11 +897,10 @@ else               #completions
 					then 	unset REPLY
 						if vared -p "Prompt[${SET_TYPE:-$Q_TYPE}]: " -eh -c REPLY
 						then 	print -s - "$REPLY"
-							check_cmdf "$REPLY" && continue 2
 						fi
 					else 	read -r ${BASH_VERSION:+-e}
-						check_cmdf "$REPLY" && continue 2
 					fi
+					check_cmdf "$REPLY" && continue 2
 					if [[ -n $REPLY ]]
 					then 	OPTX= new_prompt_confirmf
 						case $? in
@@ -912,9 +912,9 @@ else               #completions
 						set_typef "$REPLY" && REC_OUT="$REPLY" \
 						|| REC_OUT="${SET_TYPE:-$Q_TYPE}: $REPLY"
 						
-						REPLY=$(escapef "$REPLY")
+						REPLY=$(escapef "$REC_OUT")
 						if ((EPN==6))
-						then 	set -- "${HIST_C}${HIST_C:+,}$(fmt_ccf "$REPLY" user)"
+						then 	set -- "${HIST_C}${HIST_C:+,}$(fmt_ccf "${REPLY/$SPC1${SET_TYPE:-$Q_TYPE}:$SPC2$SPC3}" user)"
 						else 	set -- "$HIST$REPLY"
 						fi
 					else 	set --
@@ -959,7 +959,7 @@ else               #completions
 			REC_OUT="${REC_OUT%%*([$IFS:])}" REC_OUT="${REC_OUT##*([$IFS:])}"
 			{	printf '%s\t%d\t"%s"\n' "${tkn[2]}" "$((tkn[0]-OLD_TOTAL))" "$(escapef "${REC_OUT:-$*}")"
 				printf '%s\t%d\t"%s"\n' "${tkn[2]}" "${tkn[1]}" "$ans"
-			} >> "$FILECHAT" ;OLD_TOTAL=$((tkn[0]+tkn[1]))
+			} >> "$FILECHAT" ;((OLD_TOTAL=tkn[0]+tkn[1]))
 		fi; unset tkn ans
 
 		set --  ;unset REPLY TKN_PREV MAX_PREV REC_OUT HIST PRE USER_TYPE HIST_C
