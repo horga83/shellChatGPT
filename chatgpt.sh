@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.6.10  2023  by mountaineerbr  GPL+3
+# v0.6.11  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -887,8 +887,8 @@ else               #completions
 			fi
 
 			#fallback prompt read
-			if [[ ${*//[$IFS\"]} = *($TYPE_GLOB:) ]] \
-				|| [[ ${REC_OUT//[$IFS\"]} = *($TYPE_GLOB:) ]]
+			if [[ ${*//[$'\t\n'\"]} = *($TYPE_GLOB:) ]] \
+				|| [[ ${REC_OUT//[$'\t\n'\"]} = *($TYPE_GLOB:) ]]
 			then 	while printf '\n%s[%s]: ' "Prompt" "${SET_TYPE:-$Q_TYPE}" >&2
 				do 	if [[ -n $ZSH_VERSION ]]
 					then 	unset REPLY
