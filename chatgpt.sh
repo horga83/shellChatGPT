@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.6.11  2023  by mountaineerbr  GPL+3
+# v0.6.13  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -68,7 +68,7 @@ SYNOPSIS
 
 
 	All positional arguments are read as a single PROMPT. If the
-	chosen model requires an INTRUCTION and INPUT prompts, first
+	chosen model requires an INSTRUCTION and INPUT prompts, first
 	positional argument is taken as INSTRUCTIONS and the following
 	ones as INPUT or PROMPT.
 
@@ -597,7 +597,7 @@ function edf
 		else 	printf "${PRE:+\\n}%s: \n" "${SET_TYPE:-$Q_TYPE}"
 		fi >>"$FILETXT"
 	elif ((!OPTC))
-	then 	: > "$FILETXT"
+	then 	printf "%s\n" "$*" >"$FILETXT"
 	fi
 	
 	__edf "$FILETXT"
@@ -645,7 +645,7 @@ function unescapef
 function break_sessionf
 {
 	[[ -e "$FILECHAT" ]] || return
-	[[ $(<"$FILECHAT") = *[Bb][Rr][Ee][Aa][Kk] ]] \
+	[[ $(tail -n 20 "$FILECHAT") = *[Bb][Rr][Ee][Aa][Kk] ]] \
 	|| tee -a -- "$FILECHAT" >&2 <<<'SESSION BREAK'
 }
 
@@ -877,7 +877,7 @@ else               #completions
 						200) 	continue 2;;  #redo
 						199) 	OPTC=-1 edf "$@" || break 2;;  #edit
 						0) 	if ((EPN==6))
-							then 	set -- "${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${REC_OUT/$SPC1${SET_TYPE:-$Q_TYPE}$SPC2:$SPC3}")" user)"
+							then 	set -- "${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${REC_OUT/$SPC1${SET_TYPE:-$Q_TYPE}$SPC2:$SPC3}")" "$(if [[ $* = *([$IFS]): ]] ;then 	echo system; else 	echo user ;fi)")"
 							else 	set -- "$(escapef "$(<"$FILETXT")")"
 							fi
 							break;;  #yes
