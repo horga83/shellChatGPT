@@ -114,6 +114,7 @@ Generate transcription from audio file:
 An updated help page can be printed with `chatgpt.sh -h`.
 Below is a copy of it.
 
+---
 
 ### NAME
 
@@ -122,7 +123,7 @@ Below is a copy of it.
 
 ### SYNOPSIS
 
-    chatgpt.sh [-m [MODEL_NAME|NUMBER]] [opt] [PROMPT]
+	chatgpt.sh [-m [MODEL_NAME|NUMBER]] [opt] [PROMPT]
 	chatgpt.sh [-m [MODEL_NAME|NUMBER]] [opt] [INSTRUCTIONS] [INPUT]
 	chatgpt.sh -e [opt] [INSTRUCTIONS] [INPUT]
 	chatgpt.sh -i [opt] [S|M|L] [PROMPT]
@@ -188,7 +189,8 @@ models are `gpt-3.5-turbo` and `gpt-3.5-turbo-0301`.
 
 The defaults chat format is `Q & A`. A name such as \`NAME:'
 may be introduced as interlocutor. Setting only \`:' works as
-an instruction prompt or to complete the previous answer prompt.
+an instruction prompt, send an empty prompt or complete the
+previous answer prompt.
 
 While in chat mode, type in one of the following commands, and
 a value in the new prompt (e.g. \`!temp0.7', \`!mod1'):
@@ -197,7 +199,8 @@ a value in the new prompt (e.g. \`!temp0.7', \`!mod1'):
 	-a   |  !pre 	  Set presence.
 	-A   |  !freq 	  Set frequency.
 	-c   |  !new 	  Starts new session.
-	-H   |  !hist 	  Edit history file.
+	-H   |  !hist 	  Edit history.
+	-L   |  !log 	  Save to log file.
 	-m   |  !mod 	  Set model by index number.
 	-p   |  !top 	  Set top_p.
 	-t   |  !temp 	  Set temperature.
@@ -206,7 +209,7 @@ a value in the new prompt (e.g. \`!temp0.7', \`!mod1'):
 	!q   |  !quit	  Exit.
 	
 
-    To change chat history, the history file must be edited with
+	To change chat history, the history file must be edited with
 	`!hist'. Delete entries or comment them out with `#'.
 
 
@@ -226,9 +229,9 @@ with the bot identity and how it should behave as, such as:
 	prompt>	\": The following is a conversation with an AI
 		  assistant. The assistant is helpful, creative,
 		  clever, and friendly.\"
-
+ 	
 	reply_> \"A: Hello! How can I help you?\"
-
+ 	
 	prompt> \"Q: Hello, what is your name?\"
 
 Also see section ENVIRONMENT to set defaults chatbot instructions.
@@ -255,7 +258,7 @@ completions endpoint.
 ### IMAGES / DALL-E
 
 The first positional parameter sets the output image size
-256x256/small, 512x512/medium or 1024x1024/large. Defaults=512x512.
+256x256/Small, 512x512/Medium or 1024x1024/Large. Defaults=512x512.
 
 An image can be created given a prompt. A text description of
 the desired image(s). The maximum length is 1000 characters.
@@ -270,47 +273,50 @@ input image will be converted to square before upload.
 Transcribes audio into the input language. May set a two letter
 ISO-639-1 language as the second positional parameter. A prompt
 may also be set after language to help the model.
-	
+
 Setting temperature has an effect. Currently, only one audio model
 is available.
 
 
 ### ENVIRONMENT
-	
-    CHATGPTRC 	Path to user chatgpt.sh configuration.
+
+	CHATGPTRC 	Path to user chatgpt.sh configuration.
 			Defaults=~/.chatgpt.conf
-
+	
 	CHATINSTR 	Initial instruction set for the chatbot.
-
+	
 	OPENAI_API_KEY
 	OPENAI_KEY 	Set your personal (free) OpenAI API key.
-
+	
 	VISUAL
 	EDITOR 		Text editor for external prompt editing.
 			Defaults=vim
 
 
 ### LIMITS
-	
+
 For most models this is 2048 tokens, or about 1500 words).
 Davici model limit is 4000 tokens (~3000 words) and for
 gpt-3.5-turbo models it is 4096 tokens.
 
 	Free trial users
 	Text & Embedding        Codex          Edit        Image
-                  20 RPM       20 RPM        20 RPM
-             150,000 TPM   40,000 TPM   150,000 TPM   50 img/min
-
+	          20 RPM       20 RPM        20 RPM
+	150,000 TPM   40,000 TPM   150,000 TPM   50 img/min
+	
 	RPM 	(requests per minute)
 	TPM 	(tokens per minute)
 
 
 ### BUGS
 
-Certain PROMPTS may return empty responses. Maybe the model
-has nothing to add to the input prompt or it expects more text.
-Try trimming spaces, appending a full stop/ellipsis, or
-resetting temperature or adding more text. See prompt design.
+Certain PROMPTS may return empty responses. Maybe the model has
+nothing to add to the input prompt or it expects more text. Try
+trimming spaces, appending a full stop/ellipsis, or resetting
+temperature or adding more text. See prompt design. Keep in mind
+that prompts ending with a space character may result in lower-
+quality output. This is because the API already incorporates
+trailing spaces in its dictionary of tokens.
 
 Language models are but a mirror of human written records, they
 do not \`understand' your questions or \`know' the answers to it.
@@ -318,6 +324,7 @@ Garbage in, garbage out.
 
 
 ### REQUIREMENTS
+
 A free OpenAI GPTChat key. Ksh93, Bash or Zsh. cURL. JQ and
 ImageMagick are optionally required.
 
@@ -334,13 +341,13 @@ ImageMagick are optionally required.
 			Set Edit mode, model defaults=text-davinci-edit-001.
 	-f 		Skip sourcing user configuration file.
 	-h 		Print this help page.
-	-H 		Edit history file.
+	-H 		Edit history file with text editor.
 	-i [PROMPT] 	Creates an image given a prompt.
 	-i [PNG_PATH] 	Creates a variation of a given image.
-	-j 		Print raw JSON data.
+	-j 		Print raw JSON response data (debug with -VVj).
 	-k [KEY] 	Set API key (free).
-	-l 		List models.
-	-m [MOD_NAME] 	Set a model name, check with -l.
+	-l [MODEL] 	List models or print details of a MODEL.
+	-m [MODEL] 	Set a model name, check with -l.
 	-m [NUM] 	Set model by index NUM:
 		  # Completions           # Moderation
 		  0.  text-davinci-003    6.  text-moderation-latest
@@ -353,8 +360,9 @@ ImageMagick are optionally required.
 	-n [NUM] 	Set number of results. Defaults=1.
 	-p [VAL] 	Set top_p value (0.0 - 1.0). Defaults=1.
 	-t [VAL] 	Set temperature value (0.0 - 2.0). Defaults=0.
-	-v 		Less verbose in chat mode.
-	-VV 		View request body. Set twice to dump and exit.
+	-vv 		Less verbose in chat mode.
+	-VV 		Pretty-print request body. Set twice to dump raw.
 	-x 		Edit prompt in text editor.
 	-w 		Transcribe audio file.
 	-z 		Print last response JSON data.
+
