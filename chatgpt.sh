@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.6.16  2023  by mountaineerbr  GPL+3
+# v0.7  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -48,10 +48,11 @@ OUTDIR="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}"
 
 # Set file paths
 FILE="${CACHEDIR%/}/chatgpt.json"
-FILECHAT="${FILE%.*}.tsv"
-FILETXT="${FILE%.*}.txt"
-FILEIN="${FILE%/*}/dalle_in.png"
+FILECHAT="${CACHEDIR%/}/chatgpt.tsv"
+FILETXT="${CACHEDIR%/}/chatgpt.txt"
+FILEIN="${CACHEDIR%/}/dalle_in.png"
 FILEOUT="${OUTDIR%/}/dalle_out.png"
+USRLOG="${OUTDIR%/}/${FILETXT##*/}"
 
 MAN="NAME
 	${0##*/} -- ChatGPT/DALL-E Shell Wrapper
@@ -134,6 +135,7 @@ COMPLETIONS
 		-A   |  !freq 	  Set frequency.
 		-c   |  !new 	  Starts new session.
 		-H   |  !hist 	  Edit history.
+		-L   |  !log 	  Save to log file.
 		-m   |  !mod 	  Set model by index number.
 		-p   |  !top 	  Set top_p.
 		-t   |  !temp 	  Set temperature.
@@ -246,10 +248,13 @@ LIMITS
 
 
 BUGS
-	Certain PROMPTS may return empty responses. Maybe the model
-	has nothing to add to the input prompt or it expects more text.
-	Try trimming spaces, appending a full stop/ellipsis, or
-	resetting temperature or adding more text. See prompt design.
+	Certain PROMPTS may return empty responses. Maybe the model has
+	nothing to add to the input prompt or it expects more text. Try
+	trimming spaces, appending a full stop/ellipsis, or resetting
+	temperature or adding more text. See prompt design. Keep in mind
+	that prompts ending with a space character may result in lower-
+	quality output. This is because the API already incorporates
+	trailing spaces in its dictionary of tokens.
 
 	Language models are but a mirror of human written records, they
 	do not \`understand' your questions or \`know' the answers to it.
@@ -272,12 +277,13 @@ OPTIONS
 			Set Edit mode, model defaults=text-davinci-edit-001.
 	-f 		Skip sourcing user configuration file.
 	-h 		Print this help page.
-	-H 		Edit history file.
+	-H 		Edit history file with text editor.
 	-i [PROMPT] 	Creates an image given a prompt.
 	-i [PNG_PATH] 	Creates a variation of a given image.
-	-j 		Print raw JSON data.
+	-j 		Print raw JSON response data (debug with -VVj).
 	-k [KEY] 	Set API key (free).
-	-l 		List models.
+	-l [MODEL] 	List models or print details of a MODEL.
+	-L [FILEPATH] 	Set a logfile.
 	-m [MOD_NAME] 	Set a model name, check with -l.
 	-m [NUM] 	Set model by index NUM:
 		  # Completions           # Moderation
@@ -291,8 +297,8 @@ OPTIONS
 	-n [NUM] 	Set number of results. Defaults=$OPTN.
 	-p [VAL] 	Set top_p value (0.0 - 1.0). Defaults=$OPTP.
 	-t [VAL] 	Set temperature value (0.0 - 2.0). Defaults=$OPTT.
-	-v 		Less verbose in chat mode.
-	-VV 		View request body. Set twice to dump and exit.
+	-vv 		Less verbose in chat mode.
+	-VV 		Pretty-print request body. Set twice to dump raw.
 	-x 		Edit prompt in text editor.
 	-w 		Transcribe audio file.
 	-z 		Print last response JSON data."
@@ -360,7 +366,7 @@ function set_model_epnf
 function promptf
 {
 	((OPTMINI)) && json_minif
-	((OPTVV)) && ((!OPTII)) && block_printf
+	((OPTVV)) && ((!OPTII)) && { 	block_printf || return ;}
 
 	curl -\# ${OPTV:+-s} -L https://api.openai.com/v1/${ENDPOINTS[EPN]} \
 		-H "Content-Type: application/json" \
@@ -373,7 +379,9 @@ function promptf
 function block_printf
 {
 	if ((OPTVV>1))
-	then 	printf '%s\n' "$BLOCK" ;exit
+	then 	printf '%s\n' "$BLOCK"
+		printf '%s ' '<CTRL-D> redo, <CTR-C> exit, or continue' >&2
+		typeset REPLY ;read
 	else	jq -r '.instruction//empty, .input//empty, .prompt//(.messages[]|"\(.role):\t\(.content)")//empty' <<<"$BLOCK" \
 		|| printf '%s\n' "$BLOCK"
 	fi
@@ -476,17 +484,42 @@ function lastjsonf
 }
 
 #calculate token preview
+#usage: token_prevf [string]
 function token_prevf
 {
-	TKN_PREV="$*" TKN_PREV=$((${#TKN_PREV}/4))
+	TKN_PREV=$(__tiktokenf "$*")
 	((OPTV)) || printf 'Prompt tokens: ~%d; Max tokens: %d\n' "$TKN_PREV" "$OPTMAX" >&2
+}
+
+#poor man's tiktoken
+#usage: __tiktokenf [string] [divide_by]
+# divide_by  ^:less tokens  v:more tokens
+function __tiktokenf
+{
+	typeset str tkn by
+	by=$2
+	# 1 TOKEN ~= 4 CHARS IN ENGLISH
+	#str="${1// }" str=${str//[$'\t\n']/xxxx} str=${str//\\[ntrvf]/xxxx} tkn=$((${#str}/${by:-4}))
+	# 1 TOKEN ~= ¾ WORDS
+	set -- $1 ;tkn=$(( ($# * 4) / ${by:-3}))
+	printf '%d\n' "$tkn" ;((tkn>0))
+}
+
+#print to history file
+#usage: push_tohistf [string] [tokens] [time]
+function push_tohistf
+{
+	typeset string tkn_min tkn
+	string="$1" ;tkn_min=$(__tiktokenf "$string" "4")
+	((tkn = ${2:-$tkn_min}>0 ? ${2:-$tkn_min} : 0))
+	printf '%s\t%d\t"%s"\n' "${3:-$(date -Isec)}" "$tkn" "$string" >> "$FILECHAT"
 }
 
 #check for interlocutor
 SPC1="?(*+(\\\\n|$'\n'))*([$IFS\"])"
 TYPE_GLOB="*([A-Za-z0-9@_/.+-])"
 SPC2="*(\\\\t|[$' \t'])"
-SPC3="*(\\\\[nt]|[$IFS])"
+SPC3="*(\\\\[ntrvf]|[$IFS])"
 function check_typef
 {
 	[[ $* = $SPC1$TYPE_GLOB$SPC2:$SPC3* ]]
@@ -522,7 +555,7 @@ function cmd_verf
 function check_cmdf
 {
 	[[ ${*//[$IFS:]} = [/!-]* ]] || return
-	set -- "${*//[$IFS\/!]}" ;set -- "${*##[:]}"
+	set -- "${*##*([$IFS:\/!])}"
 	case "$*" in
 		-[0-9]*|[0-9]*|max*) 	set -- "${*%.*}"
 			set -- "${*//[!0-9]}"  ;OPTMAX="${*:-$OPTMAX}"
@@ -541,6 +574,13 @@ function check_cmdf
 			;;
 		-[Hh]|hist*|history)
 			__edf "$FILECHAT"
+			;;
+		-[L]|log*) 	((OPTLOG)) && unset OPTLOG || OPTLOG=1
+			set -- "${*##-L}" ;set -- "${*##log}"
+			USRLOG="${*:-$USRLOG}"
+			[[ "$USRLOG" = "$OLD_USRLOG" ]] \
+			|| cmd_verf $'\nLog file' "\`\`$USRLOG''"
+			OLD_USRLOG="$USRLOG"
 			;;
 		-m*|mod*|model*)
 			set -- "${*#-m}" ;set -- "${*#model}" ;set -- "${*#mod}"
@@ -593,10 +633,7 @@ function edf
 	then 	ed_msg=",,,,,,(edit below this line),,,,,,"
 		PRE=$(unescapef "$HIST${HIST:+\\n$ed_msg}")
 		printf "%s${PRE:+\\n}" "$PRE" >"$FILETXT"
-		if (($#))
-		then 	printf "${PRE:+\\n}%s\n" "$*"
-		else 	printf "${PRE:+\\n}%s: \n" "${SET_TYPE:-$Q_TYPE}"
-		fi >>"$FILETXT"
+		printf "${PRE:+\\n}%s\n" "${*:-${SET_TYPE:-$Q_TYPE}: }" >>"$FILETXT"
 	elif ((!OPTC))
 	then 	printf "%s\n" "$*" >"$FILETXT"
 	fi
@@ -605,7 +642,7 @@ function edf
 	
 	if ((OPTC)) && pos=$(<"$FILETXT") && [[ "$pos" != "$PRE" ]]
 	then 	while [[ "$pos" != "$PRE"* ]]
-		do 	printf 'Warning: %s \n' 'Bad edit: [E]dit, [r]edo or [c]ontinue?' >&2
+		do 	printf 'Warning: %s \n' 'bad edit: [E]dit, [r]edo or [c]ontinue?' >&2
 			read -r -n ${ZSH_VERSION:+-k} 1
 			case "${REPLY:-$1}" in
 				[CcNnQqAa]) 	break;;  #continue
@@ -625,7 +662,8 @@ function edf
 function escapef
 {
 	typeset var
- 	var=${*//[\"]/\\\"}            #double quote marks
+	var="${*%%*([$IFS])}" var="${var##*([$IFS])}"
+ 	var=${var//[\"]/\\\"}          #double quote marks
 	var=${var//[$'\t']/\\t}        #tabs
 	var=${var//[$'\n\r\v\f']/\\n}  #new line/form feed
  	var=${var//\\\\[\"]/\\\"}      #rm excess escapes
@@ -674,16 +712,24 @@ function fmt_ccf
 	printf '{"role": "%s", "content": "%s"}\n' "${2:-user}" "$1"
 }
 
+#create user log
+function usr_logf
+{
+	[[ -d $USRLOG ]] && USRLOG="$USRLOG/${FILETXT##*/}"
+	[[ "$USRLOG" = '~'* ]] && USRLOG="${HOME}${USRLOG##\~}"
+	printf '%s\n\n' "$(date -R 2>/dev/null||date)" "$@" > "$USRLOG"
+}
+
 
 #parse opts
-while getopts a:A:cCefhHiIjlm:n:kp:t:vVxwz0123456789 c
+while getopts a:A:cCefhHiIjlL:m:n:kp:t:vVxwz0123456789 c
 do 	fix_dotf OPTARG
 	case $c in
 		[0-9]) 	OPTMAX=$OPTMAX$c;;
-		a) 	OPTA="$OPTARG";;
-		A) 	OPTAA="$OPTARG";;
+		a) 	OPTA=$OPTARG;;
+		A) 	OPTAA=$OPTARG;;
 		c) 	((OPTC)) && OPTM=10 ;((OPTC++));;
-		C) 	((OPTCC++));;
+		C) 	((OPTRESUME++));;
 		e) 	OPTE=1;;
 		f$OPTF) 	unset CHATINSTR OPTA OPTAA OPTMINI
 			OPTF=1 . "$0" "$@" ;exit;;
@@ -691,7 +737,10 @@ do 	fix_dotf OPTARG
 		H) 	__edf "$FILECHAT" ;exit ;;
 		i|I) 	OPTI=1;;
 		j) 	OPTJ=1;;
-		l) 	OPTL=1 ;;
+		l) 	OPTL=1;;
+		L) 	OPTLOG=1 USRLOG=$OPTARG
+			cmd_verf 'Log file' "\`\`$USRLOG''"
+			;;
 		m) 	OPTMSET=1
 			if [[ $OPTARG = *[a-zA-Z]* ]]
 			then 	MOD=$OPTARG  #set model name
@@ -699,14 +748,8 @@ do 	fix_dotf OPTARG
 			fi;;
 		n) 	OPTN=$OPTARG ;;
 		k) 	OPENAI_KEY=$OPTARG;;
-		p) 	if ((OPTARG>1))
-			then 	printf 'err: illegal top_p -- %s\n' "$OPTARG" >&2
-			else 	OPTP=$OPTARG
-			fi;;
-		t) 	if ((OPTARG>2))
-			then 	printf 'err: illegal temperature -- %s\n' "$OPTARG" >&2
-			else 	OPTT=$OPTARG
-			fi;;
+		p) 	OPTP=$OPTARG;;
+		t) 	OPTT=$OPTARG;;
 		v) 	((++OPTV));;
 		V) 	((++OPTVV));;  #debug
 		x) 	OPTX=1;;
@@ -719,9 +762,9 @@ shift $((OPTIND -1))
 
 OPTMAX=${OPTMAX:-$OPTMM}
 OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
-((OPTCC)) && { 	((OPTC)) || ((OPTC++)) ;}
+((OPTRESUME)) && { 	((OPTC)) || ((OPTC++)) ;}
 ((OPTC)) && ((OPTE+OPTI)) && OPTC=  ;((OPTL+OPTZ)) && OPTX= 
-[[ -n ${OPTT#0} ]] && [[ -n ${OPTP#1} ]] && printf '%s\n' "warning: temperature and top_p both set" >&2
+[[ -n ${OPTT#0} ]] && [[ -n ${OPTP#1} ]] && printf 'Warning: %s\n' "temperature and top_p both set" >&2
 [[ -n $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA,"
 [[ -n $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA,"
 if ((OPTI))
@@ -755,9 +798,9 @@ elif ((OPTL))
 then 	list_modelsf "$@"
 elif ((OPTW))  #audio transcribe
 then 	if [[ $1 != *@(mp3|mp4|mpeg|mpga|m4a|wav|webm) ]]
-	then 	printf 'err: %s\n' 'file format not supported' >&2 ;exit 1
+	then 	printf 'Err: %s\n' 'file format not supported' >&2 ;exit 1
 	elif [[ ! -e $1 ]]
-	then 	printf 'err: %s\n' 'audio file required' >&2 ;exit 1
+	then 	printf 'Err: %s\n' 'audio file required' >&2 ;exit 1
 	else 	file="$1" ;shift
 	fi
 	#set language ISO-639-1 (two letters)
@@ -815,18 +858,19 @@ then 	BLOCK="{
 	promptf
 	prompt_printf
 else               #completions
-	((${#CHATINSTR})) && ((!OPTC)) && [[ -z ${*//@([$IFS]|\\[nt])} ]] && : ${ERR:?PROMPT}
-	((OPTCC)) || { 	((OPTC)) && break_sessionf ;}
+	((${#CHATINSTR})) && ((!OPTC)) && [[ -z ${*//@([$IFS]|\\[ntrvf])} ]] && [[ -n ${ERR:?PROMPT} ]]
+	((OPTRESUME)) || { 	((OPTC)) && break_sessionf ;}
 	if ((${#CHATINSTR}))  #chatbot instructions
 	then 	CHATINSTR=$(escapef "$CHATINSTR")
 		if ((!OPTC)) && (($#))  #one-shot
-		then 	OPTV=1 token_prevf "$CHATINSTR\\n\\n$*"
+		then 	OPTV=1 token_prevf "$CHATINSTR$*"
 			if ((EPN==6))
 			then 	set -- "$(fmt_ccf "$CHATINSTR" system),$(fmt_ccf "${*##*([$IFS:])}" user)"
 			else 	set -- "$CHATINSTR\\n\\n${*##*([$IFS:])}"
 			fi
-		elif ((!OPTCC)) && ((OPTC))
-		then 	printf '%s\t%d\t%s\n' "$(date -Isec)" "1" ": $CHATINSTR" >> "$FILECHAT"
+		elif ((!OPTRESUME)) && ((OPTC))
+		then 	push_tohistf ": $CHATINSTR"
+			((OLD_TOTAL+=$(__tiktokenf ": $CHATINSTR" "4") ))
 		fi
 	fi
 	while :
@@ -840,13 +884,17 @@ else               #completions
 
 			#read history file
 			if [[ -s "$FILECHAT" ]]
-			then 	((MAX_PREV=TKN_PREV+1)) ;unset HIST HIST_C
+			then 	((MAX_PREV=TKN_PREV)) ;unset HIST HIST_C
 				while IFS=$'\t' read -r time token string
 				do 	[[ $time$token = *[Bb][Rr][Ee][Aa][Kk]* ]] && break
 					[[ ${time//[$IFS]} = \#* ]] && continue
-					[[ -n ${string//[$IFS\"]} ]] && ((token>0)) || continue
-					if ((MAX_PREV+token+1<OPTMAX))
-					then 	((MAX_PREV+=token+1))
+					[[ -n ${string//[$IFS\"]} ]] || continue
+					if ((token<1))
+					then 	((OPTVV>1||OPTJ)) && printf 'Warning: %s\n' 'zero/negative token count in history' >&2
+						token=$(__tiktokenf "$string")
+					fi
+					if ((MAX_PREV+token<OPTMAX))
+					then 	((MAX_PREV+=token))
 						string="${string##[ \"]}" string="${string%%[ \"]}"
 						string="${string##$SPC3:$SPC3}" HIST="$string\n\n$HIST"
 						
@@ -864,7 +912,7 @@ else               #completions
 						fi
 					fi
 				done < <(tac -- "$FILECHAT")
-				((MAX_PREV-=TKN_PREV+1))
+				((MAX_PREV-=TKN_PREV))
 				unset REPLY USER_TYPE time token string role
 			fi
 
@@ -884,7 +932,7 @@ else               #completions
 							else 	set -- "$(escapef "$(<"$FILETXT")")"
 							fi
 							break;;  #yes
-						*) 	break;;  #no
+						*) 	set -- ;break;;  #no
 					esac
 				done
 			fi
@@ -929,7 +977,11 @@ else               #completions
 		fi
 		#https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
 
-		: "${*:?PROMPT ERR}"
+		[[ ${REC_OUT//[$IFS]} = :* ]] && {  #instructions/system?
+			push_tohistf "$(escapef "$REC_OUT")"
+			unset REC_OUT TKN_PREV ;set -- ;continue
+		}
+		[[ -n "${*:?PROMPT ERR}" ]]
 		if ((EPN==6))
 		then 	BLOCK="{\"messages\": [${*%,}],"
 		else 	BLOCK="{\"prompt\": \"${*}\","
@@ -946,23 +998,24 @@ else               #completions
 
 		#record to hist file
 		if ((OPTC)) && {
-		 	tkn=($(jq -r '.usage.prompt_tokens//empty,
-				.usage.completion_tokens//empty,
+		 	tkn=($(jq -r '.usage.prompt_tokens//"0",
+				.usage.completion_tokens//"0",
 				(.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"
 			) )
-			ans=$(jq '.choices[0]|.text//.message.content' "$FILE")
-			ans="${ans//\\\"/''}"
-			ans="${ans##*([$IFS]|\\[nt]|\")}" ans="${ans%\"}"
+			ans=$(jq '.choices[0]|.text//.message.content' "$FILE") #ans="${ans//\\\"/''}"
+			ans="${ans##*([$IFS]|\\[ntrvf]|\")}" ans="${ans%\"}"
 			((${#tkn[@]}>2)) && ((${#ans}))
 			}
-		then 	check_typef "$ans" || ans="$A_TYPE: $ans" OLD_TOTAL=$((OLD_TOTAL+1))
-			REC_OUT="${REC_OUT%%*([$IFS:])}" REC_OUT="${REC_OUT##*([$IFS:])}"
-			{	printf '%s\t%d\t"%s"\n' "${tkn[2]}" "$((tkn[0]-OLD_TOTAL))" "$(escapef "${REC_OUT:-$*}")"
-				printf '%s\t%d\t"%s"\n' "${tkn[2]}" "${tkn[1]}" "$ans"
-			} >> "$FILECHAT" ;((OLD_TOTAL=tkn[0]+tkn[1]))
-		fi; unset tkn ans
+		then 	check_typef "$ans" || ans="$A_TYPE: $ans"
+			push_tohistf "$(escapef "${REC_OUT:-$*}")" "$((tkn[0]-OLD_TOTAL))" "${tkn[2]}"
+			push_tohistf "$ans" "${tkn[1]}" "${tkn[2]}"
+			((OLD_TOTAL=tkn[0]+tkn[1]))
+		fi
+		((OPTLOG)) && usr_logf "$(unescapef "$HIST${REC_OUT:-$*}"$'\n\n'"$ans")"
+		unset tkn ans
 
-		set --  ;unset REPLY TKN_PREV MAX_PREV REC_OUT HIST PRE USER_TYPE HIST_C
+		set --
+		unset REPLY TKN_PREV MAX_PREV REC_OUT HIST PRE USER_TYPE HIST_C
 		((OPTC)) || break
 	done ;unset OLD_TOTAL
 fi
