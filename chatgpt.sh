@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.7.3  2023  by mountaineerbr  GPL+3
+# v0.7.4  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -377,7 +377,7 @@ function promptf
 	((OPTMINI)) && json_minif
 	((OPTVV)) && ((!OPTII)) && { 	block_printf || return ;}
 
-	curl -\# ${OPTV:+-s} -L https://api.openai.com/v1/${ENDPOINTS[EPN]} \
+	curl -\# ${OPTV:+-s} -L "https://api.openai.com/v1/${ENDPOINTS[EPN]}" \
 		-H "Content-Type: application/json" \
 		-H "Authorization: Bearer $OPENAI_KEY" \
 		-d "$BLOCK" \
@@ -428,7 +428,7 @@ function prompt_printf
 #make request to image endpoint
 function prompt_imgvarf
 {
-	curl -\# ${OPTV:+-s} -L https://api.openai.com/v1/${ENDPOINTS[EPN]} \
+	curl -\# ${OPTV:+-s} -L "https://api.openai.com/v1/${ENDPOINTS[EPN]}" \
 		-H "Authorization: Bearer $OPENAI_KEY" \
 		-F image="@$1" \
 		-F response_format="$OPTI_FMT" \
@@ -463,20 +463,20 @@ function prompt_imgprintf
 
 function prompt_audiof
 {
-	curl -\# ${OPTV:+-s} -L https://api.openai.com/v1/${ENDPOINTS[EPN]} \
+	curl -\# ${OPTV:+-s} -L "https://api.openai.com/v1/${ENDPOINTS[EPN]}" \
 		-X POST \
 		-H "Authorization: Bearer $OPENAI_KEY" \
 		-H 'Content-Type: multipart/form-data' \
 		-F file="@$1" \
-		-F model=$MOD \
-		-F temperature=$OPTT \
+		-F model="$MOD" \
+		-F temperature="$OPTT" \
 		"${@:2}" \
 		-o "$FILE"
 }
 
 function list_modelsf
 {
-	curl https://api.openai.com/v1/models${1:+/}${1} \
+	curl "https://api.openai.com/v1/models${1:+/}${1}" \
 		-H "Authorization: Bearer $OPENAI_KEY" \
 		-o "$FILE"
 	if [[ -n $1 ]]
@@ -505,12 +505,14 @@ function token_prevf
 # divide_by  ^:less tokens  v:more tokens
 function __tiktokenf
 {
-	typeset str tkn by
-	by=$2
+	typeset punct str tkn by
+	punct="\!\"\#$%&'()*+,\-./:;<=>?@\[\\\]^_‘{|}~"
+
+	by="$2"
 	# 1 TOKEN ~= 4 CHARS IN ENGLISH
-	#str="${1// }" str=${str//[$'\t\n']/xxxx} str=${str//\\[ntrvf]/xxxx} tkn=$((${#str}/${by:-4}))
+	#str="${1// }" str="${str//[$'\t\n']/xxxx}" str="${str//\\[ntrvf]/xxxx}" tkn=$((${#str}/${by:-4}))
 	# 1 TOKEN ~= ¾ WORDS
-	set -- $1 ;tkn=$(( ($# * 4) / ${by:-3}))
+	set -- ${1//["$punct"]/x} ;tkn=$(( ($# * 4) / ${by:-3}))
 	printf '%d\n' "$tkn" ;((tkn>0))
 }
 
@@ -568,16 +570,16 @@ function check_cmdf
 	case "$*" in
 		-[0-9]*|[0-9]*|max*) 	set -- "${*%.*}"
 			set -- "${*//[!0-9]}"  ;OPTMAX="${*:-$OPTMAX}"
-			cmd_verf 'Max tokens' $OPTMAX
+			cmd_verf 'Max tokens' "$OPTMAX"
 			;;
 		-a*|pre*|presence*)
 			set -- "${*//[!0-9.]}" ;OPTA="${*:-$OPTA}"
-			fix_dotf OPTA  ;cmd_verf 'Presence' $OPTA
+			fix_dotf OPTA  ;cmd_verf 'Presence' "$OPTA"
 			set_optsf
 			;;
 		-A*|freq*|frequency*)
 			set -- "${*//[!0-9.]}" ;OPTAA="${*:-$OPTAA}"
-			fix_dotf OPTAA ;cmd_verf 'Frequency' $OPTAA
+			fix_dotf OPTAA ;cmd_verf 'Frequency' "$OPTAA"
 			set_optsf
 			;;
 		-c|br|break|session)
@@ -598,17 +600,17 @@ function check_cmdf
 			if [[ $* = *[a-zA-Z]* ]]
 			then 	MOD="${*//[$IFS]}"  #by name
 			else 	MOD="${MODELS[${*//[!0-9]}]}" #by index
-			fi ;set_model_epnf "$MOD" ;cmd_verf 'Model' $MOD
+			fi ;set_model_epnf "$MOD" ;cmd_verf 'Model' "$MOD"
 			((EPN==6)) && OPTC=2 || OPTC=1
 			;;
 		-p*|top*)
 			set -- "${*//[!0-9.]}" ;OPTP="${*:-$OPTP}"
-			fix_dotf OPTP  ;cmd_verf 'Top P' $OPTP
+			fix_dotf OPTP  ;cmd_verf 'Top P' "$OPTP"
 			set_optsf
 			;;
 		-t*|temp*|temperature*)
 			set -- "${*//[!0-9.]}" ;OPTT="${*:-$OPTT}"
-			fix_dotf OPTT  ;cmd_verf 'Temperature' $OPTT
+			fix_dotf OPTT  ;cmd_verf 'Temperature' "$OPTT"
 			;;
 		-v|ver|verbose)
 			((OPTV)) && unset OPTV || OPTV=1
@@ -712,10 +714,10 @@ function json_minif
 {
 	typeset blk
 	blk=$(jq -c . <<<"$BLOCK") || {
-		blk=${BLOCK//[$'\t\n\r\v\f']} blk=${blk//\": \"/\":\"}
-		blk=${blk//, \"/,\"} blk=${blk//\" ,\"/\",\"}
+		blk=${BLOCK//[$'\t\n\r\v\f']} blk="${blk//\": \"/\":\"}"
+		blk="${blk//, \"/,\"}" blk="${blk//\" ,\"/\",\"}"
 	}
-	BLOCK=$blk
+	BLOCK="$blk"
 }
 
 #format for chat completion endpoint
@@ -867,9 +869,9 @@ function editf
 while getopts a:A:cCefhHiIjlL:m:n:kp:S:t:vVxwz0123456789 c
 do 	fix_dotf OPTARG
 	case $c in
-		[0-9]) 	OPTMAX=$OPTMAX$c;;
-		a) 	OPTA=$OPTARG;;
-		A) 	OPTAA=$OPTARG;;
+		[0-9]) 	OPTMAX="$OPTMAX$c";;
+		a) 	OPTA="$OPTARG";;
+		A) 	OPTAA="$OPTARG";;
 		c) 	((OPTC++));;
 		C) 	((OPTRESUME++));;
 		e) 	OPTE=1;;
@@ -880,7 +882,7 @@ do 	fix_dotf OPTARG
 		i|I) 	OPTI=1;;
 		j) 	OPTJ=1;;
 		l) 	OPTL=1;;
-		L) 	OPTLOG=1 USRLOG=$OPTARG
+		L) 	OPTLOG=1 USRLOG="$OPTARG"
 			cmd_verf 'Log file' "\`\`$USRLOG''"
 			;;
 		m) 	OPTMARG="$OPTARG"
@@ -888,14 +890,14 @@ do 	fix_dotf OPTARG
 			then 	MOD=$OPTARG  #set model name
 			else 	OPTM=$OPTARG #set one pre defined model number
 			fi;;
-		n) 	OPTN=$OPTARG ;;
-		k) 	OPENAI_KEY=$OPTARG;;
-		p) 	OPTP=$OPTARG;;
+		n) 	OPTN="$OPTARG" ;;
+		k) 	OPENAI_KEY="$OPTARG";;
+		p) 	OPTP="$OPTARG";;
 		S) 	if [[ -e "$OPTARG" ]]
 			then 	INSTRUCTION=$(<"$OPTARG")
 			else 	INSTRUCTION="$OPTARG"
 			fi;;
-		t) 	OPTT=$OPTARG;;
+		t) 	OPTT="$OPTARG";;
 		v) 	((++OPTV));;
 		V) 	((++OPTVV));;  #debug
 		x) 	OPTX=1;;
@@ -906,7 +908,7 @@ do 	fix_dotf OPTARG
 done ; unset c
 shift $((OPTIND -1))
 
-OPTMAX=${OPTMAX:-$OPTMM}
+OPTMAX="${OPTMAX:-$OPTMM}"
 OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
 ((OPTC)) && ((OPTE+OPTI)) && OPTC=  ;((OPTL+OPTZ)) && OPTX= ;set_optsf
 if ((OPTI))
