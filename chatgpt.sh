@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
-# chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E Shell Wrapper
-# v0.7  2023  by mountaineerbr  GPL+3
+# chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E/Whisper Shell Wrapper
+# v0.7.1  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -15,7 +15,7 @@ EPN=0
 # Temperature
 OPTT=0
 # Top P
-OPTP=1
+#OPTP=1
 # Maximum tokens
 OPTMM=1024
 # Presence penalty
@@ -31,8 +31,9 @@ OPTI_FMT=b64_json  #url
 # Minify JSON request
 #OPTMINI=
 
-# CHATBOT INSTRUCTIONS
-#CHATINSTR="The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly."
+# INSTRUCTION
+# Text and chat completions, and edits
+#INSTRUCTION="The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly."
 
 # CHATBOT INTERLOCUTORS
 Q_TYPE=Q
@@ -43,47 +44,51 @@ CONFFILE="$HOME/.chatgpt.conf"
 CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatgptsh"
 OUTDIR="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}"
 
+
 # Load user defaults
 ((OPTF)) || { 	[[ -e "${CHATGPTRC:-$CONFFILE}" ]] && . "${CHATGPTRC:-$CONFFILE}" ;}
+INSTRUCTION="${INSTRUCTION:-$CHATINSTR}"  #deprecate envar
 
 # Set file paths
 FILE="${CACHEDIR%/}/chatgpt.json"
 FILECHAT="${CACHEDIR%/}/chatgpt.tsv"
 FILETXT="${CACHEDIR%/}/chatgpt.txt"
-FILEIN="${CACHEDIR%/}/dalle_in.png"
 FILEOUT="${OUTDIR%/}/dalle_out.png"
+FILEIN="${CACHEDIR%/}/dalle_in.png"
+FILEINW="${CACHEDIR%/}/whisper_in.mp3"
 USRLOG="${OUTDIR%/}/${FILETXT##*/}"
 
 MAN="NAME
-	${0##*/} -- ChatGPT/DALL-E Shell Wrapper
+	${0##*/} -- ChatGPT/DALL-E/Whisper Shell Wrapper
 
 
 SYNOPSIS
 	${0##*/} [-m [MODEL_NAME|NUMBER]] [opt] [PROMPT]
-	${0##*/} [-m [MODEL_NAME|NUMBER]] [opt] [INSTRUCTIONS] [INPUT]
-	${0##*/} -e [opt] [INSTRUCTIONS] [INPUT]
+	${0##*/} [-m [MODEL_NAME|NUMBER]] [opt] [INSTRUCTION] [INPUT]
+	${0##*/} -e [opt] [INSTRUCTION] [INPUT]
 	${0##*/} -i [opt] [S|M|L] [PROMPT]
 	${0##*/} -i [opt] [S|M|L] [INPUT_PNG_PATH]
 	${0##*/} -l [MODEL_NAME]
 	${0##*/} -w [opt] [AUDIO_FILE] [LANG] [PROMPT]
+	${0##*/} -ccw [opt] [LANG]
 
 
 	All positional arguments are read as a single PROMPT. If the
 	chosen model requires an INSTRUCTION and INPUT prompts, first
-	positional argument is taken as INSTRUCTIONS and the following
+	positional argument is taken as INSTRUCTION and the following
 	ones as INPUT or PROMPT.
 
 	Set option -c to start the chatbot via the text completion
 	endpoint and record the conversation. This option accepts various
 	models, defaults to \`text-davinci-003' if none set.
 	
-	Set option -cc to start the chatbot via the chat endpoint,
-	currenly only models are \`gpt-3.5-turbo' and \`gpt-3.5-turbo-0301'
+	Set option -cc to start the chatbot via the chat endpoint and
+	use the turbo models.
 
 	Set -C (with -cc) to resume from last history session.
 
 	Option -e sets the \`edits' endpoint. That endpoint requires
-	both INSTRUCTIONS and INPUT prompts. This option requires
+	both INSTRUCTION and INPUT prompts. This option requires
 	setting an \`edits model'.
 
 	Option -i generates images according to PROMPT. If first
@@ -95,6 +100,10 @@ SYNOPSIS
 	Optionally, set a two letter input language (ISO-639-1) as second
 	argument. A prompt may also be set after language (must be in the
 	same language as the audio).
+
+	Combine -w with -cc to start chat with voice input (whisper)
+	support. Output may be piped to a voice synthesiser such as
+	\`espeakng', to have full voice in and out.
 
 	Stdin is supported when there is no positional arguments left
 	after option parsing. Stdin input sets a single PROMPT.
@@ -119,8 +128,7 @@ COMPLETIONS
 	of the conversation and works with a variety of models.
 
 	Set option -cc to use the chat completion endpoint. Works the
-	same as the text completion chat, however the only available
-	models are \`gpt-3.5-turbo' and \`gpt-3.5-turbo-0301'.
+	same as the text completion chat (turbo models).
 
 	The defaults chat format is \`Q & A'. A name such as \`NAME:'
 	may be introduced as interlocutor. Setting only \`:' works as
@@ -223,7 +231,7 @@ ENVIRONMENT
 	CHATGPTRC 	Path to user ${0##*/} configuration.
 			Defaults=${CHATGPTRC:-${CONFFILE/$HOME/"~"}}
 
-	CHATINSTR 	Initial instruction set for the chatbot.
+	INSTRUCTION 	Initial instruction set for the chatbot.
 
 	OPENAI_API_KEY
 	OPENAI_KEY 	Set your personal (free) OpenAI API key.
@@ -236,7 +244,7 @@ ENVIRONMENT
 LIMITS
 	For most models this is 2048 tokens, or about 1500 words).
 	Davici model limit is 4000 tokens (~3000 words) and for
-	gpt-3.5-turbo models it is 4096 tokens.
+	turbo models it is 4096 tokens.
 
 	Free trial users
 	Text & Embedding        Codex          Edit        Image
@@ -262,8 +270,8 @@ BUGS
 
 
 REQUIREMENTS
-	A free OpenAI GPTChat key. Ksh93, Bash or Zsh. cURL. JQ and
-	ImageMagick are optionally required.
+	A free OpenAI GPTChat key. Ksh93, Bash or Zsh. cURL. JQ,
+	ImageMagick, and Sox/Alsa-tools/FFmpeg are optionally required.
 
 
 OPTIONS
@@ -284,7 +292,7 @@ OPTIONS
 	-k [KEY] 	Set API key (free).
 	-l [MODEL] 	List models or print details of a MODEL.
 	-L [FILEPATH] 	Set a logfile.
-	-m [MOD_NAME] 	Set a model name, check with -l.
+	-m [MODEL] 	Set a model name, check with -l.
 	-m [NUM] 	Set model by index NUM:
 		  # Completions           # Moderation
 		  0.  text-davinci-003    6.  text-moderation-latest
@@ -295,7 +303,8 @@ OPTIONS
 		  4.  code-davinci-002    # Chat
 		  5.  code-cushman-001    10. gpt-3.5-turbo
 	-n [NUM] 	Set number of results. Defaults=$OPTN.
-	-p [VAL] 	Set top_p value (0.0 - 1.0). Defaults=$OPTP.
+	-p [VAL] 	Set top_p value (0.0 - 1.0). Defaults=${OPTP:-unset}.
+	-S [INSTR|FILE] Set an instructions prompt.
 	-t [VAL] 	Set temperature value (0.0 - 2.0). Defaults=$OPTT.
 	-vv 		Less verbose in chat mode.
 	-VV 		Pretty-print request body. Set twice to dump raw.
@@ -346,7 +355,7 @@ function set_model_epnf
 		image-var) 	EPN=4;;
 		image) 		EPN=3;;
 		*whisper*) 		EPN=7;;
-		gpt-*) 		EPN=6 ;((OPTC)) && OPTC=2;;
+		*turbo*) 		EPN=6 ;((OPTC)) && OPTC=2;;
 		code-*) 	case "$1" in
 					*search*) 	EPN=5 OPTEMBED=1;;
 					*edit*) 	EPN=2 OPTE=1;;
@@ -384,7 +393,7 @@ function block_printf
 		typeset REPLY ;read
 	else	jq -r '.instruction//empty, .input//empty, .prompt//(.messages[]|"\(.role):\t\(.content)")//empty' <<<"$BLOCK" \
 		|| printf '%s\n' "$BLOCK"
-	fi
+	fi >&2
 }
 
 #prompt confirmation prompt
@@ -548,7 +557,7 @@ function set_sizef
 #command run feedback
 function cmd_verf
 {
-	((OPTV)) || printf '%-11s => %s\n' "$1" "$2" >&2
+	((OPTV)) || printf '%-11s => %s\n' "$1" "${2:-unset}" >&2
 }
 
 #check if input is a command
@@ -564,10 +573,12 @@ function check_cmdf
 		-a*|pre*|presence*)
 			set -- "${*//[!0-9.]}" ;OPTA="${*:-$OPTA}"
 			fix_dotf OPTA  ;cmd_verf 'Presence' $OPTA
+			set_optsf
 			;;
 		-A*|freq*|frequency*)
 			set -- "${*//[!0-9.]}" ;OPTAA="${*:-$OPTAA}"
 			fix_dotf OPTAA ;cmd_verf 'Frequency' $OPTAA
+			set_optsf
 			;;
 		-c|br|break|session)
 			break_sessionf
@@ -593,6 +604,7 @@ function check_cmdf
 		-p*|top*)
 			set -- "${*//[!0-9.]}" ;OPTP="${*:-$OPTP}"
 			fix_dotf OPTP  ;cmd_verf 'Top P' $OPTP
+			set_optsf
 			;;
 		-t*|temp*|temperature*)
 			set -- "${*//[!0-9.]}" ;OPTT="${*:-$OPTT}"
@@ -720,18 +732,148 @@ function usr_logf
 	printf '%s\n\n' "$(date -R 2>/dev/null||date)" "$@" > "$USRLOG"
 }
 
+#optional settings
+function set_optsf
+{
+	[[ -n $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA," || OPTA_OPT=
+	[[ -n $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA," || OPTAA_OPT=
+	[[ -n $OPTP ]] && OPTP_OPT="\"top_p\": $OPTP," || OPTP_OPT=
+	
+	[[ -n ${OPTT#0} ]] && [[ -n ${OPTP#1} ]] \
+	&& printf 'Warning: %s\n' "temperature and top_p both set" >&2
+}
+
+#record mic
+#usage: recordf [filename]
+function recordf
+{
+	typeset termux pid REPLY
+
+	[[ -e $1 ]] && rm -- "$1"
+	if ((!OPTV))
+	then 	printf '\r%s\n\n' '*** Press any key to START recording ***' >&2
+		read -r -n ${ZSH_VERSION:+-k} 1
+	fi ;printf '%s\n' '*** Press any key to STOP recording ***' >&2
+
+	if command -v termux-microphone-record >/dev/null 2>&1
+	then 	termux=1
+		termux-microphone-record -c 1 -l 0 -f "$1" &
+	elif command -v sox  >/dev/null 2>&1
+	then 	#sox
+		rec "$1" &
+	elif command -v arecord  >/dev/null 2>&1
+	then 	#alsa-utils
+		arecord -i "$1" &
+	else 	#ffmpeg
+		ffmpeg -f alsa -i pulse -ac 1 -y "$1" &
+	fi
+	pid=$! ;read x
+	[[ -n $termux ]] && termux-microphone-record -q \
+	|| kill -INT $pid
+	wait ;return 0
+}
+
+#whisper
+function whisperf
+{
+	typeset file lang REPLY
+	if [[ ${1:-mp3} != *@(mp3|mp4|mpeg|mpga|m4a|wav|webm) ]]
+	then 	printf 'Err: %s\n' 'file format not supported' >&2 ;exit 1
+	elif [[ ! -e $1 ]]
+	then 	printf '%s ' 'Record input? [Y/n] ' >&2
+		read -r -n ${ZSH_VERSION:+-k} 1
+		case "$REPLY" in
+			[AaNnQq]) 	:;;
+			*) 		file="$FILEINW"
+					recordf "$FILEINW";;
+		esac
+		if [[ -z $file ]]
+		then 	printf 'Err: %s\n' 'audio file required' >&2
+			exit 1
+		fi
+	else 	file="$1" ;shift
+	fi ;[[ -e $1 ]] && shift  #get rid of eventual second filename
+	#set language ISO-639-1 (two letters)
+	if [[ $1 = [a-z][a-z] ]]
+	then 	lang="-F language=$1"
+		((OPTV)) || printf 'Audio language -- %s\n' "$1" >&2
+		shift
+	fi
+	#set a prompt
+	[[ -n ${*//@([$IFS]|\\[ntrvf])} ]] && set -- -F prompt="$(escapef "$*")"
+	prompt_audiof "$file" $lang "$@"
+	jq -r '.text' "$FILE" || cat -- "$FILE"
+}
+
+#image variations
+function imgvarf
+{
+	[[ -e ${1:?input PNG path required} ]] || exit
+	if command -v magick >/dev/null 2>&1  #convert img to 'square png'
+	then 	if [[ $1 != *.[Pp][Nn][Gg] ]] ||
+			((! $(magick identify -format '%[fx:(h == w)]' "$1") ))
+		then 	magick convert "${1}" -gravity Center -extent 1:1 "${FILEIN}" &&
+			set  -- "${FILEIN}" "${@:2}"
+		fi
+		#https://legacy.imagemagick.org/Usage/resize/
+	fi
+	prompt_imgvarf "$1"
+	prompt_imgprintf
+}
+
+#image generations
+function imggenf
+{
+	BLOCK="{
+		\"prompt\": \"${*:?IMG PROMPT ERR}\",
+		\"size\": \"$OPTS\",
+		\"n\": $OPTN,
+		\"response_format\": \"$OPTI_FMT\"
+	}"
+	promptf
+	prompt_imgprintf
+}
+
+#embeds
+function embedf
+{
+	BLOCK="{
+		\"model\": \"$MOD\",
+		\"input\": \"${*:?INPUT ERR}\",
+		\"temperature\": $OPTT, $OPTP_OPT
+		\"max_tokens\": $OPTMAX,
+		\"n\": $OPTN
+	}"
+	promptf
+	prompt_printf
+}
+
+#edits
+function editf
+{
+	BLOCK="{
+		\"model\": \"$MOD\",
+		\"instruction\": \"${1:-${INSTRUCTION:?EDIT MODE ERR}}\",
+		\"input\": \"${@:2}\",
+		\"temperature\": $OPTT, $OPTP_OPT
+		\"n\": $OPTN
+	}"
+	promptf
+	prompt_printf
+}
+
 
 #parse opts
-while getopts a:A:cCefhHiIjlL:m:n:kp:t:vVxwz0123456789 c
+while getopts a:A:cCefhHiIjlL:m:n:kp:S:t:vVxwz0123456789 c
 do 	fix_dotf OPTARG
 	case $c in
 		[0-9]) 	OPTMAX=$OPTMAX$c;;
 		a) 	OPTA=$OPTARG;;
 		A) 	OPTAA=$OPTARG;;
-		c) 	((OPTC)) && OPTM=10 ;((OPTC++));;
+		c) 	((OPTC++));;
 		C) 	((OPTRESUME++));;
 		e) 	OPTE=1;;
-		f$OPTF) 	unset CHATINSTR OPTA OPTAA OPTMINI
+		f$OPTF) 	unset INSTRUCTION CHATINSTR OPTA OPTAA OPTMINI
 			OPTF=1 . "$0" "$@" ;exit;;
 		h) 	printf '%s\n' "$MAN" ;exit ;;
 		H) 	__edf "$FILECHAT" ;exit ;;
@@ -741,7 +883,7 @@ do 	fix_dotf OPTARG
 		L) 	OPTLOG=1 USRLOG=$OPTARG
 			cmd_verf 'Log file' "\`\`$USRLOG''"
 			;;
-		m) 	OPTMSET=1
+		m) 	OPTMARG="$OPTARG"
 			if [[ $OPTARG = *[a-zA-Z]* ]]
 			then 	MOD=$OPTARG  #set model name
 			else 	OPTM=$OPTARG #set one pre defined model number
@@ -749,11 +891,15 @@ do 	fix_dotf OPTARG
 		n) 	OPTN=$OPTARG ;;
 		k) 	OPENAI_KEY=$OPTARG;;
 		p) 	OPTP=$OPTARG;;
+		S) 	if [[ -e "$OPTARG" ]]
+			then 	INSTRUCTION=$(<"$OPTARG")
+			else 	INSTRUCTION="$OPTARG"
+			fi;;
 		t) 	OPTT=$OPTARG;;
 		v) 	((++OPTV));;
 		V) 	((++OPTVV));;  #debug
 		x) 	OPTX=1;;
-		w) 	OPTW=1 MOD=${MODELS[12]};;
+		w) 	OPTW=1;;
 		z) 	OPTZ=1;;
 		\?) 	exit 1;;
 	esac
@@ -762,11 +908,7 @@ shift $((OPTIND -1))
 
 OPTMAX=${OPTMAX:-$OPTMM}
 OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
-((OPTRESUME)) && { 	((OPTC)) || ((OPTC++)) ;}
-((OPTC)) && ((OPTE+OPTI)) && OPTC=  ;((OPTL+OPTZ)) && OPTX= 
-[[ -n ${OPTT#0} ]] && [[ -n ${OPTP#1} ]] && printf 'Warning: %s\n' "temperature and top_p both set" >&2
-[[ -n $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA,"
-[[ -n $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA,"
+((OPTC)) && ((OPTE+OPTI)) && OPTC=  ;((OPTL+OPTZ)) && OPTX= ;set_optsf
 if ((OPTI))
 then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
 	if set_sizef "$1"
@@ -777,7 +919,14 @@ then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
 	#set file upload, image variations
 	[[ -e "$1" ]] && OPTII=1 MOD=image-var
 fi
-((OPTE)) && ((!OPTMSET)) && OPTM=8
+if ((OPTE)) && [[ -z $OPTMARG ]]
+then 	OPTM=8
+elif ((OPTW)) && ((!OPTC))
+then 	OPTM=12
+elif ((OPTC>1))
+then 	OPTM=10
+
+fi
 MOD="${MOD:-${MODELS[OPTM]}}"
 set_model_epnf "$MOD"
 
@@ -792,85 +941,38 @@ done ;unset arg init
 mkdir -p "$CACHEDIR" || exit
 command -v jq >/dev/null 2>&1 || function jq { 	false ;}
 
-if ((OPTZ))
+if ((OPTZ))        #last received json
 then 	lastjsonf
-elif ((OPTL))
+elif ((OPTL))      #model list
 then 	list_modelsf "$@"
-elif ((OPTW))  #audio transcribe
-then 	if [[ $1 != *@(mp3|mp4|mpeg|mpga|m4a|wav|webm) ]]
-	then 	printf 'Err: %s\n' 'file format not supported' >&2 ;exit 1
-	elif [[ ! -e $1 ]]
-	then 	printf 'Err: %s\n' 'audio file required' >&2 ;exit 1
-	else 	file="$1" ;shift
-	fi
-	#set language ISO-639-1 (two letters)
-	if [[ $1 = [a-z][a-z] ]]
-	then 	lang="-F language=$1"
-		((OPTV)) || printf 'Audio language -- %s\n' "$1" >&2
-		shift
-	fi
-	#set a prompt
-	(($#)) && set -- -F prompt="$(escapef "$*")"
-	prompt_audiof "$file" $lang "$@"
-	jq -r '.text' "$FILE" || cat -- "$FILE"
-	unset file lang
+elif ((OPTW)) && ((!OPTC))  #audio transcribe
+then 	whisperf "$@"
 elif ((OPTII))     #image variations
-then 	[[ -e ${1:?input PNG path required} ]] || exit
-	if command -v magick >/dev/null 2>&1  #convert img to 'square png'
-	then 	if [[ $1 != *.[Pp][Nn][Gg] ]] ||
-			((! $(magick identify -format '%[fx:(h == w)]' "$1") ))
-		then 	magick convert "${1}" -gravity Center -extent 1:1 "${FILEIN}" &&
-			set  -- "${FILEIN}" "${@:2}"
-		fi
-		#https://legacy.imagemagick.org/Usage/resize/
-	fi
-	prompt_imgvarf "$1"
-	prompt_imgprintf
+then 	imgvarf "$@"
 elif ((OPTI))      #image generations
-then 	BLOCK="{
-		\"prompt\": \"${*:?IMG PROMPT ERR}\",
-		\"size\": \"$OPTS\",
-		\"n\": $OPTN,
-		\"response_format\": \"$OPTI_FMT\"
-	}"
-	promptf
-	prompt_imgprintf
+then 	imggenf "$@"
 elif ((OPTEMBED))  #embeds
-then 	BLOCK="{
-		\"model\": \"$MOD\",
-		\"input\": \"${*:?INPUT ERR}\",
-		\"temperature\": $OPTT,
-		\"top_p\": $OPTP,
-		\"max_tokens\": $OPTMAX,
-		\"n\": $OPTN
-	}"
-	promptf
-	prompt_printf
+then 	embedf "$@"
 elif ((OPTE))      #edits
-then 	BLOCK="{
-		\"model\": \"$MOD\",
-		\"instruction\": \"${1:?EDIT MODE ERR}\",
-		\"input\": \"${@:2}\",
-		\"temperature\": $OPTT,
-		\"top_p\": $OPTP,
-		\"n\": $OPTN
-	}"
-	promptf
-	prompt_printf
+then 	editf "$@"
 else               #completions
-	((${#CHATINSTR})) && ((!OPTC)) && [[ -z ${*//@([$IFS]|\\[ntrvf])} ]] && [[ -n ${ERR:?PROMPT} ]]
+	if ((OPTW))  #whisper input
+	then 	unset OPTX
+		INPUT_ORIG=("$@") ;set --
+	fi
+	((${#INSTRUCTION})) && ((!OPTC)) && [[ -z ${*//@([$IFS]|\\[ntrvf])} ]] && [[ -n ${ERR:?PROMPT} ]]
 	((OPTRESUME)) || { 	((OPTC)) && break_sessionf ;}
-	if ((${#CHATINSTR}))  #chatbot instructions
-	then 	CHATINSTR=$(escapef "$CHATINSTR")
+	if ((${#INSTRUCTION}))  #chatbot instructions
+	then 	INSTRUCTION=$(escapef "$INSTRUCTION")
 		if ((!OPTC)) && (($#))  #one-shot
-		then 	OPTV=1 token_prevf "$CHATINSTR$*"
+		then 	OPTV=1 token_prevf "$INSTRUCTION\\n\\n$*"
 			if ((EPN==6))
-			then 	set -- "$(fmt_ccf "$CHATINSTR" system),$(fmt_ccf "${*##*([$IFS:])}" user)"
-			else 	set -- "$CHATINSTR\\n\\n${*##*([$IFS:])}"
+			then 	set -- "$(fmt_ccf "$INSTRUCTION" system),$(fmt_ccf "${*##*([$IFS:])}" user)"
+			else 	set -- "$INSTRUCTION\\n\\n${*##*([$IFS:])}"
 			fi
 		elif ((!OPTRESUME)) && ((OPTC))
-		then 	push_tohistf ": $CHATINSTR"
-			((OLD_TOTAL+=$(__tiktokenf ": $CHATINSTR" "4") ))
+		then 	push_tohistf ": $INSTRUCTION"
+			((OLD_TOTAL+=$(__tiktokenf ": $INSTRUCTION" "4") ))
 		fi
 	fi
 	while :
@@ -941,7 +1043,13 @@ else               #completions
 			if [[ ${*//[$'\t\n'\"]} = *($TYPE_GLOB:) ]] \
 				|| [[ ${REC_OUT//[$'\t\n'\"]} = *($TYPE_GLOB:) ]]
 			then 	while printf '\n%s[%s]: ' "Prompt" "${SET_TYPE:-$Q_TYPE}" >&2
-				do 	if [[ -n $ZSH_VERSION ]]
+				do 	if ((OPTW))
+					then 	recordf "$FILEINW"
+						REPLY=$(MOD="${MODELS[12]}"
+							set_model_epnf "$MOD"
+							whisperf "$FILEINW" "${INPUT_ORIG[@]}"
+						) ;((OPTV)) || printf '%s\n' "$REPLY" >&2
+					elif [[ -n $ZSH_VERSION ]]
 					then 	unset REPLY
 						if vared -p "Prompt[${SET_TYPE:-$Q_TYPE}]: " -eh -c REPLY
 						then 	print -s - "$REPLY"
@@ -988,8 +1096,7 @@ else               #completions
 		fi
 		BLOCK="$BLOCK
 			\"model\": \"$MOD\",
-			\"temperature\": $OPTT,
-			\"top_p\": $OPTP, $OPTA_OPT $OPTAA_OPT
+			\"temperature\": $OPTT, $OPTP_OPT $OPTA_OPT $OPTAA_OPT
 			\"max_tokens\": $OPTMAX,
 			\"n\": $OPTN
 		}"

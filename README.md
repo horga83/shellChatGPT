@@ -18,8 +18,7 @@ Shell wrapper for OpenAI API for ChatGPT and DALL-E.
 % chatgpt.sh  What are the best Linux distros\?
 Prompt: 6 words; Max tokens: 1024
 ######################################## 100.0%
-Object: text_completion
-Model_: text-davinci-003
+Model_: text-davinci-003 (text_completion)
 Usage_: 8 + 52 = 60 tokens
 
 
@@ -78,15 +77,23 @@ Single text completion:
 Text completion with Curie model:
 
     chatgpt.sh -mtext-curie-001 "Hello there! What is your name?"
-    chatgpt.sh -m1 "Hello there! What is your name?"
+    chatgpt.sh -m1 "List biggest cities in the world"
 
-Chat completion, sets temperature:
+Chat completion, set temperature:
 
     chatgpt.sh -cc -t0.7 "Hello there! What is your name?"
 
-Text completion chat mode, use visual editor instead of shell `read` or `vared`:
+Text/chat completion, use visual editor instead of shell `read` or `vared` (reuse initial text from positional arguments):
 
-    chatgpt.sh -cx -t0.7 "Hello there! What is your name?"
+    chatgpt.sh -cx "Alice was visiting Bob when John arrived  "
+
+Chat completion with voice as input:
+
+    chatgpt.sh -ccw
+
+Chat in portuguese with voice in and voice out (pipe output to voice synthesiser):
+
+    chatgpt.sh -ccw pt | espeakng -v pt-br
 
 Use the \`edits' endpoint, this option requires two or more prompts,
 instructions (required) and the proper (optional):
@@ -108,6 +115,10 @@ Generate transcription from audio file:
     chatgpt.sh -w path/to/audio.mp3
     chatgpt.sh -w path/to/audio.mp3 "en" "This is a poem about X."
 
+Generate transcription from input record, set portuguese as input language:
+
+    chatgpt.sh -w pt
+
 
 ## Help page
 
@@ -118,53 +129,58 @@ Below is a copy of it.
 
 ### NAME
 
-    chatgpt.sh -- ChatGPT/DALL-E Shell Wrapper
+	chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
 
 
 ### SYNOPSIS
 
 	chatgpt.sh [-m [MODEL_NAME|NUMBER]] [opt] [PROMPT]
-	chatgpt.sh [-m [MODEL_NAME|NUMBER]] [opt] [INSTRUCTIONS] [INPUT]
-	chatgpt.sh -e [opt] [INSTRUCTIONS] [INPUT]
+	chatgpt.sh [-m [MODEL_NAME|NUMBER]] [opt] [INSTRUCTION] [INPUT]
+	chatgpt.sh -e [opt] [INSTRUCTION] [INPUT]
 	chatgpt.sh -i [opt] [S|M|L] [PROMPT]
 	chatgpt.sh -i [opt] [S|M|L] [INPUT_PNG_PATH]
 	chatgpt.sh -l [MODEL_NAME]
 	chatgpt.sh -w [opt] [AUDIO_FILE] [LANG] [PROMPT]
+	chatgpt.sh -ccw [opt] [LANG]
 
 
 All positional arguments are read as a single PROMPT. If the
 chosen model requires an INSTRUCTION and INPUT prompts, first
-positional argument is taken as INSTRUCTIONS and the following
+positional argument is taken as INSTRUCTION and the following
 ones as INPUT or PROMPT.
 
-Set `option -c` to start the chatbot via the text completion
+Set option -c to start the chatbot via the text completion
 endpoint and record the conversation. This option accepts various
-models, defaults to `text-davinci-003` if none set.
+models, defaults to \`text-davinci-003' if none set.
 
-Set `option -cc` to start the chatbot via the chat endpoint,
-currenly only models are `gpt-3.5-turbo` and `gpt-3.5-turbo-0301`.
+Set option -cc to start the chatbot via the chat endpoint and
+use the turbo models.
 
-Set `option -C` (with `-cc`) to resume from last history session.
+Set -C (with -cc) to resume from last history session.
 
-`Option -e` sets the \`edits' endpoint. That endpoint requires
-both INSTRUCTIONS and INPUT prompts. This option requires
+Option -e sets the \`edits' endpoint. That endpoint requires
+both INSTRUCTION and INPUT prompts. This option requires
 setting an \`edits model'.
 
-`Option -i` generates images according to PROMPT. If first
+Option -i generates images according to PROMPT. If first
 positional argument is a picture file, then generate variation
 of it. A size of output image may se set, such as S, M or L.
 
-`Option -w` transcribes audio from mp3, mp4, mpeg, mpga, m4a, wav,
+Option -w transcribes audio from mp3, mp4, mpeg, mpga, m4a, wav,
 and webm files. First positional argument must be an audio file.
 Optionally, set a two letter input language (ISO-639-1) as second
 argument. A prompt may also be set after language (must be in the
 same language as the audio).
 
+Combine -w with -cc to start chat with voice input (whisper)
+support. Output may be piped to a voice synthesiser such as
+\`espeakng', to have full voice experience.
+
 Stdin is supported when there is no positional arguments left
 after option parsing. Stdin input sets a single PROMPT.
 
-User configuration is kept at `~/.chatgpt.conf`.
-Script cache is kept at `~/.cache/chatgptsh/`.
+User configuration is kept at \`~/.chatgpt.conf'.
+Script cache is kept at \`~/.cache/chatgptsh'.
 
 A personal (free) OpenAI API is required, set it with -k or
 see ENVIRONMENT section.
@@ -180,14 +196,13 @@ API docs at <https://beta.openai.com/docs/guides>.
 Given a prompt, the model will return one or more predicted
 completions. It can be used a chatbot.
 
-Set `option -c` to enter text completion chat and keep a history
+Set option -c to enter text completion chat and keep a history
 of the conversation and works with a variety of models.
 
-Set `option -cc` to use the chat completion endpoint. Works the
-same as the text completion chat, however the only available
-models are `gpt-3.5-turbo` and `gpt-3.5-turbo-0301`.
+Set option -cc to use the chat completion endpoint. Works the
+same as the text completion chat (turbo models).
 
-The defaults chat format is `Q & A`. A name such as \`NAME:'
+The defaults chat format is \`Q & A'. A name such as \`NAME:'
 may be introduced as interlocutor. Setting only \`:' works as
 an instruction prompt, send an empty prompt or complete the
 previous answer prompt.
@@ -207,14 +222,12 @@ a value in the new prompt (e.g. \`!temp0.7', \`!mod1'):
 	-v   |  !ver	  Set/unset verbose.
 	-x   |  !ed 	  Set/unset text editor.
 	!q   |  !quit	  Exit.
-	
-
-	To change chat history, the history file must be edited with
-	`!hist'. Delete entries or comment them out with `#'.
 
 
-#### Prompt Design
+To change chat history, the history file must be edited with
+\`!hist'. Delete entries or comment them out with \`#'.
 
+Prompt Design
 Make a good prompt. May use bullets for multiple questions in
 a single prompt. Write \`act as [technician]', add examples of
 expected results.
@@ -229,17 +242,28 @@ with the bot identity and how it should behave as, such as:
 	prompt>	\": The following is a conversation with an AI
 		  assistant. The assistant is helpful, creative,
 		  clever, and friendly.\"
- 	
+
 	reply_> \"A: Hello! How can I help you?\"
- 	
+
 	prompt> \"Q: Hello, what is your name?\"
 
 Also see section ENVIRONMENT to set defaults chatbot instructions.
 For more on prompt design, see:
-<https://platform.openai.com/docs/guides/completion/prompt-design>
-<https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
 
-For details on settings, see <https://beta.openai.com/docs/guides>.
+    <https://platform.openai.com/docs/guides/completion/prompt-design>
+    <https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
+
+
+    Settings
+    Temperature 	number 	Optional 	Defaults to 1
+    
+    Lowering temperature means it will take fewer risks, and
+    completions will be more accurate and deterministic. Increasing
+    temperature will result in more diverse completions.
+    Ex: low-temp:  We’re not asking the model to try to be creative
+    with its responses – especially for yes or no questions.
+
+For more on settings, see <https://beta.openai.com/docs/guides>.
 
 
 ### EDITS
@@ -270,6 +294,7 @@ input image will be converted to square before upload.
 
 
 ### AUDIO / WHISPER
+
 Transcribes audio into the input language. May set a two letter
 ISO-639-1 language as the second positional parameter. A prompt
 may also be set after language to help the model.
@@ -280,14 +305,14 @@ is available.
 
 ### ENVIRONMENT
 
-	CHATGPTRC 	Path to user chatgpt.sh configuration.
+    CHATGPTRC 	Path to user chatgpt.sh configuration.
 			Defaults=~/.chatgpt.conf
-	
-	CHATINSTR 	Initial instruction set for the chatbot.
-	
+
+	INSTRUCTION 	Initial instruction set for the chatbot.
+
 	OPENAI_API_KEY
 	OPENAI_KEY 	Set your personal (free) OpenAI API key.
-	
+
 	VISUAL
 	EDITOR 		Text editor for external prompt editing.
 			Defaults=vim
@@ -297,13 +322,13 @@ is available.
 
 For most models this is 2048 tokens, or about 1500 words).
 Davici model limit is 4000 tokens (~3000 words) and for
-gpt-3.5-turbo models it is 4096 tokens.
+turbo models it is 4096 tokens.
 
 	Free trial users
 	Text & Embedding        Codex          Edit        Image
-	          20 RPM       20 RPM        20 RPM
-	150,000 TPM   40,000 TPM   150,000 TPM   50 img/min
-	
+                  20 RPM       20 RPM        20 RPM
+             150,000 TPM   40,000 TPM   150,000 TPM   50 img/min
+
 	RPM 	(requests per minute)
 	TPM 	(tokens per minute)
 
@@ -325,8 +350,7 @@ Garbage in, garbage out.
 
 ### REQUIREMENTS
 
-A free OpenAI GPTChat key. Ksh93, Bash or Zsh. cURL. JQ and
-ImageMagick are optionally required.
+A free OpenAI GPTChat key. Ksh93, Bash or Zsh. cURL. JQ, ImageMagick, Sox/Ffmpeg are optionally required.
 
 
 ### OPTIONS
@@ -347,6 +371,7 @@ ImageMagick are optionally required.
 	-j 		Print raw JSON response data (debug with -VVj).
 	-k [KEY] 	Set API key (free).
 	-l [MODEL] 	List models or print details of a MODEL.
+	-L [FILEPATH] 	Set a logfile.
 	-m [MODEL] 	Set a model name, check with -l.
 	-m [NUM] 	Set model by index NUM:
 		  # Completions           # Moderation
@@ -358,11 +383,11 @@ ImageMagick are optionally required.
 		  4.  code-davinci-002    # Chat
 		  5.  code-cushman-001    10. gpt-3.5-turbo
 	-n [NUM] 	Set number of results. Defaults=1.
-	-p [VAL] 	Set top_p value (0.0 - 1.0). Defaults=1.
+	-p [VAL] 	Set top_p value (0.0 - 1.0). Defaults=unset.
+	-S [INSTR|FILE] Set an instructions prompt.
 	-t [VAL] 	Set temperature value (0.0 - 2.0). Defaults=0.
 	-vv 		Less verbose in chat mode.
 	-VV 		Pretty-print request body. Set twice to dump raw.
 	-x 		Edit prompt in text editor.
 	-w 		Transcribe audio file.
 	-z 		Print last response JSON data.
-
