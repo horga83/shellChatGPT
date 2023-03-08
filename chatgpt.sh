@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.7.2  2023  by mountaineerbr  GPL+3
+# v0.7.3  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -1045,7 +1045,7 @@ else               #completions
 			then 	while printf '\n%s[%s]: ' "Prompt" "${SET_TYPE:-$Q_TYPE}" >&2
 				do 	if ((OPTW))
 					then 	recordf "$FILEINW"
-						REPLY=$(MOD="${MODELS[12]}"
+						REPLY=$(MOD="${MODELS[12]}" OPTT=0
 							set_model_epnf "$MOD"
 							whisperf "$FILEINW" "${INPUT_ORIG[@]}"
 						) ;REPLY="${REPLY:-(EMPTY)}"
