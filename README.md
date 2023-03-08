@@ -239,13 +239,13 @@ replies may return lax but should stabilise on further promtps.
 Alternatively, one may try setting initial instructions prompt
 with the bot identity and how it should behave as, such as:
 
-	prompt>	\": The following is a conversation with an AI
+	prompt>	": The following is a conversation with an AI
 		  assistant. The assistant is helpful, creative,
-		  clever, and friendly.\"
+		  clever, and friendly."
 
-	reply_> \"A: Hello! How can I help you?\"
+	reply_> "A: Hello! How can I help you?"
 
-	prompt> \"Q: Hello, what is your name?\"
+	prompt> "Q: Hello, what is your name?"
 
 Also see section ENVIRONMENT to set defaults chatbot instructions.
 For more on prompt design, see:
