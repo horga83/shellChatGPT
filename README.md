@@ -8,7 +8,7 @@ Shell wrapper for OpenAI API for ChatGPT and DALL-E.
 - Follow up conversations
 - Generate images from text input
 - Generate variations of images
-- Record prompt voice, hear the answer back from the AI. 
+- Record prompt voice, hear the answer back from the AI
 - Choose amongst available models
 - Lots of command line options
 - Converts base64 JSON data to PNG image
