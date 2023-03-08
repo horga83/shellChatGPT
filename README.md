@@ -44,6 +44,7 @@ Usage_: 8 + 52 = 60 tokens
 - JQ (optional)
 - Imagemagick (optional)
 - Base64 (optional)
+- Sox/Arecord/FFmpeg (optional)
 
 
 ### Installation
