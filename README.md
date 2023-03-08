@@ -6,9 +6,9 @@ Shell wrapper for OpenAI API for ChatGPT and DALL-E.
 
 - GPT chat from the command line
 - Follow up conversations
-- Set any of multiple models available.
 - Generate images from text input
 - Generate variations of images
+- Record prompt voice, hear the answer back from the AI. 
 - Choose amongst available models
 - Lots of command line options
 - Converts base64 JSON data to PNG image
@@ -64,7 +64,7 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 - Chat mode may be configured with Instructions or not.
 - Set temperature value with `-t [VAL]` (0.0 to 2.0), defaults=0.
 - To set your model, run `chatgpt.sh -l` and then set option `-m [MODEL_NAME]`
-- Some models require a \`prompt' while others \`instructions' and \`input'
+- Some models require a `prompt` while others `instructions` and `input`
 - To generate images, set option -i and write your prompt
 - Make a variation of an image, set -i and an image path for upload
 
@@ -95,7 +95,7 @@ Chat in portuguese with voice in and voice out (pipe output to voice synthesiser
 
     chatgpt.sh -ccw pt | espeakng -v pt-br
 
-Use the \`edits' endpoint, this option requires two or more prompts,
+Use the `edits` endpoint, this option requires two or more prompts,
 instructions (required) and the proper (optional):
 
     chatgpt.sh -e "Fix spelling mistakes" "This promptr has spilling mistakes."
@@ -151,16 +151,16 @@ ones as INPUT or PROMPT.
 
 Set option -c to start the chatbot via the text completion
 endpoint and record the conversation. This option accepts various
-models, defaults to \`text-davinci-003' if none set.
+models, defaults to `text-davinci-003` if none set.
 
 Set option -cc to start the chatbot via the chat endpoint and
 use the turbo models.
 
 Set -C (with -cc) to resume from last history session.
 
-Option -e sets the \`edits' endpoint. That endpoint requires
+Option -e sets the `edits` endpoint. That endpoint requires
 both INSTRUCTION and INPUT prompts. This option requires
-setting an \`edits model'.
+setting an `edits model`.
 
 Option -i generates images according to PROMPT. If first
 positional argument is a picture file, then generate variation
@@ -174,13 +174,13 @@ same language as the audio).
 
 Combine -w with -cc to start chat with voice input (whisper)
 support. Output may be piped to a voice synthesiser such as
-\`espeakng', to have full voice experience.
+`espeakng`, to have full voice experience.
 
 Stdin is supported when there is no positional arguments left
 after option parsing. Stdin input sets a single PROMPT.
 
-User configuration is kept at \`~/.chatgpt.conf'.
-Script cache is kept at \`~/.cache/chatgptsh'.
+User configuration is kept at `~/.chatgpt.conf`.
+Script cache is kept at `~/.cache/chatgptsh`.
 
 A personal (free) OpenAI API is required, set it with -k or
 see ENVIRONMENT section.
@@ -202,13 +202,13 @@ of the conversation and works with a variety of models.
 Set option -cc to use the chat completion endpoint. Works the
 same as the text completion chat (turbo models).
 
-The defaults chat format is \`Q & A'. A name such as \`NAME:'
-may be introduced as interlocutor. Setting only \`:' works as
+The defaults chat format is `Q & A`. A name such as `NAME:`
+may be introduced as interlocutor. Setting only `:` works as
 an instruction prompt, send an empty prompt or complete the
 previous answer prompt.
 
 While in chat mode, type in one of the following commands, and
-a value in the new prompt (e.g. \`!temp0.7', \`!mod1'):
+a value in the new prompt (e.g. `!temp0.7`, `!mod1`):
 
 	!NUM |  !max 	  Set maximum tokens.
 	-a   |  !pre 	  Set presence.
@@ -225,14 +225,14 @@ a value in the new prompt (e.g. \`!temp0.7', \`!mod1'):
 
 
 To change chat history, the history file must be edited with
-\`!hist'. Delete entries or comment them out with \`#'.
+`!hist`. Delete entries or comment them out with `#`.
 
 Prompt Design
 Make a good prompt. May use bullets for multiple questions in
-a single prompt. Write \`act as [technician]', add examples of
+a single prompt. Write `act as [technician]`, add examples of
 expected results.
 
-For the chatbot, the only initial indication given is a \`Q: '
+For the chatbot, the only initial indication given is a `Q: `
 interlocutor flag. Without previous instructions, the first
 replies may return lax but should stabilise on further promtps.
 
@@ -249,10 +249,10 @@ with the bot identity and how it should behave as, such as:
 
 Also see section ENVIRONMENT to set defaults chatbot instructions.
 For more on prompt design, see:
-
-    <https://platform.openai.com/docs/guides/completion/prompt-design>
-    <https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
-
+<https://platform.openai.com/docs/guides/completion/prompt-design>
+<https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
+ 
+ 
 
     Settings
     Temperature 	number 	Optional 	Defaults to 1
@@ -268,7 +268,7 @@ For more on settings, see <https://beta.openai.com/docs/guides>.
 
 ### EDITS
 
-This endpoint is set with models with \`edit' in their name
+This endpoint is set with models with `edit` in their name
 or option -e.
 
 Editing works by specifying existing text as a prompt and an
@@ -344,7 +344,7 @@ quality output. This is because the API already incorporates
 trailing spaces in its dictionary of tokens.
 
 Language models are but a mirror of human written records, they
-do not \`understand' your questions or \`know' the answers to it.
+do not `understand` your questions or `know` the answers to it.
 Garbage in, garbage out.
 
 
