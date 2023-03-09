@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.7.4  2023  by mountaineerbr  GPL+3
+# v0.7.5  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -505,14 +505,14 @@ function token_prevf
 # divide_by  ^:less tokens  v:more tokens
 function __tiktokenf
 {
-	typeset punct str tkn by
-	punct="\!\"\#$%&'()*+,\-./:;<=>?@\[\\\]^_‘{|}~"
-
+	typeset str tkn by
 	by="$2"
+
 	# 1 TOKEN ~= 4 CHARS IN ENGLISH
-	#str="${1// }" str="${str//[$'\t\n']/xxxx}" str="${str//\\[ntrvf]/xxxx}" tkn=$((${#str}/${by:-4}))
+	#str="${1// }" str=${str//[$'\t\n']/xxxx} str="${str//\\[ntrvf]/xxxx}" tkn=$((${#str}/${by:-4}))
 	# 1 TOKEN ~= ¾ WORDS
-	set -- ${1//["$punct"]/x} ;tkn=$(( ($# * 4) / ${by:-3}))
+	set -- ${1//[[:punct:]]/x} ;tkn=$(( ($# * 4) / ${by:-3}))
+	
 	printf '%d\n' "$tkn" ;((tkn>0))
 }
 
@@ -755,7 +755,7 @@ function recordf
 	if ((!OPTV))
 	then 	printf '\r%s\n\n' '*** Press any key to START recording ***' >&2
 		read -r -n ${ZSH_VERSION:+-k} 1
-	fi ;printf '%s\n' '*** Press any key to STOP recording ***' >&2
+	fi ;printf '\r%s\n' '*** Press any key to STOP recording ***' >&2
 
 	if command -v termux-microphone-record >/dev/null 2>&1
 	then 	termux=1
@@ -1105,6 +1105,7 @@ else               #completions
 		}"
 		promptf
 		prompt_printf
+		[[ -t 1 ]] || OPTV=1 prompt_printf >&2
 
 		#record to hist file
 		if ((OPTC)) && {
