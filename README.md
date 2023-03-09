@@ -133,7 +133,7 @@ Below is a copy of it.
 
 ### NAME
 
-	chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
+	chatgpt.sh -- ChatGPT / DALL-E / Whisper  Shell Wrapper
 
 
 ### SYNOPSIS
@@ -369,25 +369,31 @@ A free OpenAI GPTChat key. Ksh93, Bash or Zsh. cURL. JQ, ImageMagick, Sox/Ffmpeg
 
 ### OPTIONS
 
-	-NUM 		Set maximum tokens. Max=4096, defaults=1024.
-	-a [VAL]	Set presence penalty  (completions; -2.0 - 2.0).
-	-A [VAL]	Set frequency penalty (completions; -2.0 - 2.0).
-	-c 		Chat mode in text completion, new session.
-	-cc 		Chat mode in chat endpoint, new session.
-	-C 		Continue from last session (with -cc).
+	-NUM 	 Set maximum tokens. Defaults=1024. Max=4096.
+	-a [VAL] Set presence penalty  (cmpls/chat, unset, -2.0 - 2.0).
+	-A [VAL] Set frequency penalty (cmpls/chat, unset, -2.0 - 2.0).
+	-b 	 Print log probabilities (cmpls, unset, 0 - 5).
+	-c 	 Chat mode in text completions, new session.
+	-cc 	 Chat mode in chat endpoint, new session.
+	-C 	 Continue from last session (with -cc, compls/chat).
 	-e [INSTRUCT] [INPUT]
-			Set Edit mode, model defaults=text-davinci-edit-001.
-	-f 		Skip sourcing user configuration file.
-	-h 		Print this help page.
-	-H 		Edit history file with text editor.
-	-i [PROMPT] 	Creates an image given a prompt.
-	-i [PNG_PATH] 	Creates a variation of a given image.
-	-j 		Print raw JSON response data (debug with -VVj).
-	-k [KEY] 	Set API key (free).
-	-l [MODEL] 	List models or print details of a MODEL.
-	-L [FILEPATH] 	Set a logfile.
-	-m [MODEL] 	Set a model name, check with -l.
-	-m [NUM] 	Set model by index NUM:
+		 Set Edit mode. Model Defaults=text-davinci-edit-001.
+	-f 	 Skip sourcing user configuration file.
+	-h 	 Print this help page.
+	-H 	 Edit history file with text editor.
+	-i [PROMPT]
+		 Creates an image given a prompt.
+	-i [PNG_PATH]
+		 Creates a variation of a given image.
+	-j 	 Print raw JSON response (debug with -jVV).
+	-k [KEY] Set API key (free).
+	-l [MODEL]
+		 List models or print details of a MODEL.
+	-L [FILEPATH]
+		 Set a logfile. Filepath is required.
+	-m [MODEL]
+		 Set a model name, check with -l. Model name is optional.
+	-m [NUM] Set model by index NUM:
 		  # Completions           # Moderation
 		  0.  text-davinci-003    6.  text-moderation-latest
 		  1.  text-curie-001      7.  text-moderation-stable
@@ -396,13 +402,16 @@ A free OpenAI GPTChat key. Ksh93, Bash or Zsh. cURL. JQ, ImageMagick, Sox/Ffmpeg
 		  # Codex                 9.  code-davinci-edit-001
 		  4.  code-davinci-002    # Chat
 		  5.  code-cushman-001    10. gpt-3.5-turbo
-	-n [NUM] 	Set number of results. Defaults=1.
-	-p [VAL] 	Set top_p value (0.0 - 1.0). Defaults=unset.
-	-S [INSTR|FILE] Set an instructions prompt.
-	-t [VAL] 	Set temperature value (0.0 - 2.0). Defaults=0.
-	-vv 		Less verbose in chat mode.
-	-VV 		Pretty-print request body. Set twice to dump raw.
-	-x 		Edit prompt in text editor.
-	-w 		Transcribe audio file into text.
-	-W 		Translate audio file into English text.
-	-z 		Print last response JSON data.
+	-n [NUM] Set number of results. Defaults=1.
+	-p [VAL] Set top_p value, nucleus sampling (cmpls/chat),
+		 (unset, 0.0 - 1.0).
+	-S [INSTRUCTION|FILE]
+		 Set an instruction prompt.
+	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
+		 (0.0 - 2.0, whisper 0.0 - 1.0). Defaults=0.7.
+	-vv 	 Less verbose in chat mode.
+	-VV 	 Pretty-print request body. Set twice to dump raw.
+	-x 	 Edit prompt in text editor.
+	-w 	 Transcribe audio file into text.
+	-W 	 Translate audio file into English text.
+	-z 	 Print last response JSON data.
