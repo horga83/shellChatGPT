@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.7.5  2023  by mountaineerbr  GPL+3
+# v0.7.6  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -751,11 +751,11 @@ function recordf
 {
 	typeset termux pid REPLY
 
-	[[ -e $1 ]] && rm -- "$1"
+	[[ -e $1 ]] && rm -- "$1"  #remove old audio file as some programmes don't overwrite
 	if ((!OPTV))
-	then 	printf '\r%s\n\n' '*** Press any key to START recording ***' >&2
+	then 	printf '\r%s\n%s\n\n' '*** Press any key to ***' '*** START recording  ***' >&2
 		read -r -n ${ZSH_VERSION:+-k} 1
-	fi ;printf '\r%s\n' '*** Press any key to STOP recording ***' >&2
+	fi ;printf '\r%s\n%s\n\n' '*** Press any key to ***' '***  STOP recording  ***' >&2
 
 	if command -v termux-microphone-record >/dev/null 2>&1
 	then 	termux=1
