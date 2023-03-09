@@ -172,7 +172,8 @@ Option -w transcribes audio from mp3, mp4, mpeg, mpga, m4a, wav,
 and webm files. First positional argument must be an audio file.
 Optionally, set a two letter input language (ISO-639-1) as second
 argument. A prompt may also be set after language (must be in the
-same language as the audio).
+same language as the audio). Option -W translates audio to English
+text.
 
 Combine -w with -cc to start chat with voice input (whisper)
 support. Output may be piped to a voice synthesiser such as
@@ -297,12 +298,21 @@ input image will be converted to square before upload.
 
 ### AUDIO / WHISPER
 
-Transcribes audio into the input language. May set a two letter
-ISO-639-1 language as the second positional parameter. A prompt
-may also be set after language to help the model.
+#### Transcriptions
 
-Setting temperature has an effect. Currently, only one audio model
-is available.
+Transcribes audio into the input language. Set a two letter
+ISO-639-1 language as the second positional parameter. A prompt
+may also be set as last positional parameter to help guide the
+model. This prompt should match the audio language.
+
+##### Translations
+
+Translates audio into into English. An optional text to guide
+the model's style or continue a previous audio segment is optional
+as last positional argument. This prompt should be in English.
+
+Setting temperature has an effect, the higher the more random.
+Currently, only one audio model is available.
 
 
 ### ENVIRONMENT
@@ -391,5 +401,6 @@ A free OpenAI GPTChat key. Ksh93, Bash or Zsh. cURL. JQ, ImageMagick, Sox/Ffmpeg
 	-vv 		Less verbose in chat mode.
 	-VV 		Pretty-print request body. Set twice to dump raw.
 	-x 		Edit prompt in text editor.
-	-w 		Transcribe audio file.
+	-w 		Transcribe audio file into text.
+	-W 		Translate audio file into English text.
 	-z 		Print last response JSON data.

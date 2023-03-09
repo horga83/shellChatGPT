@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.7.8  2023  by mountaineerbr  GPL+3
+# v0.7.9  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -69,8 +69,9 @@ SYNOPSIS
 	${0##*/} -i [opt] [S|M|L] [PROMPT]
 	${0##*/} -i [opt] [S|M|L] [INPUT_PNG_PATH]
 	${0##*/} -l [MODEL_NAME]
-	${0##*/} -w [opt] [AUDIO_FILE] [LANG] [PROMPT]
+	${0##*/} -w [opt] [AUDIO_FILE] [LANG] [PROMPT-LANG]
 	${0##*/} -ccw [opt] [LANG]
+	${0##*/} -W [opt] [AUDIO_FILE] [PROMPT-EN]
 
 
 	All positional arguments are read as a single PROMPT. If the
@@ -99,7 +100,8 @@ SYNOPSIS
 	and webm files. First positional argument must be an audio file.
 	Optionally, set a two letter input language (ISO-639-1) as second
 	argument. A prompt may also be set after language (must be in the
-	same language as the audio).
+	same language as the audio). Option -W translates audio to English
+	text.
 
 	Combine -w with -cc to start chat with voice input (whisper)
 	support. Output may be piped to a voice synthesiser such as
@@ -219,12 +221,19 @@ IMAGES / DALL-E
 
 
 AUDIO / WHISPER
-	Transcribes audio into the input language. May set a two letter
+	Transcriptions
+	Transcribes audio into the input language. Set a two letter
 	ISO-639-1 language as the second positional parameter. A prompt
-	may also be set after language to help the model.
+	may also be set as last positional parameter to help guide the
+	model. This prompt should match the audio language.
+
+	Translations
+	Translates audio into into English. An optional text to guide
+	the model's style or continue a previous audio segment is optional
+	as last positional argument. This prompt should be in English.
 	
-	Setting temperature has an effect. Currently, only one audio model
-	is available.
+	Setting temperature has an effect, the higher the more random.
+	Currently, only one audio model is available.
 
 
 ENVIRONMENT
@@ -309,7 +318,8 @@ OPTIONS
 	-vv 		Less verbose in chat mode.
 	-VV 		Pretty-print request body. Set twice to dump raw.
 	-x 		Edit prompt in text editor.
-	-w 		Transcribe audio file.
+	-w 		Transcribe audio file into text.
+	-W 		Translate audio file into English text.
 	-z 		Print last response JSON data."
 
 MODELS=(
@@ -343,7 +353,7 @@ ENDPOINTS=(
 	embeddings                #5
 	chat/completions          #6
 	audio/transcriptions      #7
-	audio/translations
+	audio/translations        #8
 )
 
 
@@ -354,7 +364,7 @@ function set_model_epnf
 	case "$1" in
 		image-var) 	EPN=4;;
 		image) 		EPN=3;;
-		*whisper*) 		EPN=7;;
+		*whisper*) 		((OPTWW)) && EPN=8 || EPN=7;;
 		*turbo*) 		EPN=6 ;((OPTC)) && OPTC=2;;
 		code-*) 	case "$1" in
 					*search*) 	EPN=5 OPTEMBED=1;;
@@ -757,8 +767,8 @@ function recordf
 {
 	typeset termux pid REPLY
 
-	[[ -e $1 ]] && rm -- "$1"  #remove old audio file as some programmes don't overwrite
-	if ((!OPTV))
+	[[ -e $1 ]] && rm -- "$1"  #remove old cache audio file as some programmes don't like overwritting
+	if ((!OPTV)) && ((N))
 	then 	printf '\r%s\n%s\n\n' '*** Press any key to ***' '*** START recording  ***' >&2
 		read -r -n ${ZSH_VERSION:+-k} 1
 	fi ;printf '\r%s\n%s\n\n' '*** Press any key to ***' '***  STOP recording  ***' >&2
@@ -775,8 +785,8 @@ function recordf
 	else 	#ffmpeg
 		ffmpeg -f alsa -i pulse -ac 1 -y "$1" &
 	fi
-	pid=$! ;read x
-	[[ -n $termux ]] && termux-microphone-record -q \
+	pid=$! ;read
+	((termux)) && termux-microphone-record -q \
 	|| kill -INT $pid
 	wait ;return 0
 }
@@ -785,26 +795,27 @@ function recordf
 function whisperf
 {
 	typeset file lang REPLY
-	if [[ ${1:-mp3} != *@(mp3|mp4|mpeg|mpga|m4a|wav|webm) ]]
-	then 	printf 'Err: %s\n' 'file format not supported' >&2 ;exit 1
-	elif [[ ! -e $1 ]]
+	if [[ ! -e $1 ]]
 	then 	printf '%s ' 'Record input? [Y/n] ' >&2
 		read -r -n ${ZSH_VERSION:+-k} 1
 		case "$REPLY" in
 			[AaNnQq]) 	:;;
-			*) 		file="$FILEINW"
-					recordf "$FILEINW";;
+			*) 	recordf "$FILEINW"
+				set -- "$FILEINW" "$@";;
 		esac
-		if [[ -z $file ]]
-		then 	printf 'Err: %s\n' 'audio file required' >&2
-			exit 1
-		fi
+	fi
+	if [[ ! -e $1 ]]
+	then 	printf 'Err: %s\n' 'audio file required' >&2 ;exit 1
+	elif [[ $1 != *@(mp3|mp4|mpeg|mpga|m4a|wav|webm) ]]
+	then 	printf 'Err: %s\n' 'file format not supported' >&2 ;exit 1
 	else 	file="$1" ;shift
 	fi ;[[ -e $1 ]] && shift  #get rid of eventual second filename
 	#set language ISO-639-1 (two letters)
 	if [[ $1 = [a-z][a-z] ]]
-	then 	lang="-F language=$1"
-		((OPTV)) || printf 'Audio language -- %s\n' "$1" >&2
+	then 	if ((!OPTWW))
+		then 	lang="-F language=$1"
+			((OPTV)) || printf 'Audio language -- %s\n' "$1" >&2
+		fi
 		shift
 	fi
 	#set a prompt
@@ -872,7 +883,7 @@ function editf
 
 
 #parse opts
-while getopts a:A:cCefhHiIjlL:m:n:kp:S:t:vVxwz0123456789 c
+while getopts a:A:cCefhHiIjlL:m:n:kp:S:t:vVxwWz0123456789 c
 do 	fix_dotf OPTARG
 	case $c in
 		[0-9]) 	OPTMAX="$OPTMAX$c";;
@@ -908,6 +919,7 @@ do 	fix_dotf OPTARG
 		V) 	((++OPTVV));;  #debug
 		x) 	OPTX=1;;
 		w) 	OPTW=1;;
+		W) 	OPTW=1 OPTWW=1;;
 		z) 	OPTZ=1;;
 		\?) 	exit 1;;
 	esac
@@ -1133,7 +1145,7 @@ else               #completions
 
 		set --
 		unset REPLY TKN_PREV MAX_PREV REC_OUT HIST PRE USER_TYPE HIST_C
-		((OPTC)) || break
-	done ;unset OLD_TOTAL
+		((++N)) ;((OPTC)) || break
+	done ;unset OLD_TOTAL N
 fi
 
