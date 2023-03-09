@@ -175,9 +175,9 @@ and webm files. First positional argument must be an audio file.
 Optionally, set a two letter input language (ISO-639-1) as second
 argument. A prompt may also be set after language (must be in the
 same language as the audio). Option -W translates audio to English
-text.
+text and a prompt in English may be set to guide the model.
 
-Combine -w with -cc to start chat with voice input (whisper)
+Combine -wW with -cc to start chat with voice input (whisper)
 support. Output may be piped to a voice synthesiser such as
 `espeakng`, to have full voice experience.
 

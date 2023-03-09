@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.7.12  2023  by mountaineerbr  GPL+3
+# v0.7.13  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -74,8 +74,9 @@ SYNOPSIS
 	${0##*/} -i [opt] [S|M|L] [INPUT_PNG_PATH]
 	${0##*/} -l [MODEL_NAME]
 	${0##*/} -w [opt] [AUDIO_FILE] [LANG] [PROMPT-LANG]
-	${0##*/} -ccw [opt] [LANG]
 	${0##*/} -W [opt] [AUDIO_FILE] [PROMPT-EN]
+	${0##*/} -ccw [opt] [LANG]
+	${0##*/} -ccW [opt]
 
 
 	All positional arguments are read as a single PROMPT. If the
@@ -105,9 +106,9 @@ SYNOPSIS
 	Optionally, set a two letter input language (ISO-639-1) as second
 	argument. A prompt may also be set after language (must be in the
 	same language as the audio). Option -W translates audio to English
-	text.
+	text and a prompt in English may be set to guide the model.
 
-	Combine -w with -cc to start chat with voice input (whisper)
+	Combine -wW with -cc to start chat with voice input (whisper)
 	support. Output may be piped to a voice synthesiser such as
 	\`espeakng', to have full voice in and out.
 
@@ -824,10 +825,14 @@ function recordf
 	else 	#ffmpeg
 		ffmpeg -f alsa -i pulse -ac 1 -y "$1" &
 	fi
-	pid=$! ;read
-	((termux)) && termux-microphone-record -q \
-	|| kill -INT $pid
+	pid=$!
+	trap "__recordkillf $pid $termux ;exit 2" INT HUP TERM EXIT
+	read ;__recordkillf $pid $termux ;trap "-" INT HUP TERM EXIT
 	wait ;return 0
+}
+function __recordkillf
+{
+	((${2:-0})) && termux-microphone-record -q || kill -INT $1
 }
 
 #whisper
@@ -1116,7 +1121,7 @@ else               #completions
 							set_model_epnf "$MOD"
 							whisperf "$FILEINW" "${INPUT_ORIG[@]}"
 						) ;REPLY="${REPLY:-(EMPTY)}"
-						((OPTV)) || printf '%s\n' "$REPLY" >&2
+						printf '%s\n' "$REPLY" >&2
 					elif [[ -n $ZSH_VERSION ]]
 					then 	unset REPLY
 						if vared -p "Prompt[${SET_TYPE:-$Q_TYPE}]: " -eh -c REPLY
