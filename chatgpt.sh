@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
-# chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.7.9  2023  by mountaineerbr  GPL+3
+# chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
+# v0.7.10  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -8,13 +8,13 @@
 #OPENAI_KEY=
 
 # DEFAULTS
-# Model
-OPTM=0
-# Endpoint
-EPN=0
+# General model
+#MOD=text-davinci-003
+# Audio model
+#MOD_AUDIO=whisper-1
 # Temperature
 OPTT=0
-# Top P
+# Top_p probability mass (nucleus sampling)
 #OPTP=1
 # Maximum tokens
 OPTMM=1024
@@ -32,7 +32,7 @@ OPTI_FMT=b64_json  #url
 #OPTMINI=
 
 # INSTRUCTION
-# Text and chat completions, and edits
+# Text and chat completions, and edits endpoints
 #INSTRUCTION="The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly."
 
 # CHATBOT INTERLOCUTORS
@@ -58,8 +58,10 @@ FILEIN="${CACHEDIR%/}/dalle_in.png"
 FILEINW="${CACHEDIR%/}/whisper_in.mp3"
 USRLOG="${OUTDIR%/}/${FILETXT##*/}"
 
+#obs: $OPTM and $EPN ought to be nought for default array index.
+
 MAN="NAME
-	${0##*/} -- ChatGPT/DALL-E/Whisper Shell Wrapper
+	${0##*/} -- ChatGPT / DALL-E / Whisper  Shell Wrapper
 
 
 SYNOPSIS
@@ -284,25 +286,31 @@ REQUIREMENTS
 
 
 OPTIONS
-	-NUM 		Set maximum tokens. Max=4096, defaults=$OPTMM.
-	-a [VAL]	Set presence penalty  (completions; -2.0 - 2.0).
-	-A [VAL]	Set frequency penalty (completions; -2.0 - 2.0).
-	-c 		Chat mode in text completion, new session.
-	-cc 		Chat mode in chat endpoint, new session.
-	-C 		Continue from last session (with -cc).
+	-NUM 	 Set maximum tokens. Defaults=$OPTMM. Max=4096.
+	-a [VAL] Set presence penalty  (cmpls/chat, unset, -2.0 - 2.0).
+	-A [VAL] Set frequency penalty (cmpls/chat, unset, -2.0 - 2.0).
+	-b 	 Print log probabilities (cmpls, unset, 0 - 5).
+	-c 	 Chat mode in text completions, new session.
+	-cc 	 Chat mode in chat endpoint, new session.
+	-C 	 Continue from last session (with -cc, compls/chat).
 	-e [INSTRUCT] [INPUT]
-			Set Edit mode, model defaults=text-davinci-edit-001.
-	-f 		Skip sourcing user configuration file.
-	-h 		Print this help page.
-	-H 		Edit history file with text editor.
-	-i [PROMPT] 	Creates an image given a prompt.
-	-i [PNG_PATH] 	Creates a variation of a given image.
-	-j 		Print raw JSON response data (debug with -VVj).
-	-k [KEY] 	Set API key (free).
-	-l [MODEL] 	List models or print details of a MODEL.
-	-L [FILEPATH] 	Set a logfile.
-	-m [MODEL] 	Set a model name, check with -l.
-	-m [NUM] 	Set model by index NUM:
+		 Set Edit mode. Model Defaults=text-davinci-edit-001.
+	-f 	 Skip sourcing user configuration file.
+	-h 	 Print this help page.
+	-H 	 Edit history file with text editor.
+	-i [PROMPT]
+		 Creates an image given a prompt.
+	-i [PNG_PATH]
+		 Creates a variation of a given image.
+	-j 	 Print raw JSON response (debug with -jVV).
+	-k [KEY] Set API key (free).
+	-l [MODEL]
+		 List models or print details of a MODEL.
+	-L [FILEPATH]
+		 Set a logfile. Filepath is required.
+	-m [MODEL]
+		 Set a model name, check with -l. Model name is optional.
+	-m [NUM] Set model by index NUM:
 		  # Completions           # Moderation
 		  0.  text-davinci-003    6.  text-moderation-latest
 		  1.  text-curie-001      7.  text-moderation-stable
@@ -311,16 +319,19 @@ OPTIONS
 		  # Codex                 9.  code-davinci-edit-001
 		  4.  code-davinci-002    # Chat
 		  5.  code-cushman-001    10. gpt-3.5-turbo
-	-n [NUM] 	Set number of results. Defaults=$OPTN.
-	-p [VAL] 	Set top_p value (0.0 - 1.0). Defaults=${OPTP:-unset}.
-	-S [INSTR|FILE] Set an instructions prompt.
-	-t [VAL] 	Set temperature value (0.0 - 2.0). Defaults=$OPTT.
-	-vv 		Less verbose in chat mode.
-	-VV 		Pretty-print request body. Set twice to dump raw.
-	-x 		Edit prompt in text editor.
-	-w 		Transcribe audio file into text.
-	-W 		Translate audio file into English text.
-	-z 		Print last response JSON data."
+	-n [NUM] Set number of results. Defaults=$OPTN.
+	-p [VAL] Set top_p value, nucleus sampling (cmpls/chat),
+		 (unset, 0.0 - 1.0).
+	-S [INSTRUCTION|FILE]
+		 Set an instruction prompt.
+	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
+		 (0.0 - 2.0, whisper 0.0 - 1.0). Defaults=$OPTT.
+	-vv 	 Less verbose in chat mode.
+	-VV 	 Pretty-print request body. Set twice to dump raw.
+	-x 	 Edit prompt in text editor.
+	-w 	 Transcribe audio file into text.
+	-W 	 Translate audio file into English text.
+	-z 	 Print last response JSON data."
 
 MODELS=(
 	#COMPLETIONS
@@ -365,7 +376,7 @@ function set_model_epnf
 		image-var) 	EPN=4;;
 		image) 		EPN=3;;
 		*whisper*) 		((OPTWW)) && EPN=8 || EPN=7;;
-		*turbo*) 		EPN=6 ;((OPTC)) && OPTC=2;;
+		*turbo*) 		EPN=6 ;((OPTC)) && OPTC=2 ;unset OPTB;;
 		code-*) 	case "$1" in
 					*search*) 	EPN=5 OPTEMBED=1;;
 					*edit*) 	EPN=2 OPTE=1;;
@@ -398,7 +409,7 @@ function promptf
 function block_printf
 {
 	if ((OPTVV>1))
-	then 	printf '%s\n' "$BLOCK"
+	then 	printf '%s\n%s\n' "${ENDPOINTS[EPN]}" "$BLOCK"
 		printf '%s ' '<CTRL-D> redo, <CTR-C> exit, or continue' >&2
 		typeset REPLY ;read
 	else	jq -r '.instruction//empty, .input//empty, .prompt//(.messages[]|"\(.role):\t\(.content)")//empty' <<<"$BLOCK" \
@@ -428,7 +439,8 @@ function prompt_printf
 	if ((OPTJ)) #print raw json
 	then 	cat -- "$FILE"
 	else 	((OPTV)) || jq -r '"Model_: \(.model//"?") (\(.object//"?"))",
-			"Usage_: \(.usage.prompt_tokens) + \(.usage.completion_tokens) = \(.usage.total_tokens//empty) tokens"' "$FILE" >&2
+			"Usage_: \(.usage.prompt_tokens) + \(.usage.completion_tokens) = \(.usage.total_tokens//empty) tokens",
+			.choices[].logprobs//empty' "$FILE" >&2
 		jq -r '.choices[1] as $sep | .choices[] | (.text//.message.content, if $sep != null then "---" else empty end)' "$FILE" 2>/dev/null \
 		|| jq -r '.choices[]|.text//.message.content' "$FILE" 2>/dev/null \
 		|| jq . "$FILE" 2>/dev/null || cat -- "$FILE"
@@ -627,6 +639,7 @@ function check_cmdf
 		-t*|temp*|temperature*)
 			set -- "${*//[!0-9.]}" ;OPTT="${*:-$OPTT}"
 			fix_dotf OPTT  ;cmd_verf 'Temperature' "$OPTT"
+			set_optsf
 			;;
 		-v|ver|verbose)
 			((OPTV)) && unset OPTV || OPTV=1
@@ -750,15 +763,36 @@ function usr_logf
 	printf '%s\n\n' "$(date -R 2>/dev/null||date)" "$@" > "$USRLOG"
 }
 
+#check if a value if within a fp range
+#usage: check_optrangef [val] [min] [max]
+function check_optrangef
+{
+	typeset val min max prop ret
+	val="${1:-0}" min="${2:-0}" max="${3:-0}" prop="${4:-property}"
+	if [[ -n $ZSH_VERSION$KSH_VERSION ]]
+	then 	ret=$(( (val < min) || (val > max) ))
+	elif command -v bc
+	then 	ret=$(bc <<<"($val < $min) || ($val > $max)")
+	fi >/dev/null 2>&1
+	((ret)) && printf 'Warning: bad %s -- %s  (%s - %s)\n' "$prop" "$val" "$min" "$max" >&2
+	return ${ret:-0}
+}
+
 #optional settings
 function set_optsf
 {
-	[[ -n $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA," || OPTA_OPT=
-	[[ -n $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA," || OPTAA_OPT=
-	[[ -n $OPTP ]] && OPTP_OPT="\"top_p\": $OPTP," || OPTP_OPT=
-	
+	check_optrangef "$OPTA" -2.0 2.0 'Presence penalty'
+	check_optrangef "$OPTAA" -2.0 2.0 'Frequency penalty'
+	check_optrangef "$OPTB" 0 5 Logprobs
+	check_optrangef "$OPTP" 0 1.0 Top_p
+	check_optrangef "$OPTT" 0 2.0 Temperature  #whisper max=1
 	[[ -n ${OPTT#0} ]] && [[ -n ${OPTP#1} ]] \
-	&& printf 'Warning: %s\n' "temperature and top_p both set" >&2
+	&& printf 'Warning: %s\n' "Temperature and Top_p are both set" >&2
+
+	[[ -n $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA," || unset OPTA_OPT
+	[[ -n $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA," || unset OPTAA_OPT
+	[[ -n $OPTB ]] && OPTB_OPT="\"logprobs\": $OPTB," || unset OPTB_OPT
+	[[ -n $OPTP ]] && OPTP_OPT="\"top_p\": $OPTP," || unset OPTP_OPT
 }
 
 #record mic
@@ -795,8 +829,9 @@ function recordf
 function whisperf
 {
 	typeset file lang REPLY
+	check_optrangef "$OPTT" 0 1.0 Temperature
 	if [[ ! -e $1 ]]
-	then 	printf '%s ' 'Record input? [Y/n] ' >&2
+	then 	printf '%s ' 'Record mic input? [Y/n] ' >&2
 		read -r -n ${ZSH_VERSION:+-k} 1
 		case "$REPLY" in
 			[AaNnQq]) 	:;;
@@ -883,17 +918,18 @@ function editf
 
 
 #parse opts
-while getopts a:A:cCefhHiIjlL:m:n:kp:S:t:vVxwWz0123456789 c
+while getopts a:A:b:cCefhHiIjlL:m:n:kp:S:t:vVxwWz0123456789 c
 do 	fix_dotf OPTARG
 	case $c in
 		[0-9]) 	OPTMAX="$OPTMAX$c";;
 		a) 	OPTA="$OPTARG";;
 		A) 	OPTAA="$OPTARG";;
+		b) 	OPTB="$OPTARG";;
 		c) 	((OPTC++));;
 		C) 	((OPTRESUME++));;
 		e) 	OPTE=1;;
-		f$OPTF) 	unset INSTRUCTION CHATINSTR OPTA OPTAA OPTMINI
-			OPTF=1 . "$0" "$@" ;exit;;
+		f$OPTF) 	unset MOD MOD_AUDIO INSTRUCTION CHATINSTR EPN OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTP OPTMINI
+			OPTF=1 ;. "$0" "$@" ;exit;;
 		h) 	printf '%s\n' "$MAN" ;exit ;;
 		H) 	__edf "$FILECHAT" ;exit ;;
 		i|I) 	OPTI=1;;
@@ -939,13 +975,13 @@ then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
 	#set file upload, image variations
 	[[ -e "$1" ]] && OPTII=1 MOD=image-var
 fi
-if ((OPTE)) && [[ -z $OPTMARG ]]
+[[ -n $OPTMARG ]] ||
+if ((OPTE))
 then 	OPTM=8
-elif ((OPTW)) && ((!OPTC))
-then 	OPTM=12
 elif ((OPTC>1))
 then 	OPTM=10
-
+elif ((OPTW)) && ((!OPTC))
+then 	OPTM=12 MOD="$MOD_AUDIO"
 fi
 MOD="${MOD:-${MODELS[OPTM]}}"
 set_model_epnf "$MOD"
@@ -1065,7 +1101,7 @@ else               #completions
 			then 	while printf '\n%s[%s]: ' "Prompt" "${SET_TYPE:-$Q_TYPE}" >&2
 				do 	if ((OPTW))
 					then 	recordf "$FILEINW"
-						REPLY=$(MOD="${MODELS[12]}" OPTT=0
+						REPLY=$(MOD="${MOD_AUDIO:-${MODELS[12]}}" OPTT=0
 							set_model_epnf "$MOD"
 							whisperf "$FILEINW" "${INPUT_ORIG[@]}"
 						) ;REPLY="${REPLY:-(EMPTY)}"
@@ -1117,8 +1153,8 @@ else               #completions
 		fi
 		BLOCK="$BLOCK
 			\"model\": \"$MOD\",
-			\"temperature\": $OPTT, $OPTP_OPT $OPTA_OPT $OPTAA_OPT
-			\"max_tokens\": $OPTMAX,
+			\"temperature\": $OPTT, $OPTA_OPT $OPTAA_OPT
+			\"max_tokens\": $OPTMAX, $OPTB_OPT $OPTP_OPT 
 			\"n\": $OPTN
 		}"
 		promptf
