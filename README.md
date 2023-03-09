@@ -72,7 +72,7 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 
 ## Examples
 
-Single text completion:
+One-shot text completion:
 
     chatgpt.sh "Hello there! What is your name?"
 
