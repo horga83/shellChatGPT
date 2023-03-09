@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.7.10  2023  by mountaineerbr  GPL+3
+# v0.7.12  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -10,6 +10,8 @@
 # DEFAULTS
 # General model
 #MOD=text-davinci-003
+# Chat model
+#MOD_CHAT=gpt-3.5-turbo
 # Audio model
 #MOD_AUDIO=whisper-1
 # Temperature
@@ -58,7 +60,7 @@ FILEIN="${CACHEDIR%/}/dalle_in.png"
 FILEINW="${CACHEDIR%/}/whisper_in.mp3"
 USRLOG="${OUTDIR%/}/${FILETXT##*/}"
 
-#obs: $OPTM and $EPN ought to be nought for default array index.
+#obs: $OPTM and $EPN ought to be unset and nought for default array index.
 
 MAN="NAME
 	${0##*/} -- ChatGPT / DALL-E / Whisper  Shell Wrapper
@@ -371,10 +373,8 @@ ENDPOINTS=(
 #set model endpoint based on its name
 function set_model_epnf
 {
-	unset EPN OPTE OPTEMBED
+	unset OPTE OPTEMBED
 	case "$1" in
-		image-var) 	EPN=4;;
-		image) 		EPN=3;;
 		*whisper*) 		((OPTWW)) && EPN=8 || EPN=7;;
 		*turbo*) 		EPN=6 ;((OPTC)) && OPTC=2 ;unset OPTB;;
 		code-*) 	case "$1" in
@@ -388,7 +388,12 @@ function set_model_epnf
 					*moderation*) 	EPN=1 OPTEMBED=1;;
 					*) 		EPN=0;;
 				esac;;
-		*) 		EPN=0;;
+		*) 		#fallback
+				case "$1" in
+					*-edit*) 	EPN=2 OPTE=1;;
+					*-embedding*|*-similarity*|*-search*) 	EPN=5 OPTEMBED=1;;
+					*) 	EPN=0;;  #defaults
+				esac;;
 	esac
 }
 
@@ -907,7 +912,7 @@ function editf
 {
 	BLOCK="{
 		\"model\": \"$MOD\",
-		\"instruction\": \"${1:-${INSTRUCTION:?EDIT MODE ERR}}\",
+		\"instruction\": \"${1:-:?EDIT MODE ERR}\",
 		\"input\": \"${@:2}\",
 		\"temperature\": $OPTT, $OPTP_OPT
 		\"n\": $OPTN
@@ -918,7 +923,7 @@ function editf
 
 
 #parse opts
-while getopts a:A:b:cCefhHiIjlL:m:n:kp:S:t:vVxwWz0123456789 c
+while getopts a:A:b:cCefhHijlL:m:n:kp:S:t:vVxwWz0123456789 c
 do 	fix_dotf OPTARG
 	case $c in
 		[0-9]) 	OPTMAX="$OPTMAX$c";;
@@ -927,12 +932,12 @@ do 	fix_dotf OPTARG
 		b) 	OPTB="$OPTARG";;
 		c) 	((OPTC++));;
 		C) 	((OPTRESUME++));;
-		e) 	OPTE=1;;
+		e) 	OPTE=1 EPN=2;;
 		f$OPTF) 	unset MOD MOD_AUDIO INSTRUCTION CHATINSTR EPN OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTP OPTMINI
 			OPTF=1 ;. "$0" "$@" ;exit;;
 		h) 	printf '%s\n' "$MAN" ;exit ;;
 		H) 	__edf "$FILECHAT" ;exit ;;
-		i|I) 	OPTI=1;;
+		i) 	OPTI=1 EPN=3 MOD=image;;
 		j) 	OPTJ=1;;
 		l) 	OPTL=1;;
 		L) 	OPTLOG=1 USRLOG="$OPTARG"
@@ -971,20 +976,20 @@ then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
 	then 	shift
 	elif set_sizef "$2"
 	then 	set -- "$1" "${@:3}"
-	fi ;MOD=image
+	fi
 	#set file upload, image variations
-	[[ -e "$1" ]] && OPTII=1 MOD=image-var
+	[[ -e "$1" ]] && OPTII=1 EPN=4 MOD=image-var
 fi
 [[ -n $OPTMARG ]] ||
 if ((OPTE))
 then 	OPTM=8
 elif ((OPTC>1))
-then 	OPTM=10
+then 	OPTM=10 MOD="$MOD_CHAT"
 elif ((OPTW)) && ((!OPTC))
 then 	OPTM=12 MOD="$MOD_AUDIO"
 fi
 MOD="${MOD:-${MODELS[OPTM]}}"
-set_model_epnf "$MOD"
+[[ -n $EPN ]] || set_model_epnf "$MOD"
 
 (($#)) || [[ -t 0 ]] || set -- "$(</dev/stdin)"
 ((OPTX)) && ((!OPTC)) && edf "$@" && set -- "$(<"$FILETXT")"  #editor
@@ -1010,7 +1015,11 @@ then 	imggenf "$@"
 elif ((OPTEMBED))  #embeds
 then 	embedf "$@"
 elif ((OPTE))      #edits
-then 	editf "$@"
+then 	if (($# == 1)) && [[ -n "$INSTRUCTION" ]]
+	then 	set -- "$INSTRUCTION" "$@"
+		((OPTV)) || printf '%s -- "%s"\n' 'INSTRUCTION' "$INSTRUCTION" >&2
+	fi
+	editf "$@"
 else               #completions
 	if ((OPTW))  #whisper input
 	then 	unset OPTX
@@ -1019,7 +1028,8 @@ else               #completions
 	((${#INSTRUCTION})) && ((!OPTC)) && [[ -z ${*//@([$IFS]|\\[ntrvf])} ]] && [[ -n ${ERR:?PROMPT} ]]
 	((OPTRESUME)) || { 	((OPTC)) && break_sessionf ;}
 	if ((${#INSTRUCTION}))  #chatbot instructions
-	then 	INSTRUCTION=$(escapef "$INSTRUCTION")
+	then 	((OPTV)) || printf '%s -- "%s"\n' 'INSTRUCTION' "$INSTRUCTION" >&2
+		INSTRUCTION=$(escapef "$INSTRUCTION")
 		if ((!OPTC)) && (($#))  #one-shot
 		then 	OPTV=1 token_prevf "$INSTRUCTION\\n\\n$*"
 			if ((EPN==6))
@@ -1038,6 +1048,7 @@ else               #completions
 				set_typef "$*" && REC_OUT="$*" \
 				|| REC_OUT="${SET_TYPE:-$Q_TYPE}: $*"
 				set -- "${REC_OUT##*([$IFS:])}"
+				[[ -n $ZSH_VERSION ]] && print -s -- "$*"
 			fi
 
 			#read history file
@@ -1109,7 +1120,7 @@ else               #completions
 					elif [[ -n $ZSH_VERSION ]]
 					then 	unset REPLY
 						if vared -p "Prompt[${SET_TYPE:-$Q_TYPE}]: " -eh -c REPLY
-						then 	print -s - "$REPLY"
+						then 	print -s -- "$REPLY"
 						fi
 					else 	read -r ${BASH_VERSION:+-e}
 					fi
