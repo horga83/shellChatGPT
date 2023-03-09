@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.7.13  2023  by mountaineerbr  GPL+3
+# v0.7.14  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -950,8 +950,8 @@ do 	fix_dotf OPTARG
 			;;
 		m) 	OPTMARG="$OPTARG"
 			if [[ $OPTARG = *[a-zA-Z]* ]]
-			then 	MOD=$OPTARG  #set model name
-			else 	OPTM=$OPTARG #set one pre defined model number
+			then 	MOD="$OPTARG"  #set model name
+			else 	MOD="${MODELS[OPTARG]}" #set one pre defined model number
 			fi;;
 		n) 	OPTN="$OPTARG" ;;
 		k) 	OPENAI_KEY="$OPTARG";;
