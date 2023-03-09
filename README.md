@@ -1,5 +1,5 @@
 # shellChatGPT
-Shell wrapper for OpenAI API for ChatGPT and DALL-E.
+Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 
 
 ## Features
@@ -12,6 +12,7 @@ Shell wrapper for OpenAI API for ChatGPT and DALL-E.
 - Choose amongst available models
 - Lots of command line options
 - Converts base64 JSON data to PNG image
+- Should™ work on Linux, FreeBSD and MacOS.
 
 
 ```
