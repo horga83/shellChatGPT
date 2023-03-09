@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # chatgpt.sh -- Ksh93/Bash/Zsh ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.7.6  2023  by mountaineerbr  GPL+3
+# v0.7.7  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -454,6 +454,12 @@ function prompt_imgprintf
 		do 	fout="${FILEOUT%.*}${m}.png"
 			jq -r ".data[${n}].b64_json" "$FILE" | base64 -d > "$fout"
 			printf 'File: %s\n' "${fout/$HOME/"~"}" >&2
+			((OPTV)) || if command -v xdg-open >/dev/null 2>&1
+			then 	xdg-open "$fout" || function xdg-open { : ;} #fail gracefully
+			elif command -v open >/dev/null 2>&1
+			then 	open "$fout" || function open { : ;}
+			fi
+			#https://budts.be/weblog/2011/07/xdf-open-vs-exo-open/
 			((++n, ++m)) ;((n<50)) || break
 		done
 		((n)) || { 	cat -- "$FILE" ;false ;}
