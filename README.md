@@ -14,7 +14,7 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 - Choose amongst available models
 - Lots of command line options
 - Converts base64 JSON data to PNG image
-- Should™ work on Linux, FreeBSD and MacOS.
+- Should™ work on Linux, FreeBSD, MacOS, and Termux.
 
 
 ```
