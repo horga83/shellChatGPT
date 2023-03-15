@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.2  2023  by mountaineerbr  GPL+3
+# v0.8.3  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -181,7 +181,7 @@ TEXT COMPLETIONS
 		!NUM |  !max 	  Set maximum tokens.
 		-a   |  !pre 	  Set presence.
 		-A   |  !freq 	  Set frequency.
-		-c   |  !new 	  Starts new session.
+		-c   |  !new 	  Start new session.
 		-H   |  !hist 	  Edit history.
 		-L   |  !log 	  Save to log file.
 		-m   |  !mod 	  Set model by index number.
@@ -505,7 +505,7 @@ function new_prompt_confirmf
 	typeset REPLY
 	((OPTV)) && return
 
-	printf "${BWhite}%s${NC} \\n" "Confirm prompt? [Y]es, [n]o,${OPTX:+ [e]dit,} [r]edo or [a]bort " >&2
+	printf "${BWhite}%s${NC} " "Confirm prompt? [Y]es, [n]o,${OPTX:+ [e]dit,} [r]edo or [a]bort " >&2
 	REPLY=$(__read_charf)
 	case "${REPLY:-$1}" in
 		[AaQq]*) 	return 201;;  #break
