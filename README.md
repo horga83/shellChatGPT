@@ -362,11 +362,11 @@ If ImageMagick is available, input image will be checked and edited
 
 ##### 3.2 Transparent colour and fuzz
 
-A transparent colour must be set with -@[COLOR] with colour specs
+A transparent colour must be set with -@[COLOUR] with colour specs
 ImageMagick can understand. Defaults=black.
 
-By default the color must be exact. Use the fuzz option to match
-colors that are close to the target color. This can be set with
+By default the colour must be exact. Use the fuzz option to match
+colours that are close to the target colour. This can be set with
 `-@[VALUE%]` as a percentage of the maximum possible intensity,
 for example `-@10%black`.
 
