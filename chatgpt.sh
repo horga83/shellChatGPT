@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.8  2023  by mountaineerbr  GPL+3
+# v0.8.9  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -532,7 +532,7 @@ function prompt_printf
 			"Usage_: \(.usage.prompt_tokens) + \(.usage.completion_tokens) = \(.usage.total_tokens//empty) tokens",
 			.choices[].logprobs//empty' "$FILE" >&2
 
-		jq -r "$JQCOLOURS
+		jq -r "def byellow: \"\"; def reset: \"\"; $JQCOLOURS
 		.choices[1] as \$sep | .choices[] |
 		(byellow + (.text//.message.content) + reset,
 		if \$sep != null then \"---\" else empty end)" "$FILE" 2>/dev/null \
@@ -1223,6 +1223,7 @@ do 	fix_dotf OPTARG
 			else 	MOD="${MODELS[OPTARG]}" #set one pre defined model number
 			fi;;
 		n) 	OPTN="$OPTARG" ;;
+		k) 	OPTK=1;;
 		K) 	OPENAI_KEY="$OPTARG";;
 		p) 	OPTP="$OPTARG";;
 		S) 	if [[ -e "$OPTARG" ]]
@@ -1250,9 +1251,10 @@ Yellow='\e[0;33m'  BYellow='\e[1;33m'  On_Yellow='\e[43m' \
 Blue='\e[0;34m'    BBlue='\e[1;34m'    On_Blue='\e[44m'   \
 Purple='\e[0;35m'  BPurple='\e[1;35m'  On_Purple='\e[45m' \
 Cyan='\e[0;36m'    BCyan='\e[1;36m'    On_Cyan='\e[46m'   \
-White='\e[0;37m'   BWhite='\e[1;37m'   On_White='\e[47m'
-Alert=$BWhite$On_Red  NC='\e[m' \
-JQCOLOURS='def red: "\u001b[31m"; def bgreen: "\u001b[1;32m"; def bwhite: "\u001b[1;37m"; def yellow: "\u001b[33m"; def byellow: "\u001b[1;33m"; def reset: "\u001b[0m";'
+White='\e[0;37m'   BWhite='\e[1;37m'   On_White='\e[47m'  \
+Alert=$BWhite$On_Red  NC='\e[m'  JQCOLOURS='def red: "\u001b[31m";
+def bgreen: "\u001b[1;32m"; def bwhite: "\u001b[1;37m";
+def yellow: "\u001b[33m"; def byellow: "\u001b[1;33m"; def reset: "\u001b[0m";'
 
 OPTMAX="${OPTMAX:-$OPTMM}"
 OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
