@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.9  2023  by mountaineerbr  GPL+3
+# v0.8.10  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -503,7 +503,6 @@ function block_printf
 function new_prompt_confirmf
 {
 	typeset REPLY
-	((OPTV)) && return
 
 	printf "${BWhite}%s${NC} " "Confirm prompt? [Y]es, [n]o,${OPTX:+ [e]dit,} [r]edo or [a]bort " >&2
 	REPLY=$(__read_charf)
@@ -912,7 +911,7 @@ function recordf
 	typeset termux pid REPLY
 
 	[[ -e $1 ]] && rm -- "$1"  #remove file before writing to it
-	if ((!OPTV)) && ((N)) && ((!CONTINUE))
+	if ((!OPTV)) && ((!SKIP)) && [[ -t 1 ]]
 	then 	printf "\\r${BWhite}%s${NC}\\n\\n" ' * Press any key to START record * ' >&2
 		__read_charf
 	fi ;printf "\\r${BWhite}${On_Purple}%s${NC}\\n\\n" ' * Press any key to STOP record * ' >&2
@@ -1319,7 +1318,7 @@ else               #completions
 	then 	unset OPTX
 		INPUT_ORIG=("$@") ;set --
 	fi
-	((OPTRESUME)) || { 	((OPTC)) && break_sessionf ;}
+	((OPTRESUME)) || ((!OPTC)) || break_sessionf
 
 	#chatbot instructions
 	((!${#INSTRUCTION})) || ((OPTV)) || printf "${BWhite}%s${NC}: %s\\n" 'INSTRUCTION' "$INSTRUCTION" >&2
@@ -1333,6 +1332,7 @@ else               #completions
 		unset INSTRUCTION
 	fi
 
+	SKIP=1
 	while :
 	do 	unset REPLY
 		if ((OPTC))  #chat mode
@@ -1390,7 +1390,7 @@ else               #completions
 		if ((OPTX))
 		then 	edf "$@" || continue  #sig:200
 			while printf "${BCyan}%s${NC}\\n" "${REC_OUT/$SPC1${SET_TYPE:-$Q_TYPE}:$SPC3}"
-			do 	new_prompt_confirmf
+			do 	((OPTV)) || new_prompt_confirmf
 				case $? in
 					201) 	break 2;;  #abort
 					200) 	continue 2;;  #redo
@@ -1407,7 +1407,7 @@ else               #completions
 				"Prompt" "${OPTW:+VOICE-}" "${SET_TYPE:-$Q_TYPE}" >&2
 			do 	if ((OPTW))
 				then
-					((OPTV==1)) && ((N)) && ((!CONTINUE)) \
+					((OPTV==1)) && ((!SKIP)) && [[ -t 1 ]] \
 					&& __read_charf -t $((SLEEP/4))  #3-6 (words/tokens)/sec
 					recordf "$FILEINW"
 					REPLY=$(MOD="${MOD_AUDIO:-${MODELS[12]}}" OPTT=0
@@ -1428,13 +1428,13 @@ else               #completions
 					fi
 				fi ;printf "${NC}" >&2
 				
-				check_cmdf "$REPLY" && continue 2 ;unset CONTINUE
+				check_cmdf "$REPLY" && continue 2 ;unset SKIP
 				
 				if [[ -n ${REPLY//[$IFS]} ]]
 				then 	OPTX=  new_prompt_confirmf
 					case $? in
 						201) 	break 2;;  #abort
-						200|199) 	CONTINUE=1 ;continue;;  #redo/edit
+						200|199) 	SKIP=1 ;continue;;  #redo/edit
 						0) 	:;;  #yes
 						*) 	unset REPLY; set -- ;break;;  #no
 					esac
@@ -1499,7 +1499,7 @@ else               #completions
 		SLEEP="${tkn[1]}" ;unset tkn ans
 
 		set --
-		unset REPLY TKN_PREV MAX_PREV REC_OUT HIST PRE USER_TYPE HIST_C CONTINUE INSTRUCTION
-		((++N)) ;((OPTC)) || break
-	done ;unset OLD_TOTAL SLEEP N
+		unset REPLY TKN_PREV MAX_PREV REC_OUT HIST PRE USER_TYPE HIST_C SKIP INSTRUCTION
+		((OPTC)) || break
+	done ;unset OLD_TOTAL SLEEP
 fi
