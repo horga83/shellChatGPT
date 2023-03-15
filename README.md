@@ -124,9 +124,16 @@ Generate image variation:
 
     chatgpt.sh -i path/to/image.png path/to/mask.png "Fill with red."
 
-Edit image, make a mask from the black colour:
+Outpaint - edit image, make a mask from the black colour:
 
-![Showing off Image Edits](gfx/img_edits.gif)
+![Showing off Image Edits - Outpaint](gfx/img_edits.gif)
+
+
+Inpaint - add a bat in the night sky:
+
+![Showing off Image Edits - Inpaint](gfx/img_edits2.gif)
+
+![Inpaint, steps](gfx/img_edits_steps.png)
 
 
 ### Audio Transcriptions / Translations
