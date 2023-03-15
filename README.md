@@ -8,6 +8,7 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 - Follow up conversations
 - Generate images from text input
 - Generate variations of images
+- Edit images
 - Transcribe audio from various languages
 - Translate audio into English text
 - Record prompt voice, hear the answer back from the AI
