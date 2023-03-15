@@ -400,11 +400,13 @@ OPTIONS
 		 Set an instruction prompt.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Defaults=$OPTT.
-	-vv 	 Less verbose in chat mode.
+	-vv 	 Less verbose.
 	-VV 	 Pretty-print request body. Set twice to dump raw.
 	-x 	 Edit prompt in text editor.
-	-w 	 Transcribe audio file into text.
-	-W 	 Translate audio file into English text.
+	-w [AUD] [LANG]
+		 Transcribe audio file into text.
+	-W [AUD]	 
+		 Translate audio file into English text.
 	-z 	 Print last response JSON data."
 
 MODELS=(
