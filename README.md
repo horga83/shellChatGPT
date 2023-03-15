@@ -93,7 +93,7 @@ Chat in portuguese with voice in and voice out (pipe output to voice synthesiser
     chatgpt.sh -ccw pt | espeakng -v pt-br
 
 
-### Edits
+### Text Edits
 
 Use the `edits` endpoint, this option requires two or more prompts,
 instructions (required) and the proper (optional):
