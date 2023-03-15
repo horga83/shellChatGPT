@@ -17,7 +17,7 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 - Should™ work on Linux, FreeBSD, MacOS, and Termux.
 
 
-\[GIF\]
+![Showing off Chat Completions](gfx/chat_cpls.gif)
 
 
 ## Getting Started
@@ -57,6 +57,8 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 
 ## Examples
 
+### Text and Chat Completions
+
 One-shot text completion:
 
     chatgpt.sh "Hello there! What is your name?"
@@ -66,17 +68,20 @@ Text completion with Curie model:
     chatgpt.sh -mtext-curie-001 "Hello there! What is your name?"
     chatgpt.sh -m1 "List biggest cities in the world."
 
-_For better results,_ *set an instruction/system prompt*:
+_For better results,_ ***set an instruction/system prompt***:
     
     chatgpt.sh -m1 -S"You are an AI assistant."  "List biggest cities in the world."
 
-Chat completion, less verbose, and set temperature:
+Chat completion, _less verbose,_ and set temperature:
 
     chatgpt.sh -ccv -t0.7 "Hello there! What is your name?"
 
 Text/chat completion, use visual editor instead of shell `read` or `vared` (reuse initial text from positional arguments):
 
-    chatgpt.sh -cx "Alice was visiting Bob when John arrived  "
+    chatgpt.sh -cx "Alice was visiting Bob when John arrived  and"
+
+
+### Voice + Chat Completions
 
 Chat completion with voice as input:
 
@@ -86,20 +91,40 @@ Chat in portuguese with voice in and voice out (pipe output to voice synthesiser
 
     chatgpt.sh -ccw pt | espeakng -v pt-br
 
+
+### Edits
+
 Use the `edits` endpoint, this option requires two or more prompts,
 instructions (required) and the proper (optional):
 
     chatgpt.sh -e "Fix spelling mistakes" "This promptr has spilling mistakes."
     chatgpt.sh -e "Shell code to move files to trash bin." ""
 
+Edit image, make a mask with the black colour:
+
+![Showing off Image Edits](gfx/img_edits.gif)
+
+### Image Generations
+
 Generate image according to prompt:
 
     chatgpt.sh -i "Dark tower in the middle of a field of red roses."
     chatgpt.sh -i "512x512" "A tower."
 
+
+### Image Variations
+
 Generate image variation:
 
     chatgpt.sh -i path/to/image.png
+
+
+### Image Edits
+
+    chatgpt.sh -i path/to/image.png path/to/mask.png "Fill with red."
+
+
+### Audio Transcriptions / Translations
 
 Generate transcription from audio file:
 
@@ -405,7 +430,6 @@ Currently, only one audio model is available.
     
     VISUAL
     EDITOR 		Text editor for external prompt editing.
-    
     		Defaults=vim
 
 
