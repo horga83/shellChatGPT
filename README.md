@@ -339,7 +339,7 @@ completions endpoint.
 #### 1. Image generations
 
 An image can be created given a text prompt. A text description
-of the desired image(s). The maximum length is 1000 characters.
+of the desired image(s). The maximum length is 1000 tokens.
 
 
 #### 2. Image variations
@@ -501,7 +501,7 @@ ImageMagick, and Sox/Alsa-tools/FFmpeg are optionally required.
     	 Edit image according to mask and prompt.
     -j 	 Print raw JSON response (debug with -jVV).
     -k 	 Disable colour output, otherwise auto.
-    -k [KEY] Set API key (free).
+    -K [KEY] Set API key (free).
     -l [MODEL]
     	 List models or print details of a MODEL.
     -L [FILEPATH]

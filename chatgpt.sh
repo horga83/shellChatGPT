@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8  2023  by mountaineerbr  GPL+3
+# v0.8.1  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -377,7 +377,7 @@ OPTIONS
 		 Edit image according to mask and prompt.
 	-j 	 Print raw JSON response (debug with -jVV).
 	-k 	 Disable colour output, otherwise auto.
-	-k [KEY] Set API key (free).
+	-K [KEY] Set API key (free).
 	-l [MODEL]
 		 List models or print details of a MODEL.
 	-L [FILEPATH]
