@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.1  2023  by mountaineerbr  GPL+3
+# v0.8.2  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -76,11 +76,11 @@ SYNOPSIS
 	${0##*/} -i [opt] [S|M|L] [PROMPT]
 	${0##*/} -i [opt] [S|M|L] [PNG_FILE]
 	${0##*/} -i [opt] [S|M|L] [PNG_FILE] [MASK_FILE] [PROPMT]
-	${0##*/} -l [MODEL_NAME]
 	${0##*/} -w [opt] [AUDIO_FILE] [LANG] [PROMPT-LANG]
 	${0##*/} -W [opt] [AUDIO_FILE] [PROMPT-EN]
 	${0##*/} -ccw [opt] [LANG]
 	${0##*/} -ccW [opt]
+	${0##*/} -l [MODEL_NAME]
 
 
 	All positional arguments are read as a single PROMPT. If the
@@ -97,9 +97,9 @@ SYNOPSIS
 
 	Set -C (with -cc) to resume from last history session.
 
-	Option -e sets the \`edits' endpoint. That endpoint requires
-	both INSTRUCTION and INPUT prompts. This option requires
-	setting an \`edits model'.
+	Option -e sets the \`edits' endpoint. That endpoint requires both
+	INSTRUCTION and INPUT prompts. User may choose a model amongst
+	the \`edit' model family.
 
 	Option -i generates images according to text PROMPT. If the first
 	positional argument is an image file, then generate variations of it.
