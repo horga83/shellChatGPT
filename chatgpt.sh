@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.6  2023  by mountaineerbr  GPL+3
+# v0.8.7  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -911,7 +911,7 @@ function recordf
 {
 	typeset termux pid REPLY
 
-	[[ -e $1 ]] && rm -- "$1"  #remove old cache audio file
+	[[ -e $1 ]] && rm -- "$1"  #remove file before writing to it
 	if ((!OPTV)) && ((N)) && ((!CONTINUE))
 	then 	printf "\\r${BWhite}%s${NC}\\n\\n" ' * Press any key to START record * ' >&2
 		__read_charf
@@ -933,7 +933,7 @@ function recordf
 		{ 	ffmpeg -f alsa -i pulse -ac 1 -y "$1" & pid=$! ;} ||
 		{ 	ffmpeg -f avfoundation -i ":1" -y "$1" & pid=$! ;}
 		#-acodec libmp3lame -ab 32k -ac 1  #https://stackoverflow.com/questions/19689029/
-	fi
+	fi >&2
 	pid=${pid:-$!}
 	trap "__recordkillf $pid $termux ;exit 2" INT HUP TERM EXIT
 	read ;__recordkillf $pid $termux ;trap "-" INT HUP TERM EXIT

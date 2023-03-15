@@ -132,7 +132,7 @@ Generate transcription from audio file:
     chatgpt.sh -w path/to/audio.mp3
     chatgpt.sh -w path/to/audio.mp3 "en" "This is a poem about X."
 
-Generate transcription from voice recording, set portuguese as input language:
+Generate transcription from voice recording, set Portuguese as input language:
 
     chatgpt.sh -w pt
 
@@ -147,9 +147,10 @@ Chat completion with voice as input:
 
     chatgpt.sh -ccw
 
-Chat in portuguese with voice in and voice out (pipe output to voice synthesiser):
+Chat in Portuguese with voice in and voice out (pipe output to voice synthesiser):
 
     chatgpt.sh -ccw pt | espeakng -v pt-br
+    chatgpt.sh -ccw pt | termux-tts-speak -l pt -n br
 
 
 ## Prompts
