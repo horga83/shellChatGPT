@@ -234,15 +234,15 @@ language model SKILLS can activated, see
 <https://platform.openai.com/examples>.
 
 
-#### 2. Chat Bot
+#### 2. Chat bot
 
-##### 2.1 Text Completion Chat
+##### 2.1 Text completion chat
 
 Set option -c to start chat mode of text completion. It keeps a
 history file and remembers the conversation follow-up, and works
 with a variety of models.
 
-##### 2.1.1 Q&A Format
+##### 2.1.1 Q&A format
 
 The defaults chat format is `Q & A`. A name such as `NAME:`
 may be introduced as interlocutor. Setting only `:` works as
@@ -258,7 +258,7 @@ lax but should stabilise on further promtps.
 Alternatively, one may set an instruction prompt with the flag
 `: [INSTRUCTION]` or with environment variable $INSTRUCTION.
 
-##### 2.2 Native Chat Completions
+##### 2.2 Native chat completions
 
 Set option -cc to use the chat completions. If user starts a prompt
 with `:`, message is set as `system` (very much like instructions)
@@ -267,7 +267,7 @@ best option for many non-chat use cases and can be set to run a
 single time setting -mgpt-3.5-turbo instead of -cc.
 
 
-#### 3. Chat Commands
+#### 3. Chat commands
 
 While in chat mode the following commands (and a value), can be
 typed in the new prompt (e.g. `!temp0.7`, `!mod1`):
@@ -289,7 +289,7 @@ To change the chat context at run time, the history file must be
 edited with `!hist`. Delete entries or comment them out with `#`.
 
 
-#### 4. Prompt Engineering and Design
+#### 4. Prompt engineering and design
 
 Make a good prompt. May use bullets for multiple questions in
 a single prompt. Write `act as [technician]`, add examples of
@@ -332,20 +332,20 @@ completions endpoint.
 
 ### IMAGES / DALL-E
 
-#### 1. Image Generations
+#### 1. Image generations
 
 An image can be created given a text prompt. A text description
 of the desired image(s). The maximum length is 1000 characters.
 
 
-#### 2. Image Variations
+#### 2. Image variations
 
 Variations of a given image can be generated. The image to use as
 the basis for the variations must be a valid PNG file, less than
 4MB and square.
 
 
-#### 3. Image Edits
+#### 3. Image edits
 
 Image and mask files must be provided. If mask is not provided,
 image must have transparency, which will be used as the mask. A
@@ -356,7 +356,7 @@ text prompt is required for the edits endpoint to be used.
 If ImageMagick is available, input image will be checked and edited
 (converted) to fit dimensions and mask requirements.
 
-##### 3.2 Transparent Colour and Fuzz
+##### 3.2 Transparent colour and fuzz
 
 A transparent colour must be set with -@[COLOR] with colour specs
 ImageMagick can understand. Defaults=black.
@@ -371,14 +371,14 @@ See also:
     <https://imagemagick.org/script/color.php>
     <https://imagemagick.org/script/command-line-options.php#fuzz>
 
-##### 3.3 Alpha Channel
+##### 3.3 Alpha channel
 
 And alpha channel is generated with ImageMagick from any image
 with the set transparent colour (defaults to black). In this way,
 it is easy to make a mask with any black and white image as a
 template.
 
-##### 3.4 In-Paint and Out-Paint
+##### 3.4 In-paint and out-paint
 
 In-painting is achieved setting an image with a mask and a prompt.
 Out-painting can be achieved manually with the aid of this script.
