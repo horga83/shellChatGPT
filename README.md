@@ -453,7 +453,7 @@ turbo models it is 4096 tokens.
                  150,000 TPM   40,000 TPM   150,000 TPM   50 img/min
         
     RPM 	(requests per minute)
-    RPM 	(tokens per minute)
+    TPM 	(tokens per minute)
 
 
 
