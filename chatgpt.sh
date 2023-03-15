@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.4  2023  by mountaineerbr  GPL+3
+# v0.8.5  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -893,8 +893,8 @@ function set_optsf
 	check_optrangef "$OPTA" -2.0 2.0 'Presence penalty'
 	check_optrangef "$OPTAA" -2.0 2.0 'Frequency penalty'
 	check_optrangef "$OPTB" 0 5 Logprobs
-	check_optrangef "$OPTP" 0 1.0 Top_p
-	check_optrangef "$OPTT" 0 2.0 Temperature  #whisper max=1
+	check_optrangef "$OPTP" 0.0 1.0 Top_p
+	check_optrangef "$OPTT" 0.0 2.0 Temperature  #whisper max=1
 	((OPTI)) && check_optrangef "$OPTN" 1 10 NumberOfResults
 	[[ -n ${OPTT#0} ]] && [[ -n ${OPTP#1} ]] \
 	&& printf "${Red}Warning: %s${NC}\\n" "Temperature and Top_p are both set" >&2
