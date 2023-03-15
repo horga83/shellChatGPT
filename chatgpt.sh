@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.5  2023  by mountaineerbr  GPL+3
+# v0.8.6  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -1279,7 +1279,7 @@ MOD="${MOD:-${MODELS[OPTM]}}"
 
 (($#)) || [[ -t 0 ]] || set -- "$(</dev/stdin)"
 
-((OPTX)) && (( (OPTE+OPTEMBED+OPTI+OPTII) || (OPTW==1 && !OPTC) )) &&
+((OPTX)) && ((OPTE+OPTEMBED+OPTI+OPTII)) &&
 edf "$@" && set -- "$(<"$FILETXT")"  #editor
 
 ((OPTL+OPTZ+OPTW)) || ((!$#)) || token_prevf "$*"
@@ -1296,7 +1296,7 @@ if ((OPTZ))        #last received json
 then 	lastjsonf
 elif ((OPTL))      #model list
 then 	list_modelsf "$@"
-elif ((OPTW)) && ((!OPTC))  #audio transcribe
+elif ((OPTW)) && ((!OPTC))  #audio transcribe/translation
 then 	whisperf "$@"
 elif ((OPTII))     #image variations/edits
 then 	((OPTV)) || printf "${BWhite}%s${NC}\\n" 'Image Variations / Edits' >&2
@@ -1445,7 +1445,6 @@ else               #completions
 			done
 		fi
 
-################################################################################
 		((!$#)) && [[ -n $REC_OUT ]] && set -- "$REC_OUT"
 		if ((EPN==6))
 		then
@@ -1458,7 +1457,6 @@ else               #completions
 			[[ -n $INSTRUCTION ]] && INSTRUCTION="$(escapef "$INSTRUCTION\\n\\n")"
 			set -- "$INSTRUCTION$HIST$(escapef "$*")"
 		fi
-################################################################################
 		
 		if ((OPTC)) && [[ ${REC_OUT//[$IFS]} = :* ]]
 		then 	#instructions/system?
