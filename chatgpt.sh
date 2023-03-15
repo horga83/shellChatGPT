@@ -254,11 +254,11 @@ IMAGES / DALL-E
 	(converted) to fit dimensions and mask requirements.
 
 	3.2 Transparent Colour and Fuzz
-	A transparent colour must be set with -@[COLOR] with colour specs
+	A transparent colour must be set with -@[COLOUR] with colour specs
 	ImageMagick can understand. Defaults=black.
 
-	By default the color must be exact. Use the fuzz option to match
-	colors that are close to the target color. This can be set with
+	By default the colour must be exact. Use the fuzz option to match
+	colours that are close to the target colour. This can be set with
 	\`-@[VALUE%]' as a percentage of the maximum possible intensity,
 	for example \`-@10%black'.
 
@@ -1186,7 +1186,7 @@ function editf
 while getopts a:A:b:cCefhHijlL:m:n:kK:p:S:t:vVxwWz0123456789@: c
 do 	fix_dotf OPTARG
 	case $c in
-		@) 	OPT_AT="$OPTARG"  #color name/spec
+		@) 	OPT_AT="$OPTARG"  #colour name/spec
 			if [[ $OPTARG = *%* ]]  #fuzz percentage
 			then 	if [[ $OPTARG = *% ]]
 				then 	OPT_AT_PC="${OPTARG##${OPTARG%%??%}}"
@@ -1240,7 +1240,7 @@ done ; unset c
 shift $((OPTIND -1))
 
 [[ -t 1 ]] || OPTK=1 ;((OPTK)) ||
-# Normal Colors    # Bold              # Background
+# Normal Colours    # Bold              # Background
 Black='\e[0;30m'   BBlack='\e[1;30m'   On_Black='\e[40m'  \
 Red='\e[0;31m'     BRed='\e[1;31m'     On_Red='\e[41m'    \
 Green='\e[0;32m'   BGreen='\e[1;32m'   On_Green='\e[42m'  \
