@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.7  2023  by mountaineerbr  GPL+3
+# v0.8.8  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -942,7 +942,7 @@ function recordf
 #avfoundation for macos: <https://apple.stackexchange.com/questions/326388/terminal-command-to-record-audio-through-macbook-microphone>.
 function __recordkillf
 {
-	((${2:-0})) && termux-microphone-record -q || kill -INT $1
+	((${2:-0})) && termux-microphone-record -q >&2 || kill -INT $1
 }
 
 #whisper
