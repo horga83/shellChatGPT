@@ -122,7 +122,7 @@ Generate image variation:
 
 ### Image Edits
 
-    chatgpt.sh -i path/to/image.png path/to/mask.png "Fill with red."
+    chatgpt.sh -i path/to/image.png path/to/mask.png "A pink flamingo."
 
 Outpaint - edit image, make a mask from the black colour:
 
