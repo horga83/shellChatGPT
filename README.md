@@ -82,17 +82,6 @@ Text/chat completion, use visual editor instead of shell `read` or `vared` (reus
     chatgpt.sh -cx "Alice was visiting Bob when John arrived  and"
 
 
-### Voice + Chat Completions
-
-Chat completion with voice as input:
-
-    chatgpt.sh -ccw
-
-Chat in portuguese with voice in and voice out (pipe output to voice synthesiser):
-
-    chatgpt.sh -ccw pt | espeakng -v pt-br
-
-
 ### Text Edits
 
 Use the `edits` endpoint, this option requires two or more prompts,
@@ -143,9 +132,24 @@ Generate transcription from audio file:
     chatgpt.sh -w path/to/audio.mp3
     chatgpt.sh -w path/to/audio.mp3 "en" "This is a poem about X."
 
-Generate transcription from input record, set portuguese as input language:
+Generate transcription from voice recording, set portuguese as input language:
 
     chatgpt.sh -w pt
+
+Translate audio file or voice recording in any language to English.
+
+    chatgpt.sh -W [audio_file]
+    chatgpt.sh -W
+
+### Voice + Chat Completions
+
+Chat completion with voice as input:
+
+    chatgpt.sh -ccw
+
+Chat in portuguese with voice in and voice out (pipe output to voice synthesiser):
+
+    chatgpt.sh -ccw pt | espeakng -v pt-br
 
 
 ## Prompts
@@ -162,7 +166,7 @@ Below is a copy of it.
 
 ### NAME
 
-chatgpt.sh -- ChatGPT / DALL-E / Whisper  Shell Wrapper
+    chatgpt.sh -- ChatGPT / DALL-E / Whisper  Shell Wrapper
 
 
 ### SYNOPSIS
@@ -173,11 +177,11 @@ chatgpt.sh -- ChatGPT / DALL-E / Whisper  Shell Wrapper
     chatgpt.sh -i [opt] [S|M|L] [PROMPT]
     chatgpt.sh -i [opt] [S|M|L] [PNG_FILE]
     chatgpt.sh -i [opt] [S|M|L] [PNG_FILE] [MASK_FILE] [PROPMT]
-    chatgpt.sh -l [MODEL_NAME]
     chatgpt.sh -w [opt] [AUDIO_FILE] [LANG] [PROMPT-LANG]
     chatgpt.sh -W [opt] [AUDIO_FILE] [PROMPT-EN]
     chatgpt.sh -ccw [opt] [LANG]
     chatgpt.sh -ccW [opt]
+    chatgpt.sh -l [MODEL_NAME]
 
 
 All positional arguments are read as a single PROMPT. If the
@@ -194,9 +198,8 @@ and use the turbo models.
 
 Set -C (with -cc) to resume from last history session.
 
-Option -e sets the `edits` endpoint. That endpoint requires
-both INSTRUCTION and INPUT prompts. This option requires
-setting an `edits model`.
+Option -e sets the `edits` endpoint. That endpoint requires both
+INSTRUCTION and INPUT prompts. User may choose a model amongst the `edit` model family.
 
 Option -i generates images according to text PROMPT. If the first
 positional argument is an image file, then generate variations of it.
@@ -206,8 +209,7 @@ a text prompt, then edit the image according to mask and prompt.
 If mask is not provided, image must have transparency, which will
 be used as the mask. Optionally, set size of output image with
 [S]mall, [M]edium or [L]arge as the first positional argument.
-See IMAGES section below for more information on inpaint and out-
-paint.
+See IMAGES section below for more information on inpaint and outpaint.
 
 Option -w transcribes audio from mp3, mp4, mpeg, mpga, m4a, wav,
 and webm files. First positional argument must be an audio file.
@@ -233,7 +235,6 @@ For complete model and settings information, refer to OPENAI
 API docs at <https://beta.openai.com/docs/guides>.
 
 
-
 ### TEXT COMPLETIONS
 
 #### 1. Text completion
@@ -245,15 +246,15 @@ language model SKILLS can activated, see
 <https://platform.openai.com/examples>.
 
 
-#### 2. Chat bot
+#### 2. Chat Bot
 
-##### 2.1 Text completion chat
+##### 2.1 Text Completion Chat
 
 Set option -c to start chat mode of text completion. It keeps a
 history file and remembers the conversation follow-up, and works
 with a variety of models.
 
-##### 2.1.1 Q&A format
+##### 2.1.1 Q&A Format
 
 The defaults chat format is `Q & A`. A name such as `NAME:`
 may be introduced as interlocutor. Setting only `:` works as
@@ -269,7 +270,7 @@ lax but should stabilise on further promtps.
 Alternatively, one may set an instruction prompt with the flag
 `: [INSTRUCTION]` or with environment variable $INSTRUCTION.
 
-##### 2.2 Native chat completions
+##### 2.2 Native Chat Completions
 
 Set option -cc to use the chat completions. If user starts a prompt
 with `:`, message is set as `system` (very much like instructions)
@@ -278,7 +279,7 @@ best option for many non-chat use cases and can be set to run a
 single time setting -mgpt-3.5-turbo instead of -cc.
 
 
-#### 3. Chat commands
+#### 3. Chat Commands
 
 While in chat mode the following commands (and a value), can be
 typed in the new prompt (e.g. `!temp0.7`, `!mod1`):
@@ -286,7 +287,7 @@ typed in the new prompt (e.g. `!temp0.7`, `!mod1`):
 	!NUM |  !max 	  Set maximum tokens.
 	-a   |  !pre 	  Set presence.
 	-A   |  !freq 	  Set frequency.
-	-c   |  !new 	  Starts new session.
+	-c   |  !new 	  Start new session.
 	-H   |  !hist 	  Edit history.
 	-L   |  !log 	  Save to log file.
 	-m   |  !mod 	  Set model by index number.
@@ -300,7 +301,7 @@ To change the chat context at run time, the history file must be
 edited with `!hist`. Delete entries or comment them out with `#`.
 
 
-#### 4. Prompt engineering and design
+#### 4. Prompt Engineering and Design
 
 Make a good prompt. May use bullets for multiple questions in
 a single prompt. Write `act as [technician]`, add examples of
@@ -343,20 +344,20 @@ completions endpoint.
 
 ### IMAGES / DALL-E
 
-#### 1. Image generations
+#### 1. Image Generations
 
 An image can be created given a text prompt. A text description
-of the desired image(s). The maximum length is 1000 tokens.
+of the desired image(s). The maximum length is 1000 characters.
 
 
-#### 2. Image variations
+#### 2. Image Variations
 
 Variations of a given image can be generated. The image to use as
 the basis for the variations must be a valid PNG file, less than
 4MB and square.
 
 
-#### 3. Image edits
+#### 3. Image Edits
 
 Image and mask files must be provided. If mask is not provided,
 image must have transparency, which will be used as the mask. A
@@ -367,7 +368,7 @@ text prompt is required for the edits endpoint to be used.
 If ImageMagick is available, input image will be checked and edited
 (converted) to fit dimensions and mask requirements.
 
-##### 3.2 Transparent colour and fuzz
+##### 3.2 Transparent Colour and Fuzz
 
 A transparent colour must be set with -@[COLOUR] with colour specs
 ImageMagick can understand. Defaults=black.
@@ -382,14 +383,14 @@ See also:
     <https://imagemagick.org/script/color.php>
     <https://imagemagick.org/script/command-line-options.php#fuzz>
 
-##### 3.3 Alpha channel
+##### 3.3 Alpha Channel
 
 And alpha channel is generated with ImageMagick from any image
 with the set transparent colour (defaults to black). In this way,
 it is easy to make a mask with any black and white image as a
 template.
 
-##### 3.4 In-paint and out-paint
+##### 3.4 In-Paint and Out-Paint
 
 In-painting is achieved setting an image with a mask and a prompt.
 Out-painting can be achieved manually with the aid of this script.
@@ -410,7 +411,6 @@ or 1024x1024 (Large) as the first positional argument. Defaults=512x512.
 
 Transcribes audio into the input language. Set a two letter
 ISO-639-1 language as the second positional parameter. A prompt
-
 may also be set as last positional parameter to help guide the
 model. This prompt should match the audio language.
 
@@ -427,22 +427,18 @@ Currently, only one audio model is available.
 ### ENVIRONMENT
 
     CHATGPTRC 	Path to user chatgpt.sh configuration.
-    
-    		Defaults=~/.chatgpt.conf
+    	Defaults=~/.chatgpt.conf
     
     INSTRUCTION 	Initial instruction set for the chatbot.
-    
     
     OPENAI_API_KEY
     OPENAI_KEY 	Set your personal (free) OpenAI API key.
     
-    
     REC_CMD 	Audio recording command.
-    
     
     VISUAL
     EDITOR 		Text editor for external prompt editing.
-    		Defaults=vim
+		Defaults=vim
 
 
 ### LIMITS
@@ -453,11 +449,12 @@ turbo models it is 4096 tokens.
 
     Free trial users
     Text & Embedding        Codex          Edit        Image
-                  20 RPM       20 RPM        20 RPM
-             150,000 TPM   40,000 TPM   150,000 TPM   50 img/min
-    
+                      20 RPM       20 RPM        20 RPM
+                 150,000 TPM   40,000 TPM   150,000 TPM   50 img/min
+        
     RPM 	(requests per minute)
-    TPM 	(tokens per minute)
+    RPM 	(tokens per minute)
+
 
 
 ### BUGS
@@ -531,9 +528,12 @@ ImageMagick, and Sox/Alsa-tools/FFmpeg are optionally required.
     	 Set an instruction prompt.
     -t [VAL] Set temperature value (cmpls/chat/edits/audio),
     	 (0.0 - 2.0, whisper 0.0 - 1.0). Defaults=0.
-    -vv 	 Less verbose in chat mode.
+    -vv 	 Less verbose.
     -VV 	 Pretty-print request body. Set twice to dump raw.
     -x 	 Edit prompt in text editor.
-    -w 	 Transcribe audio file into text.
-    -W 	 Translate audio file into English text.
+    -w [AUD] [LANG]
+    	 Transcribe audio file into text.
+    -W [AUD]	 
+    	 Translate audio file into English text.
     -z 	 Print last response JSON data.
+
