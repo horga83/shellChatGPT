@@ -17,32 +17,15 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 - Should™ work on Linux, FreeBSD, MacOS, and Termux.
 
 
-```
-% chatgpt.sh  What are the best Linux distros\?
-Prompt: 6 words; Max tokens: 1024
-######################################## 100.0%
-Model_: text-davinci-003 (text_completion)
-Usage_: 8 + 52 = 60 tokens
+\[GIF\]
 
-
-1. Ubuntu
-2. Linux Mint
-3. Debian
-4. Fedora
-5. openSUSE
-6. Arch Linux
-7. Manjaro
-8. elementary OS
-9. Zorin OS
-10. Solus
-```
 
 ## Getting Started
 
 ### Required packages
 
-- Free [OpenAI GPTChat key](https://beta.openai.com/account/api-keys)
-- Ksh, Bash or Zsh
+- Free [OpenAI GPTChat key](https://platform.openai.com/account/api-keys)
+- Ksh93, Bash or Zsh
 - cURL
 - JQ (optional)
 - Imagemagick (optional)
@@ -81,11 +64,15 @@ One-shot text completion:
 Text completion with Curie model:
 
     chatgpt.sh -mtext-curie-001 "Hello there! What is your name?"
-    chatgpt.sh -m1 "List biggest cities in the world"
+    chatgpt.sh -m1 "List biggest cities in the world."
 
-Chat completion, set temperature:
+_For better results,_ *set an instruction/system prompt*:
+    
+    chatgpt.sh -m1 -S"You are an AI assistant."  "List biggest cities in the world."
 
-    chatgpt.sh -cc -t0.7 "Hello there! What is your name?"
+Chat completion, less verbose, and set temperature:
+
+    chatgpt.sh -ccv -t0.7 "Hello there! What is your name?"
 
 Text/chat completion, use visual editor instead of shell `read` or `vared` (reuse initial text from positional arguments):
 
@@ -124,6 +111,11 @@ Generate transcription from input record, set portuguese as input language:
     chatgpt.sh -w pt
 
 
+## Prompts
+
+Note that the model's steering and capabilities require prompt engineering
+to even know that it should answer the questions.
+
 ## Help page
 
 An updated help page can be printed with `chatgpt.sh -h`.
@@ -133,19 +125,22 @@ Below is a copy of it.
 
 ### NAME
 
-	chatgpt.sh -- ChatGPT / DALL-E / Whisper  Shell Wrapper
+chatgpt.sh -- ChatGPT / DALL-E / Whisper  Shell Wrapper
 
 
 ### SYNOPSIS
 
-	chatgpt.sh [-m [MODEL_NAME|NUMBER]] [opt] [PROMPT]
-	chatgpt.sh [-m [MODEL_NAME|NUMBER]] [opt] [INSTRUCTION] [INPUT]
-	chatgpt.sh -e [opt] [INSTRUCTION] [INPUT]
-	chatgpt.sh -i [opt] [S|M|L] [PROMPT]
-	chatgpt.sh -i [opt] [S|M|L] [INPUT_PNG_PATH]
-	chatgpt.sh -l [MODEL_NAME]
-	chatgpt.sh -w [opt] [AUDIO_FILE] [LANG] [PROMPT]
-	chatgpt.sh -ccw [opt] [LANG]
+    chatgpt.sh [-m [MODEL_NAME|NUMBER]] [opt] [PROMPT]
+    chatgpt.sh [-m [MODEL_NAME|NUMBER]] [opt] [INSTRUCTION] [INPUT]
+    chatgpt.sh -e [opt] [INSTRUCTION] [INPUT]
+    chatgpt.sh -i [opt] [S|M|L] [PROMPT]
+    chatgpt.sh -i [opt] [S|M|L] [PNG_FILE]
+    chatgpt.sh -i [opt] [S|M|L] [PNG_FILE] [MASK_FILE] [PROPMT]
+    chatgpt.sh -l [MODEL_NAME]
+    chatgpt.sh -w [opt] [AUDIO_FILE] [LANG] [PROMPT-LANG]
+    chatgpt.sh -W [opt] [AUDIO_FILE] [PROMPT-EN]
+    chatgpt.sh -ccw [opt] [LANG]
+    chatgpt.sh -ccW [opt]
 
 
 All positional arguments are read as a single PROMPT. If the
@@ -157,8 +152,8 @@ Set option -c to start the chatbot via the text completion
 endpoint and record the conversation. This option accepts various
 models, defaults to `text-davinci-003` if none set.
 
-Set option -cc to start the chatbot via the chat endpoint and
-use the turbo models.
+Set option -cc to start the chatbot via native chat completions
+and use the turbo models.
 
 Set -C (with -cc) to resume from last history session.
 
@@ -166,9 +161,16 @@ Option -e sets the `edits` endpoint. That endpoint requires
 both INSTRUCTION and INPUT prompts. This option requires
 setting an `edits model`.
 
-Option -i generates images according to PROMPT. If first
-positional argument is a picture file, then generate variation
-of it. A size of output image may se set, such as S, M or L.
+Option -i generates images according to text PROMPT. If the first
+positional argument is an image file, then generate variations of it.
+If the first postional argument is an image file and the second a
+mask file (with alpha channel and transparency), and optionally,
+a text prompt, then edit the image according to mask and prompt.
+If mask is not provided, image must have transparency, which will
+be used as the mask. Optionally, set size of output image with
+[S]mall, [M]edium or [L]arge as the first positional argument.
+See IMAGES section below for more information on inpaint and out-
+paint.
 
 Option -w transcribes audio from mp3, mp4, mpeg, mpga, m4a, wav,
 and webm files. First positional argument must be an audio file.
@@ -179,7 +181,7 @@ text and a prompt in English may be set to guide the model.
 
 Combine -wW with -cc to start chat with voice input (whisper)
 support. Output may be piped to a voice synthesiser such as
-`espeakng`, to have full voice experience.
+`espeakng`, to have full voice in and out.
 
 Stdin is supported when there is no positional arguments left
 after option parsing. Stdin input sets a single PROMPT.
@@ -187,33 +189,62 @@ after option parsing. Stdin input sets a single PROMPT.
 User configuration is kept at `~/.chatgpt.conf`.
 Script cache is kept at `~/.cache/chatgptsh`.
 
-A personal (free) OpenAI API is required, set it with -k or
+A personal (free) OpenAI API is required, set it with -K or
 see ENVIRONMENT section.
-
-For the skill list, see <https://platform.openai.com/examples>.
 
 For complete model and settings information, refer to OPENAI
 API docs at <https://beta.openai.com/docs/guides>.
 
 
-### COMPLETIONS
+
+### TEXT COMPLETIONS
+
+#### 1. Text completion
 
 Given a prompt, the model will return one or more predicted
-completions. It can be used a chatbot.
+completions. For example, given a truncated input, the language
+model will try completing it. With specific instruction,
+language model SKILLS can activated, see
+<https://platform.openai.com/examples>.
 
-Set option -c to enter text completion chat and keep a history
-of the conversation and works with a variety of models.
 
-Set option -cc to use the chat completion endpoint. Works the
-same as the text completion chat (turbo models).
+#### 2. Chat Bot
+
+##### 2.1 Text Completion Chat
+
+Set option -c to start chat mode of text completion. It keeps a
+history file and remembers the conversation follow-up, and works
+with a variety of models.
+
+##### 2.1.1 Q&A Format
 
 The defaults chat format is `Q & A`. A name such as `NAME:`
 may be introduced as interlocutor. Setting only `:` works as
-an instruction prompt, send an empty prompt or complete the
-previous answer prompt.
+an instruction prompt (or to add to the previous answer), send
+an empty prompt or complete the previous answer prompt. See also
+Prompt Design.
 
-While in chat mode, type in one of the following commands, and
-a value in the new prompt (e.g. `!temp0.7`, `!mod1`):
+In the chat mode of text completion, the only initial indication 
+a conversation is to begun is given with the `Q: ` interlocutor
+flag. Without initial instructions, the first replies may return
+lax but should stabilise on further promtps.
+
+Alternatively, one may set an instruction prompt with the flag
+`: [INSTRUCTION]` or with environment variable $INSTRUCTION.
+
+##### 2.2 Native Chat Completions
+
+Set option -cc to use the chat completions. If user starts a prompt
+with `:`, message is set as `system` (very much like instructions)
+else the message is sent as a question. Turbo models are also the
+best option for many non-chat use cases and can be set to run a
+single time setting -mgpt-3.5-turbo instead of -cc.
+
+
+#### 3. Chat Commands
+
+While in chat mode the following commands (and a value), can be
+typed in the new prompt (e.g. `!temp0.7`, `!mod1`):
 
 	!NUM |  !max 	  Set maximum tokens.
 	-a   |  !pre 	  Set presence.
@@ -228,50 +259,39 @@ a value in the new prompt (e.g. `!temp0.7`, `!mod1`):
 	-x   |  !ed 	  Set/unset text editor.
 	!q   |  !quit	  Exit.
 
+To change the chat context at run time, the history file must be
+edited with `!hist`. Delete entries or comment them out with `#`.
 
-To change chat history, the history file must be edited with
-`!hist`. Delete entries or comment them out with `#`.
 
-Prompt Design
+#### 4. Prompt Engineering and Design
+
 Make a good prompt. May use bullets for multiple questions in
 a single prompt. Write `act as [technician]`, add examples of
 expected results.
 
-For the chatbot, the only initial indication given is a `Q: `
-interlocutor flag. Without previous instructions, the first
-replies may return lax but should stabilise on further promtps.
+Note that the model's steering and capabilities require prompt
+engineering to even know that it should answer the questions.
 
-Alternatively, one may try setting initial instructions prompt
-with the bot identity and how it should behave as, such as:
-
-	prompt>	": The following is a conversation with an AI
-		  assistant. The assistant is helpful, creative,
-		  clever, and friendly."
-
-	reply_> "A: Hello! How can I help you?"
-
-	prompt> "Q: Hello, what is your name?"
-
-Also see section ENVIRONMENT to set defaults chatbot instructions.
 For more on prompt design, see:
-<https://platform.openai.com/docs/guides/completion/prompt-design>
-<https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
- 
- 
 
-    Settings
-    Temperature 	number 	Optional 	Defaults to 1
-    
-    Lowering temperature means it will take fewer risks, and
-    completions will be more accurate and deterministic. Increasing
-    temperature will result in more diverse completions.
-    Ex: low-temp:  We’re not asking the model to try to be creative
-    with its responses – especially for yes or no questions.
+    <https://platform.openai.com/docs/guides/completion/prompt-design>
+    <https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
+
+
+#### 5. Settings
+
+Temperature 	number 	Optional 	Defaults to 0
+
+Lowering temperature means it will take fewer risks, and
+completions will be more accurate and deterministic. Increasing
+temperature will result in more diverse completions.
+Ex: low-temp:  We’re not asking the model to try to be creative
+with its responses – especially for yes or no questions.
 
 For more on settings, see <https://beta.openai.com/docs/guides>.
 
 
-### EDITS
+### TEXT EDITS
 
 This endpoint is set with models with `edit` in their name
 or option -e.
@@ -286,28 +306,78 @@ completions endpoint.
 
 ### IMAGES / DALL-E
 
-The first positional parameter sets the output image size
-256x256/Small, 512x512/Medium or 1024x1024/Large. Defaults=512x512.
+#### 1. Image Generations
 
-An image can be created given a prompt. A text description of
-the desired image(s). The maximum length is 1000 characters.
+An image can be created given a text prompt. A text description
+of the desired image(s). The maximum length is 1000 characters.
 
-Also, a variation of a given image can be generated. The image
-to use as the basis for the variation(s). Must be a valid PNG
-file, less than 4MB and square. If Imagemagick is available,
-input image will be converted to square before upload.
+
+#### 2. Image Variations
+
+Variations of a given image can be generated. The image to use as
+the basis for the variations must be a valid PNG file, less than
+4MB and square.
+
+
+#### 3. Image Edits
+
+Image and mask files must be provided. If mask is not provided,
+image must have transparency, which will be used as the mask. A
+text prompt is required for the edits endpoint to be used.
+
+##### 3.1 ImageMagick
+
+If ImageMagick is available, input image will be checked and edited
+(converted) to fit dimensions and mask requirements.
+
+##### 3.2 Transparent Colour and Fuzz
+
+A transparent colour must be set with -@[COLOR] with colour specs
+ImageMagick can understand. Defaults=black.
+
+By default the color must be exact. Use the fuzz option to match
+colors that are close to the target color. This can be set with
+`-@[VALUE%]` as a percentage of the maximum possible intensity,
+for example `-@10%black`.
+
+See also:
+
+    <https://imagemagick.org/script/color.php>
+    <https://imagemagick.org/script/command-line-options.php#fuzz>
+
+##### 3.3 Alpha Channel
+
+And alpha channel is generated with ImageMagick from any image
+with the set transparent colour (defaults to black). In this way,
+it is easy to make a mask with any black and white image as a
+template.
+
+##### 3.4 In-Paint and Out-Paint
+
+In-painting is achieved setting an image with a mask and a prompt.
+Out-painting can be achieved manually with the aid of this script.
+Paint a portion of the outer area of an image with a defined colour
+which will be used as the mask, and set the same colour in the
+script with -@. Choose the best result amongst many to continue
+the out-painting process.
+
+
+Optionally, for all image generations, variations, and edits,
+set size of output image with 256x256 (Small), 512x512 (Medium)
+or 1024x1024 (Large) as the first positional argument. Defaults=512x512.
 
 
 ### AUDIO / WHISPER
 
-#### Transcriptions
+#### 1. Transcriptions
 
 Transcribes audio into the input language. Set a two letter
 ISO-639-1 language as the second positional parameter. A prompt
+
 may also be set as last positional parameter to help guide the
 model. This prompt should match the audio language.
 
-##### Translations
+#### 2. Translations
 
 Translates audio into into English. An optional text to guide
 the model's style or continue a previous audio segment is optional
@@ -320,16 +390,23 @@ Currently, only one audio model is available.
 ### ENVIRONMENT
 
     CHATGPTRC 	Path to user chatgpt.sh configuration.
-			Defaults=~/.chatgpt.conf
-
-	INSTRUCTION 	Initial instruction set for the chatbot.
-
-	OPENAI_API_KEY
-	OPENAI_KEY 	Set your personal (free) OpenAI API key.
-
-	VISUAL
-	EDITOR 		Text editor for external prompt editing.
-			Defaults=vim
+    
+    		Defaults=~/.chatgpt.conf
+    
+    INSTRUCTION 	Initial instruction set for the chatbot.
+    
+    
+    OPENAI_API_KEY
+    OPENAI_KEY 	Set your personal (free) OpenAI API key.
+    
+    
+    REC_CMD 	Audio recording command.
+    
+    
+    VISUAL
+    EDITOR 		Text editor for external prompt editing.
+    
+    		Defaults=vim
 
 
 ### LIMITS
@@ -338,80 +415,89 @@ For most models this is 2048 tokens, or about 1500 words).
 Davici model limit is 4000 tokens (~3000 words) and for
 turbo models it is 4096 tokens.
 
-	Free trial users
-	Text & Embedding        Codex          Edit        Image
+    Free trial users
+    Text & Embedding        Codex          Edit        Image
                   20 RPM       20 RPM        20 RPM
              150,000 TPM   40,000 TPM   150,000 TPM   50 img/min
-
-	RPM 	(requests per minute)
-	TPM 	(tokens per minute)
+    
+    RPM 	(requests per minute)
+    TPM 	(tokens per minute)
 
 
 ### BUGS
 
-Certain PROMPTS may return empty responses. Maybe the model has
-nothing to add to the input prompt or it expects more text. Try
-trimming spaces, appending a full stop/ellipsis, or resetting
-temperature or adding more text. See prompt design. Keep in mind
-that prompts ending with a space character may result in lower-
-quality output. This is because the API already incorporates
-trailing spaces in its dictionary of tokens.
+Certain prompts may return empty responses. Maybe the model has
+nothing to further complete input or it expects more text. Try
+trimming spaces, appending a full stop/ellipsis, resetting tem-
+perature or adding more text.
 
-Language models are but a mirror of human written records, they
-do not `understand` your questions or `know` the answers to it.
+Prompts ending with a space character may result in lower quality
+output. This is because the API already incorporates trailing
+spaces in its dictionary of tokens.
+
+Instruction prompts are required for the model to even know that
+it should answer the questions. See Prompt Design above.
+
 Garbage in, garbage out.
 
 
 ### REQUIREMENTS
 
-A free OpenAI GPTChat key. Ksh93, Bash or Zsh. cURL. JQ, ImageMagick, Sox/Ffmpeg are optionally required.
+A free OpenAI GPTChat key. Ksh93, Bash or Zsh. cURL. JQ,
+ImageMagick, and Sox/Alsa-tools/FFmpeg are optionally required.
 
 
 ### OPTIONS
 
-	-NUM 	 Set maximum tokens. Defaults=1024. Max=4096.
-	-a [VAL] Set presence penalty  (cmpls/chat, unset, -2.0 - 2.0).
-	-A [VAL] Set frequency penalty (cmpls/chat, unset, -2.0 - 2.0).
-	-b 	 Print log probabilities (cmpls, unset, 0 - 5).
-	-c 	 Chat mode in text completions, new session.
-	-cc 	 Chat mode in chat endpoint, new session.
-	-C 	 Continue from last session (with -cc, compls/chat).
-	-e [INSTRUCT] [INPUT]
-		 Set Edit mode. Model Defaults=text-davinci-edit-001.
-	-f 	 Skip sourcing user configuration file.
-	-h 	 Print this help page.
-	-H 	 Edit history file with text editor.
-	-i [PROMPT]
-		 Creates an image given a prompt.
-	-i [PNG_PATH]
-		 Creates a variation of a given image.
-	-j 	 Print raw JSON response (debug with -jVV).
-	-k [KEY] Set API key (free).
-	-l [MODEL]
-		 List models or print details of a MODEL.
-	-L [FILEPATH]
-		 Set a logfile. Filepath is required.
-	-m [MODEL]
-		 Set a model name, check with -l. Model name is optional.
-	-m [NUM] Set model by index NUM:
-		  # Completions           # Moderation
-		  0.  text-davinci-003    6.  text-moderation-latest
-		  1.  text-curie-001      7.  text-moderation-stable
-		  2.  text-babbage-001    # Edits                  
-		  3.  text-ada-001        8.  text-davinci-edit-001
-		  # Codex                 9.  code-davinci-edit-001
-		  4.  code-davinci-002    # Chat
-		  5.  code-cushman-001    10. gpt-3.5-turbo
-	-n [NUM] Set number of results. Defaults=1.
-	-p [VAL] Set top_p value, nucleus sampling (cmpls/chat),
-		 (unset, 0.0 - 1.0).
-	-S [INSTRUCTION|FILE]
-		 Set an instruction prompt.
-	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
-		 (0.0 - 2.0, whisper 0.0 - 1.0). Defaults=0.7.
-	-vv 	 Less verbose in chat mode.
-	-VV 	 Pretty-print request body. Set twice to dump raw.
-	-x 	 Edit prompt in text editor.
-	-w 	 Transcribe audio file into text.
-	-W 	 Translate audio file into English text.
-	-z 	 Print last response JSON data.
+    -@ [[VAL%]COLOUR]
+    	 Set transparent colour of image mask. Defaults=black.
+    	 Fuzz intensity can be set with [VAL%]. Defaults=0%.
+    -NUM 	 Set maximum tokens. Defaults=1024. Max=4096.
+    -a [VAL] Set presence penalty  (cmpls/chat, unset, -2.0 - 2.0).
+    -A [VAL] Set frequency penalty (cmpls/chat, unset, -2.0 - 2.0).
+    -b 	 Print log probabilities (cmpls, unset, 0 - 5).
+    -c 	 Chat mode in text completions, new session.
+    -cc 	 Chat mode in chat completions, new session.
+    -C 	 Continue from last session (with -cc, compls/chat).
+    -e [INSTRUCT] [INPUT]
+    	 Set Edit mode. Model Defaults=text-davinci-edit-001.
+    -f 	 Skip sourcing user configuration file.
+    -h 	 Print this help page.
+    -H 	 Edit history file with text editor.
+    -i [PROMPT]
+    	 Generate images given a prompt.
+    -i [PNG_PATH]
+    	 Create variations of a given image.
+    -i [PNG_PATH] [MASK_PATH] [PROMPT]
+    	 Edit image according to mask and prompt.
+    -j 	 Print raw JSON response (debug with -jVV).
+    -k 	 Disable colour output, otherwise auto.
+    -k [KEY] Set API key (free).
+    -l [MODEL]
+    	 List models or print details of a MODEL.
+    -L [FILEPATH]
+    	 Set a logfile. Filepath is required.
+    -m [MODEL]
+    	 Set a model name, check with -l. Model name is optional.
+    -m [NUM] Set model by index NUM:
+    	  # Completions           # Moderation
+    	  0.  text-davinci-003    6.  text-moderation-latest
+    	  1.  text-curie-001      7.  text-moderation-stable
+    	  2.  text-babbage-001    # Edits                  
+    	  3.  text-ada-001        8.  text-davinci-edit-001
+    	  # Codex                 9.  code-davinci-edit-001
+    	  4.  code-davinci-002    # Chat
+    	  5.  code-cushman-001    10. gpt-3.5-turbo
+    -n [NUM] Set number of results. Defaults=1.
+    -p [VAL] Set top_p value, nucleus sampling (cmpls/chat),
+    	 (unset, 0.0 - 1.0).
+    -S [INSTRUCTION|FILE]
+    	 Set an instruction prompt.
+    -t [VAL] Set temperature value (cmpls/chat/edits/audio),
+    	 (0.0 - 2.0, whisper 0.0 - 1.0). Defaults=0.
+    -vv 	 Less verbose in chat mode.
+    -VV 	 Pretty-print request body. Set twice to dump raw.
+    -x 	 Edit prompt in text editor.
+    -w 	 Transcribe audio file into text.
+    -W 	 Translate audio file into English text.
+    -z 	 Print last response JSON data.
