@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.3  2023  by mountaineerbr  GPL+3
+# v0.8.4  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -133,7 +133,7 @@ SYNOPSIS
 	see ENVIRONMENT section.
 
 	For complete model and settings information, refer to OPENAI
-	API docs at <https://beta.openai.com/docs/guides>.
+	API docs at <https://platform.openai.com/docs/>.
 
 
 TEXT COMPLETIONS
@@ -217,7 +217,7 @@ TEXT COMPLETIONS
 	Ex: low-temp:  We’re not asking the model to try to be creative
 	with its responses – especially for yes or no questions.
 
-	For more on settings, see <https://beta.openai.com/docs/guides>.
+	For more on settings, see <https://platform.openai.com/docs/>.
 
 
 TEXT EDITS
@@ -913,9 +913,9 @@ function recordf
 
 	[[ -e $1 ]] && rm -- "$1"  #remove old cache audio file
 	if ((!OPTV)) && ((N)) && ((!CONTINUE))
-	then 	printf "\\r${BWhite}%s${NC}\\n\\n" '*** Press to START recording ***' >&2
+	then 	printf "\\r${BWhite}%s${NC}\\n\\n" ' * Press any key to START record * ' >&2
 		__read_charf
-	fi ;printf "\\r${BWhite}%s${NC}\\n\\n" '*** Press to STOP recording ***' >&2
+	fi ;printf "\\r${BWhite}${On_Purple}%s${NC}\\n\\n" ' * Press any key to STOP record * ' >&2
 
 	if [[ -n ${REC_CMD%% *} ]] && command -v ${REC_CMD%% *} >/dev/null 2>&1
 	then 	$REC_CMD "$1" &  #this ensures max user compat
