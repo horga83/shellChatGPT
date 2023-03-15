@@ -101,9 +101,9 @@ instructions (required) and the proper (optional):
     chatgpt.sh -e "Fix spelling mistakes" "This promptr has spilling mistakes."
     chatgpt.sh -e "Shell code to move files to trash bin." ""
 
-Edit image, make a mask with the black colour:
+Edits works great with INSTRUCTION and an empty prompt (e.g. to create
+some code based on instructions only).
 
-![Showing off Image Edits](gfx/img_edits.gif)
 
 ### Image Generations
 
@@ -123,6 +123,10 @@ Generate image variation:
 ### Image Edits
 
     chatgpt.sh -i path/to/image.png path/to/mask.png "Fill with red."
+
+Edit image, make a mask from the black colour:
+
+![Showing off Image Edits](gfx/img_edits.gif)
 
 
 ### Audio Transcriptions / Translations
