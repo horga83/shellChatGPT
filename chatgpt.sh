@@ -1,8 +1,8 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.11  2023  by mountaineerbr  GPL+3
+# v0.8.12  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
-[[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
+[[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -48,7 +48,7 @@ CONFFILE="$HOME/.chatgpt.conf"
 CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatgptsh"
 OUTDIR="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}"
 
-
+#--------
 # Load user defaults
 ((OPTF)) || { 	[[ -e "${CHATGPTRC:-$CONFFILE}" ]] && . "${CHATGPTRC:-$CONFFILE}" ;}
 
@@ -60,10 +60,10 @@ FILEOUT="${OUTDIR%/}/dalle_out.png"
 FILEIN="${CACHEDIR%/}/dalle_in.png"
 FILEINW="${CACHEDIR%/}/whisper_in.mp3"
 USRLOG="${OUTDIR%/}/${FILETXT##*/}"
-[[ -n $KSH_VERSION ]] && { 	set -o emacs -o multiline ;HISTFILE="${CACHEDIR%/}/history_ksh" ;}
-[[ -n $ZSH_VERSION ]] && HISTFILE="${CACHEDIR%/}/history_zsh"
-[[ -n $BASH_VERSION ]] && HISTFILE="${CACHEDIR%/}/history_bash"
 HISTSIZE=512
+[[ -n $KSH_VERSION ]] && { 	HISTFILE="${CACHEDIR%/}/history_ksh" ;set -o emacs -o multiline ;}
+[[ -n $ZSH_VERSION ]] && { 	HISTFILE="${CACHEDIR%/}/history_zsh" ;zmodload zsh/zle ;}
+[[ -n $BASH_VERSION ]] && HISTFILE="${CACHEDIR%/}/history_bash"
 
 MAN="NAME
 	${0##*/} -- ChatGPT / DALL-E / Whisper  Shell Wrapper
