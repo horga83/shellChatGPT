@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.12  2023  by mountaineerbr  GPL+3
+# v0.8.13  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
 
@@ -1277,6 +1277,7 @@ then 	OPTM=12 MOD="$MOD_AUDIO"
 fi
 MOD="${MOD:-${MODELS[OPTM]}}"
 [[ -n $EPN ]] || set_model_epnf "$MOD"
+[[ -n ${INSTRUCTION//[$IFS]} ]] || unset INSTRUCTION
 
 (($#)) || [[ -t 0 ]] || set -- "$(</dev/stdin)"
 
@@ -1308,7 +1309,7 @@ then 	((OPTV)) || printf "${BWhite}%s${NC}\\n" 'Image Generations' >&2
 elif ((OPTEMBED))  #embeds
 then 	embedf "$@"
 elif ((OPTE))      #edits
-then 	if (($# == 1)) && [[ -n "$INSTRUCTION" ]]
+then 	if (($# == 1)) && ((${#INSTRUCTION}))
 	then 	set -- "$INSTRUCTION" "$@"
 		((OPTV)) || printf '%s -- "%s"\n' 'INSTRUCTION' "$INSTRUCTION" >&2
 	fi
@@ -1321,14 +1322,14 @@ else               #completions
 	((OPTRESUME)) || ((!OPTC)) || break_sessionf
 
 	#chatbot instructions
-	((!${#INSTRUCTION})) || ((OPTV)) || printf "${BWhite}%s${NC}: %s\\n" 'INSTRUCTION' "$INSTRUCTION" >&2
 	if ((OPTRESUME))
 	then 	unset INSTRUCTION
-	elif ((OPTC))
-	then  #chat should have instructions??? Or can it be used anotehr way?
-		INSTRUCTION="${INSTRUCTION-Be a nice bot.}"
+	elif 	((OPTC))
+	then
+		INSTRUCTION="${INSTRUCTION:-Be a nice bot.}"
 		push_tohistf "$(escapef ": $INSTRUCTION")"
 		(( OLD_TOTAL += $(__tiktokenf ": $INSTRUCTION" "4") ))
+		((OPTV)) || printf "${BWhite}%s${NC}: %s\\n" 'INSTRUCTION' "$INSTRUCTION" >&2
 		unset INSTRUCTION
 	fi
 
