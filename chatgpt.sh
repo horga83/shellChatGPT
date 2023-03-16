@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.10  2023  by mountaineerbr  GPL+3
+# v0.8.11  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS
 
@@ -911,7 +911,7 @@ function recordf
 	typeset termux pid REPLY
 
 	[[ -e $1 ]] && rm -- "$1"  #remove file before writing to it
-	if ((!OPTV)) && ((!SKIP)) && [[ -t 1 ]]
+	if { 	((!OPTV)) && ((!SKIP)) ;} || [[ ! -t 1 ]]
 	then 	printf "\\r${BWhite}%s${NC}\\n\\n" ' * Press any key to START record * ' >&2
 		__read_charf
 	fi ;printf "\\r${BWhite}${On_Purple}%s${NC}\\n\\n" ' * Press any key to STOP record * ' >&2
@@ -1390,7 +1390,7 @@ else               #completions
 		if ((OPTX))
 		then 	edf "$@" || continue  #sig:200
 			while printf "${BCyan}%s${NC}\\n" "${REC_OUT/$SPC1${SET_TYPE:-$Q_TYPE}:$SPC3}"
-			do 	((OPTV)) || new_prompt_confirmf
+			do 	((OPTV==1)) || new_prompt_confirmf
 				case $? in
 					201) 	break 2;;  #abort
 					200) 	continue 2;;  #redo
