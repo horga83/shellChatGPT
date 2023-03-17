@@ -1,8 +1,8 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.14  2023  by mountaineerbr  GPL+3
+# v0.8.15  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
-[[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
+[[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;zmodload zsh/zle ;}
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -63,6 +63,7 @@ USRLOG="${OUTDIR%/}/${FILETXT##*/}"
 [[ -n $KSH_VERSION ]] && { 	HISTFILE="${CACHEDIR%/}/history_ksh" ;set -o emacs -o multiline ;}
 [[ -n $BASH_VERSION ]] && HISTFILE="${CACHEDIR%/}/history_bash"
 #https://www.zsh.org/mla/users/2013/msg00041.html
+
 HISTSIZE=512
 
 MAN="NAME
