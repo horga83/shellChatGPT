@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.13  2023  by mountaineerbr  GPL+3
+# v0.8.14  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
 
@@ -15,7 +15,7 @@
 # Audio model
 #MOD_AUDIO=whisper-1
 # Temperature
-OPTT=0
+#OPTT=
 # Top_p probability mass (nucleus sampling)
 #OPTP=1
 # Maximum tokens
@@ -60,17 +60,17 @@ FILEOUT="${OUTDIR%/}/dalle_out.png"
 FILEIN="${CACHEDIR%/}/dalle_in.png"
 FILEINW="${CACHEDIR%/}/whisper_in.mp3"
 USRLOG="${OUTDIR%/}/${FILETXT##*/}"
-HISTSIZE=512
 [[ -n $KSH_VERSION ]] && { 	HISTFILE="${CACHEDIR%/}/history_ksh" ;set -o emacs -o multiline ;}
-[[ -n $ZSH_VERSION ]] && { 	HISTFILE="${CACHEDIR%/}/history_zsh" ;zmodload zsh/zle ;}
 [[ -n $BASH_VERSION ]] && HISTFILE="${CACHEDIR%/}/history_bash"
+#https://www.zsh.org/mla/users/2013/msg00041.html
+HISTSIZE=512
 
 MAN="NAME
 	${0##*/} -- ChatGPT / DALL-E / Whisper  Shell Wrapper
 
 
 SYNOPSIS
-	${0##*/} [-m [MODEL_NAME|NUMBER]] [opt] [PROMPT]
+	${0##*/} [-m [MODEL_NAME|NUMBER]] [opt] [PROMPT|TXT_FILE]
 	${0##*/} [-m [MODEL_NAME|NUMBER]] [opt] [INSTRUCTION] [INPUT]
 	${0##*/} -e [opt] [INSTRUCTION] [INPUT]
 	${0##*/} -i [opt] [S|M|L] [PROMPT]
@@ -95,16 +95,23 @@ SYNOPSIS
 	Set option -cc to start the chatbot via native chat completions
 	and use the turbo models.
 
-	Set -C (with -cc) to resume from last history session.
+	Set -C (with -c and -cc) to resume from last history session.
 
-	Option -e sets the \`edits' endpoint. That endpoint requires both
-	INSTRUCTION and INPUT prompts. User may choose a model amongst
+	A text file may be set as first positional argument for text and
+	chat completions, and text/code edits. After loading, it is set
+	as the first part of PROMPT. Further arguments are added to PROMPT.
+
+	Option -S sets an INSTRUCTION prompt (the initial prompt) for
+	text, chat completions, and text/code edits. It may be a text file.
+
+	Option -e sets the \`text edits' endpoint. That endpoint requires
+	both INSTRUCTION and INPUT prompts. User may choose a model amongst
 	the \`edit' model family.
 
 	Option -i generates images according to text PROMPT. If the first
-	positional argument is an image file, then generate variations of it.
-	If the first postional argument is an image file and the second a
-	mask file (with alpha channel and transparency), and optionally,
+	positional argument is an image file, then generate variations of
+	it. If the first positional argument is an image file and the second
+	a mask file (with alpha channel and transparency), and optionally,
 	a text prompt, then edit the image according to mask and prompt.
 	If mask is not provided, image must have transparency, which will
 	be used as the mask. Optionally, set size of output image with
@@ -132,11 +139,11 @@ SYNOPSIS
 	A personal (free) OpenAI API is required, set it with -K or
 	see ENVIRONMENT section.
 
-	For complete model and settings information, refer to OPENAI
+	For complete model and settings information, refer to OpenAI
 	API docs at <https://platform.openai.com/docs/>.
 
 
-TEXT COMPLETIONS
+TEXT / CHAT COMPLETIONS
 	1. Text completion
 	Given a prompt, the model will return one or more predicted
 	completions. For example, given a truncated input, the language
@@ -161,7 +168,7 @@ TEXT COMPLETIONS
 	In the chat mode of text completion, the only initial indication 
 	a conversation is to begun is given with the \`$Q_TYPE: ' interlocutor
 	flag. Without initial instructions, the first replies may return
-	lax but should stabilise on further promtps.
+	lax but should stabilise on further prompts.
 	
 	Alternatively, one may set an instruction prompt with the flag
 	\`: [INSTRUCTION]' or with environment variable \$INSTRUCTION.
@@ -196,9 +203,26 @@ TEXT COMPLETIONS
 
 
 	4. Prompt Engineering and Design
-	Make a good prompt. May use bullets for multiple questions in
-	a single prompt. Write \`act as [technician]', add examples of
-	expected results.
+	Unless the chat option -c or -cc are set, _no_ instruction is
+	given to the language model (as would, otherwise, be the first
+	prompt). On chat mode, if no instruction is set, a short one is
+	given, and some options set, such as increasing temp and presence
+	penalty, in order to un-lobotomise the bot. With cheap and fast
+	text completions models, such as Curie, the best_of option may
+	even be worth setting (to 2 or 3).
+
+	Prompt engineering is an art on itself. Study carefully how to
+	craft the best prompts to get the most out of text, code and
+	chat completions models.
+
+	Certain prompts may return empty responses. Maybe the model has
+	nothing to further complete input or it expects more text. Try
+	trimming spaces, appending a full stop/ellipsis, resetting tem-
+	perature or adding more text.
+
+	Prompts ending with a space character may result in lower quality
+	output. This is because the API already incorporates trailing
+	spaces in its dictionary of tokens.
 
 	Note that the model's steering and capabilities require prompt
 	engineering to even know that it should answer the questions.
@@ -209,13 +233,34 @@ TEXT COMPLETIONS
 
 
 	5. Settings
-	Temperature 	number 	Optional 	Defaults to $OPTT
+	Max Tokens
+	The maximum number of tokens to generate in the completion.
+	Beware that setting this to the maximum allowed may stop the
+	model itself.
 
-	Lowering temperature means it will take fewer risks, and
-	completions will be more accurate and deterministic. Increasing
-	temperature will result in more diverse completions.
-	Ex: low-temp:  We’re not asking the model to try to be creative
-	with its responses – especially for yes or no questions.
+	Temperature
+	Also known as creativity, more random outputs. Defaults to 1.
+	We generally recommend altering this or top_p but not both.
+
+	Top_p
+	Alternative to temperature, called nucleus sampling, where the
+	model considers the results with top_p probability mass. So 0.1
+	means only the tokens from the top 10% probability mass are
+	considered. Defaults to 1
+
+	Presence Penalty
+	Number between -2.0 and 2.0. Positive values penalize new tokens
+	based on whether they appear in the text so far. Defaults to 0.
+
+	Frequency Penalty
+	Number between -2.0 and 2.0. Positive values penalize new tokens
+	based on their existing frequency in the text so far. Defaults to 0.
+
+	Best Of
+	Returns the \`best' of ou n results. Best_of controls the number
+	of candidate completions and n specifies how many to return.
+	Best_of must be greater than n (option -n). Defaults to 1.
+	Note: This parameter can quickly consume your token quota.
 
 	For more on settings, see <https://platform.openai.com/docs/>.
 
@@ -227,7 +272,7 @@ TEXT EDITS
 	Editing works by specifying existing text as a prompt and an
 	instruction on how to modify it. The edits endpoint can be used
 	to change the tone or structure of text, or make targeted changes
-	like fixing spelling. We’ve also observed edits to work well on
+	like fixing spelling. We've also observed edits to work well on
 	empty prompts, thus enabling text generation similar to the
 	completions endpoint. 
 
@@ -333,17 +378,8 @@ LIMITS
 
 
 BUGS
-	Certain prompts may return empty responses. Maybe the model has
-	nothing to further complete input or it expects more text. Try
-	trimming spaces, appending a full stop/ellipsis, resetting tem-
-	perature or adding more text.
-
-	Prompts ending with a space character may result in lower quality
-	output. This is because the API already incorporates trailing
-	spaces in its dictionary of tokens.
-
 	Instruction prompts are required for the model to even know that
-	it should answer the questions. See Prompt Design above.
+	it should answer the questions. See Prompt Engineering above.
 
 	Garbage in, garbage out.
 
@@ -360,10 +396,12 @@ OPTIONS
 	-NUM 	 Set maximum tokens. Defaults=$OPTMM. Max=4096.
 	-a [VAL] Set presence penalty  (cmpls/chat, unset, -2.0 - 2.0).
 	-A [VAL] Set frequency penalty (cmpls/chat, unset, -2.0 - 2.0).
-	-b 	 Print log probabilities (cmpls, unset, 0 - 5).
+	-b [VAL] Set best of, VALUE must be greater than opt -n (cmpls).
+		 Defaults=1.
+	-B 	 Print log probabilities (cmpls, unset, 0 - 5).
 	-c 	 Chat mode in text completions, new session.
 	-cc 	 Chat mode in chat completions, new session.
-	-C 	 Continue from last session (with -cc, compls/chat).
+	-C 	 Continue from last session (with -c, -cc, compls/chat).
 	-e [INSTRUCT] [INPUT]
 		 Set Edit mode. Model Defaults=text-davinci-edit-001.
 	-f 	 Skip sourcing user configuration file.
@@ -381,7 +419,7 @@ OPTIONS
 	-l [MODEL]
 		 List models or print details of a MODEL.
 	-L [FILEPATH]
-		 Set a logfile. Filepath is required.
+		 Set a logfile. FILEPATH is required.
 	-m [MODEL]
 		 Set a model name, check with -l. Model name is optional.
 	-m [NUM] Set model by index NUM:
@@ -399,7 +437,7 @@ OPTIONS
 	-S [INSTRUCTION|FILE]
 		 Set an instruction prompt.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
-		 (0.0 - 2.0, whisper 0.0 - 1.0). Defaults=$OPTT.
+		 (0.0 - 2.0, whisper 0.0 - 1.0). Defaults=${OPTT:-0}.
 	-vv 	 Less verbose.
 	-VV 	 Pretty-print request body. Set twice to dump raw.
 	-x 	 Edit prompt in text editor.
@@ -453,7 +491,7 @@ function set_model_epnf
 	unset OPTE OPTEMBED
 	case "$1" in
 		*whisper*) 		((OPTWW)) && EPN=8 || EPN=7;;
-		*turbo*) 		EPN=6 ;((OPTC)) && OPTC=2 ;unset OPTB;;
+		*turbo*) 		EPN=6 ;((OPTC)) && OPTC=2 ;unset OPTB OPTBB;;
 		code-*) 	case "$1" in
 					*search*) 	EPN=5 OPTEMBED=1;;
 					*edit*) 	EPN=2 OPTE=1;;
@@ -504,12 +542,12 @@ function new_prompt_confirmf
 {
 	typeset REPLY
 
-	printf "${BWhite}%s${NC} " "Confirm prompt? [Y]es, [n]o,${OPTX:+ [e]dit,} [r]edo or [a]bort " >&2
+	printf "${BWhite}%s${NC} " "Confirm prompt? [Y]es, [n]o, [e]dit, [r]edo or [a]bort " >&2
 	REPLY=$(__read_charf)
 	case "${REPLY:-$1}" in
 		[AaQq]*) 	return 201;;  #break
 		[Rr]*) 	return 200;;  #continue
-		[EeVv]*) 	return 199;;  #edf
+		[EeVv]*) 	return 199;;  #edit
 		[Nn]*) 	unset REC_OUT TKN_PREV ;return 1;;  #no
 	esac  #yes
 }
@@ -835,8 +873,13 @@ function unescapef
 function break_sessionf
 {
 	[[ -e "$FILECHAT" ]] || return
-	[[ $(tail -n 20 "$FILECHAT") = *[Bb][Rr][Ee][Aa][Kk] ]] \
+	[[ BREAK$(tail -n 20 "$FILECHAT") = *[Bb][Rr][Ee][Aa][Kk] ]] \
 	|| tee -a -- "$FILECHAT" >&2 <<<'SESSION BREAK'
+}
+
+function print_sysmsgf
+{
+	((OPTV)) || printf "${BWhite}%s${NC}: %s\\n" "$1" "$2" >&2
 }
 
 #fix variable value, add zero before/after dot.
@@ -889,18 +932,20 @@ function check_optrangef
 #check and set settings
 function set_optsf
 {
-	check_optrangef "$OPTA" -2.0 2.0 'Presence penalty'
-	check_optrangef "$OPTAA" -2.0 2.0 'Frequency penalty'
-	check_optrangef "$OPTB" 0 5 Logprobs
+	check_optrangef "$OPTA" -2.0 2.0 'Presence Penalty'
+	check_optrangef "$OPTAA" -2.0 2.0 'Frequency Penalty'
+	check_optrangef "${OPTB:-$OPTN}" $OPTN 50 BestOf
+	check_optrangef "$OPTBB" 0 5 LogProbs
 	check_optrangef "$OPTP" 0.0 1.0 Top_p
 	check_optrangef "$OPTT" 0.0 2.0 Temperature  #whisper max=1
-	((OPTI)) && check_optrangef "$OPTN" 1 10 NumberOfResults
+	((OPTI)) && check_optrangef "$OPTN" 1 10 'Number of Results'
 	[[ -n ${OPTT#0} ]] && [[ -n ${OPTP#1} ]] \
 	&& printf "${Red}Warning: %s${NC}\\n" "Temperature and Top_p are both set" >&2
 
 	[[ -n $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA," || unset OPTA_OPT
 	[[ -n $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA," || unset OPTAA_OPT
-	[[ -n $OPTB ]] && OPTB_OPT="\"logprobs\": $OPTB," || unset OPTB_OPT
+	[[ -n $OPTB ]] && OPTB_OPT="\"best_of\": $OPTB," || unset OPTB_OPT
+	[[ -n $OPTBB ]] && OPTBB_OPT="\"logprobs\": $OPTBB," || unset OPTBB_OPT
 	[[ -n $OPTP ]] && OPTP_OPT="\"top_p\": $OPTP," || unset OPTP_OPT
 }
 
@@ -973,7 +1018,7 @@ function whisperf
 		shift
 	fi
 	#set a prompt
-	[[ -n ${*//@([$IFS]|\\[ntrvf])} ]] && set -- -F prompt="$(escapef "$*")"
+	[[ -n ${*//[$IFS]} ]] && set -- -F prompt="$(escapef "$*")"
 	prompt_audiof "$file" $lang "$@"
 	jq -r '.text' "$FILE" || cat -- "$FILE"
 }
@@ -1184,7 +1229,7 @@ function editf
 
 
 #parse opts
-while getopts a:A:b:cCefhHijlL:m:n:kK:p:S:t:vVxwWz0123456789@: c
+while getopts a:A:b:B:cCefhHijlL:m:n:kK:p:S:t:vVxwWz0123456789@: c
 do 	fix_dotf OPTARG
 	case $c in
 		@) 	OPT_AT="$OPTARG"  #colour name/spec
@@ -1203,10 +1248,11 @@ do 	fix_dotf OPTARG
 		a) 	OPTA="$OPTARG";;
 		A) 	OPTAA="$OPTARG";;
 		b) 	OPTB="$OPTARG";;
+		B) 	OPTBB="$OPTARG";;
 		c) 	((++OPTC));;
 		C) 	((++OPTRESUME));;
 		e) 	OPTE=1 EPN=2;;
-		f$OPTF) 	unset MOD MOD_AUDIO INSTRUCTION CHATINSTR EPN OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTP OPTMINI KSH_EDIT_MODE
+		f$OPTF) 	unset MOD MOD_AUDIO INSTRUCTION CHATINSTR EPN OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTP OPTT OPTMINI KSH_EDIT_MODE
 			OPTF=1 ;. "$0" "$@" ;exit;;
 		h) 	printf '%s\n' "$MAN" ;exit ;;
 		H) 	__edf "$FILECHAT" ;exit ;;
@@ -1284,6 +1330,7 @@ MOD="${MOD:-${MODELS[OPTM]}}"
 ((OPTX)) && ((OPTE+OPTEMBED+OPTI+OPTII)) &&
 edf "$@" && set -- "$(<"$FILETXT")"  #editor
 
+((OPTC)) && OPTT="${OPTT:-0.6}" || OPTT="${OPTT:-0}"  #temp
 ((OPTL+OPTZ+OPTW)) || ((!$#)) || token_prevf "$*"
 
 for arg  #escape input
@@ -1309,31 +1356,37 @@ then 	((OPTV)) || printf "${BWhite}%s${NC}\\n" 'Image Generations' >&2
 elif ((OPTEMBED))  #embeds
 then 	embedf "$@"
 elif ((OPTE))      #edits
-then 	if (($# == 1)) && ((${#INSTRUCTION}))
+then 	[[ -e $1 ]] && set -- "$(<"$1")" "${@:2}"
+	if (($# == 1)) && ((${#INSTRUCTION}))
 	then 	set -- "$INSTRUCTION" "$@"
-		((OPTV)) || printf '%s -- "%s"\n' 'INSTRUCTION' "$INSTRUCTION" >&2
+		print_sysmsgf 'INSTRUCTION' "$INSTRUCTION" 
 	fi
 	editf "$@"
 else               #completions
+	[[ -e $1 ]] && set -- "$(<"$1")" "${@:2}"
 	if ((OPTW))  #whisper input
 	then 	unset OPTX
 		INPUT_ORIG=("$@") ;set --
 	fi
-	((OPTRESUME)) || ((!OPTC)) || break_sessionf
 
 	#chatbot instructions
-	if ((OPTRESUME))
-	then 	unset INSTRUCTION
-	elif 	((OPTC))
-	then
-		INSTRUCTION="${INSTRUCTION:-Be a nice bot.}"
-		push_tohistf "$(escapef ": $INSTRUCTION")"
-		(( OLD_TOTAL += $(__tiktokenf ": $INSTRUCTION" "4") ))
-		((OPTV)) || printf "${BWhite}%s${NC}: %s\\n" 'INSTRUCTION' "$INSTRUCTION" >&2
+	if ((OPTC))
+	then 	((OPTRESUME)) || {
+		  break_sessionf
+		  INSTRUCTION="${INSTRUCTION:-Be a nice chat bot.}"
+		  push_tohistf "$(escapef ": $INSTRUCTION")"
+		  (( OLD_TOTAL += $(__tiktokenf ": $INSTRUCTION" "4") ))
+		  print_sysmsgf 'INSTRUCTION' "$INSTRUCTION" 
+		}
 		unset INSTRUCTION
+		#chatbot must sounds like a human, cannot be lobotomised
+		((OPTA)) || OPTA=0.4  #playground: temp:0.9 presencePenalty:0.6
 	fi
 
-	SKIP=1
+	SKIP=1  EDIT=
+	#load history (only ksh/bash)
+	[[ -n $BASH_VERSION ]] && { 	history -c ;history -r ;}
+	[[ -n $KSH_VERSION ]] && read -s <<<""  #hist -l -1 >/dev/null
 	while :
 	do 	unset REPLY
 		if ((OPTC))  #chat mode
@@ -1341,9 +1394,7 @@ else               #completions
 			then 	check_cmdf "$*" && { 	set -- ;continue ;}
 				if [[ -n $BASH_VERSION ]]
 				then 	history -s -- "$*"
-				elif [[ -n $ZSH_VERSION ]]
-				then 	print -s -- "$*"
-				else 	read -r -s <<<"$*"  #ksh
+				else 	print -s -- "$*"  #zsh/ksh
 				fi
 				set_typef "$*" && REC_OUT="$*" \
 				|| REC_OUT="${SET_TYPE:-$Q_TYPE}: $*"
@@ -1418,24 +1469,24 @@ else               #completions
 					printf "${BPurple}%s${NC}\\n---\\n" "$REPLY" >&2
 				elif [[ -n $ZSH_VERSION ]]
 				then
-					unset REPLY arg ;((OPTK)) || arg='-p%B%F{14}' #cyan=14
+					((EDIT)) || unset REPLY ;unset arg
+					((OPTK)) || arg='-p%B%F{14}' #cyan=14
 					vared -h -c $arg REPLY
-					print -s -- "$REPLY" ;fc -I -A ;unset arg
+					print -s -- "$REPLY" ;unset arg
 				else
-					read -r ${BASH_VERSION:+-e} ${KSH_VERSION:+-s}
-					if [[ -n $BASH_VERSION ]]
-					then 	history -s -- "$REPLY" ;history -a
-					else 	read -r -s <<<"$REPLY"  #ksh
-					fi
+					read -r ${BASH_VERSION:+-e} ${KSH_VERSION:+-s} \
+					${EDIT:+${BASH_VERSION:+-i "$REPLY"} ${KSH_VERSION:+-v}} REPLY
+					[[ -n $BASH_VERSION ]] && { 	history -s -- "$REPLY" ;history -a ;}
 				fi ;printf "${NC}" >&2
 				
-				check_cmdf "$REPLY" && continue 2 ;unset SKIP
+				check_cmdf "$REPLY" && continue 2 ;unset SKIP EDIT
 				
-				if [[ -n ${REPLY//[$IFS]} ]]
-				then 	OPTX=  new_prompt_confirmf
+				if [[ -n $REPLY ]]
+				then 	new_prompt_confirmf
 					case $? in
 						201) 	break 2;;  #abort
-						200|199) 	SKIP=1 ;continue;;  #redo/edit
+						200) 	SKIP=1 ;continue;;  #redo
+						199) 	SKIP=1 EDIT=1;continue;;  #edit
 						0) 	:;;  #yes
 						*) 	unset REPLY; set -- ;break;;  #no
 					esac
@@ -1474,7 +1525,7 @@ else               #completions
 		BLOCK="$BLOCK
 			\"model\": \"$MOD\",
 			\"temperature\": $OPTT, $OPTA_OPT $OPTAA_OPT
-			\"max_tokens\": $OPTMAX, $OPTB_OPT $OPTP_OPT 
+			\"max_tokens\": $OPTMAX, $OPTB_OPT $OPTBB_OPT $OPTP_OPT 
 			\"n\": $OPTN
 		}"
 		promptf
