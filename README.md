@@ -8,7 +8,7 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 - Follow up conversations
 - Generate images from text input
 - Generate variations of images
-- Edit images
+- Edit images, easily generate an alpha mask
 - Transcribe audio from various languages
 - Translate audio into English text
 - Record prompt voice, hear the answer back from the AI
@@ -23,6 +23,10 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 
 ## Getting Started
 
+### Installation
+
+Just download the stand-alone `chatgpt.sh` and make it executable or clone this repo.
+
 ### Required packages
 
 - Free [OpenAI GPTChat key](https://platform.openai.com/account/api-keys)
@@ -34,18 +38,7 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 - Sox/Arecord/FFmpeg (optional)
 
 
-### Installation
-
-Just download the stand-alone `chatgpt.sh` and make it executable or clone this repo.
-
-
-## Environment
-
-- Set `$OPENAI_API_KEY` with your OpenAI API key.
-- Set `$CHATGPTRC` with path to the configuration file. Defaults = `~/.chatgptsh.conf`.
-
-
-## Usage
+### Usage
 
 - Set your OpenAI API key with option `-K [KEY]` or environment variable `$OPENAI_API_KEY`
 - Just write your prompt after the script name `chatgpt.sh`
@@ -55,6 +48,13 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 - Some models require a `prompt` while others `instructions` and `input`
 - To generate images, set option -i and write your prompt
 - Make a variation of an image, set -i and an image path for upload
+
+
+## Environment
+
+- Set `$OPENAI_API_KEY` with your OpenAI API key.
+- Set `$CHATGPTRC` with path to the configuration file. Defaults = `~/.chatgptsh.conf`.
+
 
 ## Examples
 
@@ -155,8 +155,68 @@ Chat in Portuguese with voice in and voice out (pipe output to voice synthesiser
 
 ## Prompts
 
+Unless the chat option -c or -cc are set, _no_ instruction is
+given to the language model. On chat mode, if no instruction is set,
+a short one is given, and some options set, such as increasing temp and presence
+penalty, in order to un-lobotomise the bot.
+
+Prompt engineering is an art on itself. Study carefully how to
+craft the best prompts to get the most out of text, code and
+chat completions models.
+
 Note that the model's steering and capabilities require prompt engineering
 to even know that it should answer the questions.
+
+
+## Shell Interpreters
+
+The script can be run with either Ksh93, Zsh nd Bash. If the defaults
+interpreter is not available in your system, run the script
+such as `bash ./chatgpt.sh` (consider adding an alias in your rc file).
+
+There should be equivalency of features under Ksh, Zsh, and Bash.
+
+However,
+Zsh cannot read a history file unless started in interactive mode,
+so only commands of the running session are available for retrieval in
+new prompts (with an up-arrow key stroke).
+
+## Termux Users
+
+Users of Termux may have some difficulty compiling the oficial Ksh93 under Termux.
+As a workaround, use Ksh emulation from Zsh. To make Zsh is ksh, simply
+add a symlink of `zsh` under your path with the name `ksh`.
+
+After installing Zsh in Termux, create a symlink with:
+
+````
+ln -s /data/data/com.termux/files/usr/bin/zsh /data/data/com.termux/files/usr/bin/ksh
+````
+
+
+## Project Objectives
+
+- Implement most features available from OpenAI API
+- Provide the closest API defaults
+- Let the user customise defaults (homework)
+
+
+<!--
+In Zsh, and Bash, the preview mode (preview completions without writing to history file)
+can be triggered with double `CTRL-D` instead of appending a slash `/` at the end of
+the prompt before pressing `ENTER`.
+-->
+<!--
+
+## Distinct Features
+
+- Chat mode command operator is either `!` or `/`
+- Edit chat history on the run with `!hist`, comment entries with `#`
+- Mini-edit with `::`, append text to previous completion from history
+- Double `CTRL-D` to preview a completion before commiting to history (Zsh and Bash)
+-
+
+-->
 
 ## Help page
 
