@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.15  2023  by mountaineerbr  GPL+3
+# v0.8.16  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;zmodload zsh/zle ;}
 
@@ -1417,7 +1417,7 @@ else               #completions
 					if ((MAX_PREV+token<OPTMAX))
 					then 	((MAX_PREV+=token))
 						string="${string##[ \"]}" string="${string%%[ \"]}"
-						string="${string##$SPC3:$SPC3}" HIST="$string\n\n$HIST"
+						string="${string##$SPC3:$SPC3}" HIST="$string${HIST:+\\n\\n}$HIST"
 						
 						if ((EPN==6))  #gpt-3.5-turbo
 						then 	USER_TYPE="$SET_TYPE"
