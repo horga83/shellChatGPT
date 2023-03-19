@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.16  2023  by mountaineerbr  GPL+3
+# v0.8.17  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;zmodload zsh/zle ;}
 
@@ -1381,7 +1381,7 @@ else               #completions
 		}
 		unset INSTRUCTION
 		#chatbot must sounds like a human, cannot be lobotomised
-		((OPTA)) || OPTA=0.4  #playground: temp:0.9 presencePenalty:0.6
+		[[ -n $OPTA ]] || OPTA=0.4  #playground: temp:0.9 presencePenalty:0.6
 	fi
 
 	SKIP=1  EDIT=
