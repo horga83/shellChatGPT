@@ -206,12 +206,14 @@ In Zsh, and Bash, the preview mode (preview completions without writing to histo
 can be triggered with double `CTRL-D` instead of appending a slash `/` at the end of
 the prompt before pressing `ENTER`.
 -->
-<!--
 
 ## Distinct Features
 
 - Chat mode command operator is either `!` or `/`
 - Edit chat history on the run with `!hist`, comment entries with `#` or delete them
+- Hopefully, colours used are colour-blind friendly.
+
+<!--
 - Mini-edit with `::`, append text to previous completion from history
 - Double `CTRL-D` to preview a completion before commiting to history (Zsh and Bash)
 -
