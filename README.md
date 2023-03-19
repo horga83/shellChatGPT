@@ -18,10 +18,10 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 - Should™ work on Linux, FreeBSD, MacOS, and Termux.
 
 
-![Showing off Chat Completions](gfx/chat_cpls.gif)
+![Showing off Chat Completions](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/chat_cpls.gif)
 
 
-## Getting Started
+## ✨ Getting Started
 
 ### Installation
 
@@ -115,14 +115,14 @@ Generate image variation:
 
 Outpaint - edit image, make a mask from the black colour:
 
-![Showing off Image Edits - Outpaint](gfx/img_edits.gif)
+![Showing off Image Edits - Outpaint](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/img_edits.gif)
 
 
 Inpaint - add a bat in the night sky:
 
-![Showing off Image Edits - Inpaint](gfx/img_edits2.gif)
+![Showing off Image Edits - Inpaint](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/img_edits2.gif)
 
-![Inpaint, steps](gfx/img_edits_steps.png)
+![Inpaint, steps](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/img_edits_steps.png)
 
 
 ### Audio Transcriptions / Translations
@@ -184,8 +184,8 @@ new prompts (with an up-arrow key stroke).
 ## Termux Users
 
 Users of Termux may have some difficulty compiling the oficial Ksh93 under Termux.
-As a workaround, use Ksh emulation from Zsh. To make Zsh is ksh, simply
-add a symlink of `zsh` under your path with the name `ksh`.
+As a workaround, use Ksh emulation from Zsh. To make Zsh emulate Ksh, simply
+add a symlink to `zsh` under your path with the name `ksh`.
 
 After installing Zsh in Termux, create a symlink with:
 
@@ -211,7 +211,7 @@ the prompt before pressing `ENTER`.
 ## Distinct Features
 
 - Chat mode command operator is either `!` or `/`
-- Edit chat history on the run with `!hist`, comment entries with `#`
+- Edit chat history on the run with `!hist`, comment entries with `#` or delete them
 - Mini-edit with `::`, append text to previous completion from history
 - Double `CTRL-D` to preview a completion before commiting to history (Zsh and Bash)
 -
