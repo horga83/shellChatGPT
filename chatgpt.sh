@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.8.17  2023  by mountaineerbr  GPL+3
+# v0.8.18  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;zmodload zsh/zle ;}
 
@@ -695,13 +695,14 @@ function push_tohistf
 }
 
 #check for interlocutor
-SPC1="?(*+(\\\\n|$'\n'))*([$IFS\"])"
+SPC1="+(\\\\[ntrvf]|[$IFS]|\")"
 TYPE_GLOB="*([A-Za-z0-9@_/.+-])"
 SPC2="*(\\\\t|[$' \t'])"
 SPC3="*(\\\\[ntrvf]|[$IFS])"
 function check_typef
 {
-	[[ $* = $SPC1$TYPE_GLOB:$SPC3* ]]
+	[[ ${*} = ${SPC1}${TYPE_GLOB}:${SPC2}* ]] ||
+	[[ ${*} = *@(\\n|$'\n')${SPC1}${TYPE_GLOB}:${SPC2}* ]]
 }
 #set interlocutor if none set
 function set_typef
