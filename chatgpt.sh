@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.9.2  2023  by mountaineerbr  GPL+3
+# v0.9.3  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;zmodload zsh/zle ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
@@ -463,7 +463,9 @@ OPTIONS
 	-x 	 Edit prompt in text editor.
 	-w [AUD] [LANG]
 		 Transcribe audio file into text. LANG is optional.
+		 Set twice to get phrase-level timestamps. 
 	-W [AUD] Translate audio file into English text.
+		 Set twice to get phrase-level timestamps. 
 	-z 	 Print last response JSON data."
 
 MODELS=(
@@ -530,7 +532,7 @@ function set_model_epnf
 	esac
 }
 
-#make request
+#make cmpls request
 function promptf
 {
 	json_minif
@@ -659,6 +661,8 @@ function prompt_imgprintf
 
 function prompt_audiof
 {
+	((OPTVV)) && echo "Model=$MOD  Temp=$OPTT  $*" >&2
+
 	curl -\# ${OPTV:+-s} -L "https://api.openai.com/v1/${ENDPOINTS[EPN]}" \
 		-X POST \
 		-H "Authorization: Bearer $OPENAI_KEY" \
@@ -1105,24 +1109,40 @@ function whisperf
 				set -- "$FILEINW" "$@";;
 		esac
 	fi
-	if [[ ! -e $1 ]]
-	then 	printf "${BRed}Err: %s${NC}\\n" 'Audio file required' >&2 ;exit 1
-	elif [[ $1 != *@(mp3|mp4|mpeg|mpga|m4a|wav|webm) ]]
-	then 	printf "${BRed}Err: %s${NC}\\n" 'File format not supported' >&2 ;exit 1
+	if [[ ! -e $1 ]] || [[ $1 != *@(mp3|mp4|mpeg|mpga|m4a|wav|webm) ]]
+	then 	printf "${BRed}Err: %s -- %s${NC}\\n" 'File format not supported' "$1" >&2 ;exit 1
 	else 	file="$1" ;shift
 	fi ;[[ -e $1 ]] && shift  #get rid of eventual second filename
 	#set language ISO-639-1 (two letters)
 	if [[ $1 = [a-z][a-z] ]]
 	then 	if ((!OPTWW))
 		then 	lang="-F language=$1"
-			((OPTV)) || printf 'Audio language -- %s\n' "$1" >&2
+			((OPTV)) || __sysmsgf 'Lang:' "$1" >&2
 		fi
 		shift
 	fi
 	#set a prompt
 	[[ -z ${*//[$IFS]} ]] || set -- -F prompt="$(escapef "$*")"
+
+	#response_format (verbose) - testing
+	if ((OPTW>1||OPTWW>1)) && ((!OPTC))
+	then
+		OPTW_FMT=verbose_json   #json, text, srt, verbose_json, or vtt.
+		[[ -n $OPTW_FMT ]] && set -- -F response_format="$OPTW_FMT" "$@"
+	fi
+
 	prompt_audiof "$file" $lang "$@"
-	jq -r '.text' "$FILE" || cat -- "$FILE"
+
+	if ((OPTW>1||OPTWW>1)) && ((!OPTC))
+	then
+		jq -r '"Task: \(.task)" +
+			"\t" + "Lang: \(.language)" +
+			"\t" + "Dur: \(.duration)s" + "\n",
+			(.segments[]| ("[" + (.start|tostring) + "]"), .text)' \
+			"$FILE" || cat -- "$FILE"
+	else
+		jq -r '.text' "$FILE" || cat -- "$FILE"
+	fi
 }
 
 #image edits/variations
@@ -1383,8 +1403,8 @@ do 	fix_dotf OPTARG
 		v) 	((++OPTV));;
 		V) 	((++OPTVV));;  #debug
 		x) 	OPTX=1;;
-		w) 	OPTW=1;;
-		W) 	OPTW=1 OPTWW=1;;
+		w) 	((++OPTW));;
+		W) 	((OPTW)) || OPTW=1 ;((++OPTWW));;
 		z) 	OPTZ=1;;
 		\?) 	exit 1;;
 	esac
@@ -1539,7 +1559,7 @@ else               #completions
 						MOD="${MOD_AUDIO:-${MODELS[11]}}" OPTT=0
 						set_model_epnf "$MOD"
 						whisperf "$FILEINW" "${INPUT_ORIG[@]}"
-					) ;set -- "$REPLY"
+					)
 					printf "${BPurple}%s${NC}\\n${REPLY:+---\\n}" "${REPLY:-"(EMPTY)"}" >&2
 				elif [[ -n $ZSH_VERSION ]]
 				then 	((EDIT)) || unset REPLY ;unset arg
@@ -1568,7 +1588,6 @@ else               #completions
 						0) 	:;;  #yes
 						*) 	unset REPLY; set -- ;break;;  #no
 					esac
-					set -- "$REPLY"
 
 					if ((RETRY))
 					then 	if [[ "$REPLY" = "$REPLY_OLD" ]]
@@ -1581,7 +1600,8 @@ else               #completions
 					unset optv_save
 				else
 					set --
-				fi ;((OPTK)) || printf "${NC}" >&2
+				fi ; set -- "$REPLY"
+				((OPTK)) || printf "${NC}" >&2
 				unset WSKIP SKIP EDIT arg
 				break
 			done
