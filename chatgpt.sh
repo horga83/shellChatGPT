@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.9.1  2023  by mountaineerbr  GPL+3
+# v0.9.2  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;zmodload zsh/zle ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
@@ -282,17 +282,16 @@ TEXT / CHAT COMPLETIONS
 	For more on settings, see <https://platform.openai.com/docs/>.
 
 
-CODE COMPLETIONS / CODEX
-	To use Codex, set a model with \`code' in its name. This utilises
-	the same endpoint as text completions.
+CODE COMPLETIONS
+	Codex models are discontinued. Use turbo models for coding tasks.
 
-	Codex models can turn comments into code, complete the next line
-	or function in context, add code comments, and rewrite code for
-	efficiency, amongst others.
+	Turn comments into code, complete the next line or function in
+	context, add code comments, and rewrite code for efficiency,
+	amongst other functions.
 
-	Start with a comment with instructions, data or code. To get Codex
-	to create useful completions it's helpful to think about what
-	information a programmer would need to perform a task. 
+	Start with a comment with instructions, data or code. To create
+	useful completions it's helpful to think about what information
+	a programmer would need to perform a task. 
 
 
 TEXT EDITS
@@ -435,23 +434,23 @@ OPTIONS
 	-k 	 Disable colour output. Defaults=Auto.
 	-K [KEY] Set API key (free).
 	-l [MODEL]
-		 List models or print details of MODEL.
+		 List models or print details of MODEL. Set twice
+		 to print model indexes instead.
 	-L [FILEPATH]
 		 Set log file. FILEPATH is required.
 	-m [MODEL]
 		 Set model by NAME.
-	-m [NUM] Set model by INDEX NUMBER:
-		  # Completions           # Edits                  
-		  0.  text-davinci-003    8.  text-davinci-edit-001
-		  1.  text-curie-001      9.  code-davinci-edit-001
-		  2.  text-babbage-001    # Chat
-		  3.  text-ada-001        10. gpt-3.5-turbo
-		  # Codex                 # Audio
-		  4.  code-davinci-002    11. whisper-1
-		  5.  code-cushman-001    # Gpt-4
-		  # Moderation            12. gpt-4
-		  6.  text-moderation-latest
-		  7.  text-moderation-stable
+	-m [IND] Set model by INDEX number:
+		# COMPLETIONS             # EDITS
+		0.  text-davinci-003      8.  text-davinci-edit-001
+		1.  text-curie-001        9.  code-davinci-edit-001
+		2.  text-babbage-001      # AUDIO
+		3.  text-ada-001          11. whisper-1
+		# CHAT                    # GPT-4 
+		4. gpt-3.5-turbo          12. gpt-4
+		# MODERATION
+		6.  text-moderation-latest
+		7.  text-moderation-stable
 	-n [NUM] Set number of results. Defaults=$OPTN.
 	-p [VAL] Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
 	-s [SEQ] Set stop sequences, up to 4. Defaults=\"<|endoftext|>\".
@@ -469,26 +468,25 @@ OPTIONS
 
 MODELS=(
 	#COMPLETIONS
-	text-davinci-003          #0
-	text-curie-001            #1
-	text-babbage-001          #2
-	text-ada-001              #3
-	#CODEX
-	code-davinci-002          #4
-	code-cushman-001          #5
-	#MODERATIONS
-	text-moderation-latest    #6
-	text-moderation-stable    #7
-	#EDITS
-	text-davinci-edit-001     #8
-	code-davinci-edit-001     #9
-	#CHAT
-	gpt-3.5-turbo             #10
-	#gpt-3.5-turbo-0301        #
-	#AUDIO
-	whisper-1                 #11
-	#GPT4
-	gpt-4 #gpt-4-0314 June 14 #12
+	text-davinci-003          #  0
+	text-curie-001            #  1
+	text-babbage-001          #  2
+	text-ada-001              #  3
+	#CHAT                     #
+	gpt-3.5-turbo             #  4
+	gpt-3.5-turbo-0301        # -5
+	#MODERATIONS              #
+	text-moderation-latest    #  6
+	text-moderation-stable    #  7
+	#EDITS                    #
+	text-davinci-edit-001     #  8
+	code-davinci-edit-001     #  9
+	#AUDIO                    #
+	whisper-1                 #-10
+	whisper-1                 # 11
+	#GPT4                     #
+	gpt-4                     # 12
+	gpt-4-0314  #June 14      #-13
 )
 
 ENDPOINTS=(
@@ -674,6 +672,14 @@ function prompt_audiof
 
 function list_modelsf
 {
+	if ((OPTL>1))
+	then 	__sysmsgf "Index  Model"
+		for ((i=0;i<${#MODELS[@]};i++))
+		do 	printf '%2d  %s\n' "$i" "${MODELS[i]}"
+		done
+		return
+	fi
+	
 	curl "https://api.openai.com/v1/models${1:+/}${1}" \
 		-H "Authorization: Bearer $OPENAI_KEY" \
 		-o "$FILE"
@@ -1052,9 +1058,9 @@ function recordf
 
 	[[ -e $1 ]] && rm -- "$1"  #remove file before writing to it
 	if { 	((!OPTV)) && ((!WSKIP)) ;} || [[ ! -t 1 ]]
-	then 	printf "\\r${BWhite}${On_Purple}%s${NC}\\n\\n" ' * Press any key to START record * ' >&2
+	then 	printf "\\r${BWhite}${On_Purple}%s${NC} " ' * Press ENTER to START record * ' >&2
 		__read_charf
-	fi ;printf "\\r${BWhite}${On_Purple}%s${NC}\\n\\n" ' * Press any key to STOP record * ' >&2
+	fi ;printf "\\r${BWhite}${On_Purple}%s${NC}\\n\\n" ' * Press ENTER to STOP record * ' >&2
 
 	if [[ -n ${REC_CMD%% *} ]] && command -v ${REC_CMD%% *} >/dev/null 2>&1
 	then 	$REC_CMD "$1" &  #this ensures max user compat
@@ -1095,7 +1101,7 @@ function whisperf
 		REPLY=$(__read_charf)
 		case "$REPLY" in
 			[AaNnQq]) 	:;;
-			*) 	recordf "$FILEINW"
+			*) 	WSKIP=1 recordf "$FILEINW"
 				set -- "$FILEINW" "$@";;
 		esac
 	fi
@@ -1354,11 +1360,11 @@ do 	fix_dotf OPTARG
 		H) 	__edf "$FILECHAT" ;exit ;;
 		i) 	OPTI=1 EPN=3 MOD=image;;
 		j) 	OPTJ=1;;
-		l) 	OPTL=1;;
+		l) 	((++OPTL));;
 		L) 	OPTLOG=1 USRLOG="$OPTARG"
 			cmd_verf 'Log file' "\`\`$USRLOG''"
 			;;
-		m) 	OPTMARG="$OPTARG"
+		m) 	OPTMARG="${OPTARG:-0}"
 			if [[ $OPTARG = *[a-zA-Z]* ]]
 			then 	MOD="$OPTARG"  #set model name
 			else 	MOD="${MODELS[OPTARG]}" #set one pre defined model number
@@ -1415,7 +1421,7 @@ fi
 if ((OPTE))  #edits
 then 	OPTM=8 MOD="$MOD_EDIT"
 elif ((OPTC>1))  #chat
-then 	OPTM=10 MOD="$MOD_CHAT"
+then 	OPTM=4 MOD="$MOD_CHAT"
 elif ((OPTW)) && ((!OPTC))  #audio
 then 	OPTM=11 MOD="$MOD_AUDIO"
 fi
@@ -1524,7 +1530,7 @@ else               #completions
 		then 	while { 	((SKIP)) && { 	((OPTK)) || printf "${BCyan}" >&2 ;} ;} ||
 				printf "${BWhite}%s${NC}[${Purple}%s${NC}%s${NC}]:\\n${BCyan}" \
 				"Prompt" "${OPTW:+VOICE-}" "${SET_TYPE:-$Q_TYPE}" >&2
-			do 	if ((OPTW))
+			do 	if ((OPTW)) && ((!EDIT))
 				then 	((OPTV==1)) && ((!WSKIP)) && [[ -t 1 ]] \
 					&& __read_charf -t $((SLEEP/4))  #3-6 (words/tokens)/sec
 					
@@ -1534,49 +1540,47 @@ else               #completions
 						set_model_epnf "$MOD"
 						whisperf "$FILEINW" "${INPUT_ORIG[@]}"
 					) ;set -- "$REPLY"
-					printf "${BPurple}%s${NC}${REPLY:+\\n---\\n}" "${REPLY:-"(EMPTY)"}" >&2
+					printf "${BPurple}%s${NC}\\n${REPLY:+---\\n}" "${REPLY:-"(EMPTY)"}" >&2
+				elif [[ -n $ZSH_VERSION ]]
+				then 	((EDIT)) || unset REPLY ;unset arg
+					((OPTK)) || arg='-p%B%F{14}' #cyan=14
+					vared -c -e -h $arg REPLY
 				else
-					if [[ -n $ZSH_VERSION ]]
-					then 	((EDIT)) || unset REPLY ;unset arg
-						((OPTK)) || arg='-p%B%F{14}' #cyan=14
-						vared -c -e -h $arg REPLY
-					else
-						read -r ${BASH_VERSION:+-e} \
-						${EDIT:+${BASH_VERSION:+-i "$REPLY"} ${KSH_VERSION:+-v}} REPLY
-					fi
+					read -r ${BASH_VERSION:+-e} \
+					${EDIT:+${BASH_VERSION:+-i "$REPLY"} ${KSH_VERSION:+-v}} REPLY
+				fi
 				
-					if check_cmdf "$REPLY"
-					then
-						continue 2
-					elif [[ ${REPLY//[$IFS]} = */ ]]
-					then
-						REPLY="${REPLY%/*}" REPLY_OLD="$REPLY"
-						optv_save=${OPTV:-0} OPTV=1 RETRY=1
-						((OPTK)) || BCyan='\e[0;36m' 
-					elif [[ -n $REPLY ]]
-					then
-						((RETRY)) || new_prompt_confirmf
-						case $? in
-							201) 	break 2;;  #abort
-							200) 	WSKIP=1 ;continue;;  #redo
-							199) 	WSKIP=1 EDIT=1 ;continue;;  #edit
-							0) 	:;;  #yes
-							*) 	unset REPLY; set -- ;break;;  #no
-						esac
-						set -- "$REPLY"
+				if check_cmdf "$REPLY" && ((!OPTW))
+				then
+					continue 2
+				elif [[ ${REPLY//[$IFS]} = */ ]] && ((!OPTW))
+				then
+					REPLY="${REPLY%/*}" REPLY_OLD="$REPLY"
+					optv_save=${OPTV:-0} OPTV=1 RETRY=1
+					((OPTK)) || BCyan='\e[0;36m' 
+				elif [[ -n $REPLY ]]
+				then
+					((RETRY)) || new_prompt_confirmf
+					case $? in
+						201) 	break 2;;  #abort
+						200) 	WSKIP=1 ;continue;;  #redo
+						199) 	WSKIP=1 EDIT=1 ;continue;;  #edit
+						0) 	:;;  #yes
+						*) 	unset REPLY; set -- ;break;;  #no
+					esac
+					set -- "$REPLY"
 
-						if ((RETRY))
-						then 	if [[ "$REPLY" = "$REPLY_OLD" ]]
-							then 	RETRY=2 REPLY_OLD= 
-								((OPTK)) || BCyan='\e[1;36m'
-							fi
-							REPLY_OLD="$REPLY"
+					if ((RETRY))
+					then 	if [[ "$REPLY" = "$REPLY_OLD" ]]
+						then 	RETRY=2 REPLY_OLD= 
+							((OPTK)) || BCyan='\e[1;36m'
 						fi
-						OPTV=${optv_save:-$OPTV}
-						unset optv_save
-					else
-						set --
+						REPLY_OLD="$REPLY"
 					fi
+					OPTV=${optv_save:-$OPTV}
+					unset optv_save
+				else
+					set --
 				fi ;((OPTK)) || printf "${NC}" >&2
 				unset WSKIP SKIP EDIT arg
 				break
