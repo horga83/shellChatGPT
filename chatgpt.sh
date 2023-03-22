@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.9  2023  by mountaineerbr  GPL+3
+# v0.9.1  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;zmodload zsh/zle ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
@@ -86,6 +86,7 @@ SYNOPSIS
 	${0##*/} -l [MODEL_NAME]
 
 
+DESCRIPTION
 	All positional arguments are read as a single PROMPT. If the
 	chosen model requires an INSTRUCTION and INPUT prompts, first
 	positional argument is taken as INSTRUCTION and the following
@@ -694,7 +695,7 @@ function lastjsonf
 function token_prevf
 {
 	TKN_PREV=$(__tiktokenf "$*")
-	((OPTV)) || printf 'Prompt: ~%d tokens; Max: %d\n' "$TKN_PREV" "$OPTMAX" >&2
+	((OPTV)) || printf 'Prompt: ~%d tokens (Max: %d)\n' "$TKN_PREV" "$OPTMAX" >&2
 }
 
 #set up $HIST and $HIST_C
@@ -1050,7 +1051,7 @@ function recordf
 	typeset termux pid REPLY
 
 	[[ -e $1 ]] && rm -- "$1"  #remove file before writing to it
-	if { 	((!OPTV)) && ((!SKIP)) ;} || [[ ! -t 1 ]]
+	if { 	((!OPTV)) && ((!WSKIP)) ;} || [[ ! -t 1 ]]
 	then 	printf "\\r${BWhite}${On_Purple}%s${NC}\\n\\n" ' * Press any key to START record * ' >&2
 		__read_charf
 	fi ;printf "\\r${BWhite}${On_Purple}%s${NC}\\n\\n" ' * Press any key to STOP record * ' >&2
@@ -1532,7 +1533,7 @@ else               #completions
 						MOD="${MOD_AUDIO:-${MODELS[11]}}" OPTT=0
 						set_model_epnf "$MOD"
 						whisperf "$FILEINW" "${INPUT_ORIG[@]}"
-					)
+					) ;set -- "$REPLY"
 					printf "${BPurple}%s${NC}${REPLY:+\\n---\\n}" "${REPLY:-"(EMPTY)"}" >&2
 				else
 					if [[ -n $ZSH_VERSION ]]
