@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.9.3  2023  by mountaineerbr  GPL+3
+# v0.9.4  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;zmodload zsh/zle ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
@@ -597,8 +597,8 @@ function prompt_printf
 		jq -r "def byellow: \"\"; def reset: \"\"; $JQCOL $JQCOL2
 		.choices[1] as \$sep | .choices[] |
 		(byellow + (
-		(.text//.message.content) | gsub(\"^[\\\\n\\\\t]\"; \"\") |
-		if ${OPTC:-0} > 0 then gsub(\"[\\\\n\\\\t]*$\"; \"\") else . end
+		(.text//.message.content) | gsub(\"^[\\\\n\\\\t ]+\"; \"\") |
+		if ${OPTC:-0} > 0 then gsub(\"[\\\\n\\\\t ]+$\"; \"\") else . end
 		) + reset,
 		if \$sep != null then \"---\" else empty end)" "$FILE" 2>/dev/null ||
 
@@ -811,12 +811,6 @@ function set_sizef
 	esac ;return 0
 }
 
-#command run feedback
-function cmd_verf
-{
-	((OPTV)) || printf "${BWhite}%-11s => %s${NC}\\n" "$1" "${2:-unset}" >&2
-}
-
 #check if input is a command
 function check_cmdf
 {
@@ -891,6 +885,24 @@ function check_cmdf
 	esac ;return 0
 }
 
+#command run feedback
+function cmd_verf
+{
+	((OPTV)) || printf "${BWhite}%-11s => %s${NC}\\n" "$1" "${2:-unset}" >&2
+}
+
+#print msg to stderr
+#usage: __sysmsgf [string_one] [string_two] ['']
+function __sysmsgf
+{
+	((OPTV)) || printf "${BWhite}%s${NC}${2:+ }%s${3-\\n}" "$1" "$2" >&2
+}
+
+function __warmsgf
+{
+	printf "${Red}%s${NC}${2:+ }${Red}%s${NC}${3-\\n}" "$1" "$2" >&2
+}
+
 #main plain text editor
 function __edf
 {
@@ -931,18 +943,6 @@ function edf
 		printf "%s\\n" "$*" >"$FILETXT"
 	fi
 	return 0
-}
-
-#print msg to stderr
-#usage: __sysmsgf [string_one] [string_two] ['']
-function __sysmsgf
-{
-	((OPTV)) || printf "${BWhite}%s${NC}${2:+ }%s${3-\\n}" "$1" "$2" >&2
-}
-
-function __warmsgf
-{
-	printf "${Red}%s${NC}${2:+ }${Red}%s${NC}${3-\\n}" "$1" "$2" >&2
 }
 
 function escapef
@@ -1030,7 +1030,7 @@ function set_optsf
 	check_optrangef "$OPTT" 0.0 2.0 Temperature  #whisper max=1
 	((OPTI)) && check_optrangef "$OPTN" 1 10 'Number of Results'
 	[[ -n ${OPTT#0} ]] && [[ -n ${OPTP#1} ]] \
-	&& __warmsgf "Warning:" "Temperature and Top_p are both set"
+	&& __warmsgf "Warning:" "Temperature and Top_P are both set"
 
 	[[ -n $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA," || unset OPTA_OPT
 	[[ -n $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA," || unset OPTAA_OPT
@@ -1095,11 +1095,33 @@ function __recordkillf
 	((termux)) && termux-microphone-record -q >&2 || kill -INT $pid
 }
 
+#set whisper language
+function __set_langf
+{
+	if [[ $1 = [a-z][a-z] ]]
+	then 	if ((!OPTWW))
+		then 	LANG="-F language=$1"
+			((OPTV)) || __sysmsgf 'Language:' "$1" >&2
+		fi
+		return 0
+	fi
+	return 1
+}
+
 #whisper
 function whisperf
 {
-	typeset file lang REPLY
+	typeset file REPLY
 	check_optrangef "$OPTT" 0 1.0 Temperature
+	__sysmsgf 'Temperature:' "$OPTT"
+
+	#set language ISO-639-1 (two letters)
+	if __set_langf "$1"
+	then 	shift
+	elif __set_langf "$2"
+	then 	set -- "${@:1:1}" "${@:3}"
+	fi
+	
 	if [[ ! -e $1 ]] && ((!OPTC))
 	then 	printf "${Purple}%s${NC} " 'Record mic input? [Y/n] ' >&2
 		REPLY=$(__read_charf)
@@ -1109,39 +1131,45 @@ function whisperf
 				set -- "$FILEINW" "$@";;
 		esac
 	fi
+	
 	if [[ ! -e $1 ]] || [[ $1 != *@(mp3|mp4|mpeg|mpga|m4a|wav|webm) ]]
-	then 	printf "${BRed}Err: %s -- %s${NC}\\n" 'File format not supported' "$1" >&2 ;exit 1
+	then 	printf "${BRed}Err: %s -- %s${NC}\\n" 'Unknown audio format' "$1" >&2 ;exit 1
 	else 	file="$1" ;shift
 	fi ;[[ -e $1 ]] && shift  #get rid of eventual second filename
-	#set language ISO-639-1 (two letters)
-	if [[ $1 = [a-z][a-z] ]]
-	then 	if ((!OPTWW))
-		then 	lang="-F language=$1"
-			((OPTV)) || __sysmsgf 'Lang:' "$1" >&2
-		fi
-		shift
-	fi
+	
 	#set a prompt
 	[[ -z ${*//[$IFS]} ]] || set -- -F prompt="$(escapef "$*")"
 
-	#response_format (verbose) - testing
+	#response_format (timestamps) - testing
 	if ((OPTW>1||OPTWW>1)) && ((!OPTC))
 	then
 		OPTW_FMT=verbose_json   #json, text, srt, verbose_json, or vtt.
 		[[ -n $OPTW_FMT ]] && set -- -F response_format="$OPTW_FMT" "$@"
-	fi
 
-	prompt_audiof "$file" $lang "$@"
-
-	if ((OPTW>1||OPTWW>1)) && ((!OPTC))
-	then
-		jq -r '"Task: \(.task)" +
-			"\t" + "Lang: \(.language)" +
-			"\t" + "Dur: \(.duration)s" + "\n",
-			(.segments[]| ("[" + (.start|tostring) + "]"), .text)' \
-			"$FILE" || cat -- "$FILE"
+		prompt_audiof "$file" $LANG "$@"
+		jq -r "def bpurple: \"\"; def reset: \"\"; $JQCOL
+			def seconds_to_time_string:
+			def nonzero(text): floor | if . > 0 then \"\(.)\(text)\" else empty end;
+			if . == 0 then \"0s\"
+			else
+			[(./60/60/24/7    | nonzero(\"w\")),
+			 (./60/60/24 % 7  | nonzero(\"d\")),
+			 (./60/60    % 24 | nonzero(\"h\")),
+			 (./60       % 60 | nonzero(\"m\")),
+			 (.          % 60 | nonzero(\"s\"))]
+			| join(\", \")
+			end;
+			\"Task: \(.task)\" +
+			\"\\t\" + \"Lang: \(.language)\" +
+			\"\\t\" + \"Dur: \(.duration|seconds_to_time_string)\" +
+			\"\\n\", (.segments[]| \"[\(.start|seconds_to_time_string)]\" +
+			bpurple + .text + reset)" "$FILE" \
+			|| jq -r '.text' "$FILE" || cat -- "$FILE"
+			#https://rosettacode.org/wiki/Convert_seconds_to_compound_duration#jq
 	else
-		jq -r '.text' "$FILE" || cat -- "$FILE"
+		prompt_audiof "$file" $LANG "$@"
+		jq -r "def bpurple: \"\"; def reset: \"\"; $JQCOL
+		bpurple + .text + reset" "$FILE" || cat -- "$FILE"
 	fi
 }
 
@@ -1421,11 +1449,11 @@ Blue='\e[0;34m'    BBlue='\e[1;34m'    On_Blue='\e[44m'   \
 Purple='\e[0;35m'  BPurple='\e[1;35m'  On_Purple='\e[45m' \
 Cyan='\e[0;36m'    BCyan='\e[1;36m'    On_Cyan='\e[46m'   \
 White='\e[0;37m'   BWhite='\e[1;37m'   On_White='\e[47m'  \
-Alert=$BWhite$On_Red  NC='\e[m'  JQCOL='def red: "\u001b[31m";
-def bgreen: "\u001b[1;32m"; def bwhite: "\u001b[1;37m";
+Alert=$BWhite$On_Red  NC='\e[m'  JQCOL='def red: "\u001b[31m"; def bgreen: "\u001b[1;32m";
+def purple: "\u001b[0;35m"; def bpurple: "\u001b[1;35m"; def bwhite: "\u001b[1;37m";
 def yellow: "\u001b[33m"; def byellow: "\u001b[1;33m"; def reset: "\u001b[0m";'
 
-OPTMAX="${OPTMAX:-$OPTMM}"
+OPTMAX="${OPTMAX:-$OPTMM}" ;unset LANG
 OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
 ((OPTC)) && ((OPTE+OPTI)) && unset OPTC ;((OPTL+OPTZ)) && OPTX=  ;set_optsf
 if ((OPTI+OPTII))
@@ -1508,7 +1536,7 @@ else               #completions
 		  __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 
 		} ;unset INSTRUCTION
 		((OPTRESUME>1)) || {
-		  #chatbot must sounds like a human, shouldn't be lobotomised
+		  #chatbot must sound like a human, shouldn't be lobotomised
 		  [[ -n $OPTA ]] || OPTA=0.4  #playGround: temp:0.9 presencePenalty:0.6
 		  ((${#STOPS[@]})) && STOPS=("${STOPS[@]}" "$Q_TYPE:" "$A_TYPE:") \
 		  || STOPS=("$Q_TYPE:" "$A_TYPE:")
