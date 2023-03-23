@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.9.5  2023  by mountaineerbr  GPL+3
+# v0.9.6  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;zmodload zsh/zle ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
@@ -597,7 +597,7 @@ function prompt_printf
 		jq -r "def byellow: \"\"; def reset: \"\"; $JQCOL $JQCOL2
 		.choices[1] as \$sep | .choices[] |
 		(byellow + (
-		(.text//.message.content) | gsub(\"^[\\\\n\\\\t ]+\"; \"\") |
+		(.text//.message.content) | gsub(\"^[\\\\n\\\\t ]\"; \"\") |
 		if ${OPTC:-0} > 0 then gsub(\"[\\\\n\\\\t ]+$\"; \"\") else . end
 		) + reset,
 		if \$sep != null then \"---\" else empty end)" "$FILE" 2>/dev/null ||
