@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.9.4  2023  by mountaineerbr  GPL+3
+# v0.9.5  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;zmodload zsh/zle ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
@@ -1584,7 +1584,7 @@ else               #completions
 					
 					recordf "$FILEINW" || break
 					REPLY=$(
-						MOD="${MOD_AUDIO:-${MODELS[11]}}" OPTT=0
+						MOD="${MOD_AUDIO:-${MODELS[11]}}" JQCOL= OPTT=0
 						set_model_epnf "$MOD"
 						whisperf "$FILEINW" "${INPUT_ORIG[@]}"
 					)
