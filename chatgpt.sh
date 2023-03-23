@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.9.6  2023  by mountaineerbr  GPL+3
+# v0.9.7  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;zmodload zsh/zle ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
@@ -1147,25 +1147,25 @@ function whisperf
 		[[ -n $OPTW_FMT ]] && set -- -F response_format="$OPTW_FMT" "$@"
 
 		prompt_audiof "$file" $LANG "$@"
-		jq -r "def bpurple: \"\"; def reset: \"\"; $JQCOL
+		jq -r "def yellow: \"\"; def bpurple: \"\"; def reset: \"\"; $JQCOL
+			def pad(x): tostring | (length | if . >= x then \"\" else \"0\" * (x - .) end) as \$padding | \"\(\$padding)\(.)\";
 			def seconds_to_time_string:
-			def nonzero(text): floor | if . > 0 then \"\(.)\(text)\" else empty end;
-			if . == 0 then \"0s\"
+			def nonzero: floor | if . > 0 then . else empty end;
+			if . == 0 then \"00\"
 			else
-			[(./60/60/24/7    | nonzero(\"w\")),
-			 (./60/60/24 % 7  | nonzero(\"d\")),
-			 (./60/60    % 24 | nonzero(\"h\")),
-			 (./60       % 60 | nonzero(\"m\")),
-			 (.          % 60 | nonzero(\"s\"))]
-			| join(\", \")
+			[(./60/60         | nonzero),
+			 (./60       % 60 | pad(2)),
+			 (.          % 60 | pad(2))]
+			| join(\":\")
 			end;
 			\"Task: \(.task)\" +
 			\"\\t\" + \"Lang: \(.language)\" +
 			\"\\t\" + \"Dur: \(.duration|seconds_to_time_string)\" +
-			\"\\n\", (.segments[]| \"[\(.start|seconds_to_time_string)]\" +
+			\"\\n\", (.segments[]| \"[\" + yellow + \"\(.start|seconds_to_time_string)\" + reset + \"]\" +
 			bpurple + .text + reset)" "$FILE" \
 			|| jq -r '.text' "$FILE" || cat -- "$FILE"
 			#https://rosettacode.org/wiki/Convert_seconds_to_compound_duration#jq
+			#https://stackoverflow.com/questions/64957982/how-to-pad-numbers-with-jq
 	else
 		prompt_audiof "$file" $LANG "$@"
 		jq -r "def bpurple: \"\"; def reset: \"\"; $JQCOL
