@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.9.9  2023  by mountaineerbr  GPL+3
+# v0.9.10  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;zmodload zsh/zle ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
@@ -868,10 +868,10 @@ function check_cmdf
 		-c|br|break|session)
 			break_sessionf
 			;;
-		-[Hh]|hist*|history)
+		-[Hh]|hist|history)
 			__edf "$FILECHAT"
 			;;
-		-[L]|log*)
+		-L*|log*)
 			((OPTLOG)) && unset OPTLOG || OPTLOG=1
 			set -- "${*##-L}" ;set -- "${*##log}"
 			USRLOG="${*:-$USRLOG}"
@@ -909,16 +909,16 @@ function check_cmdf
 		-x|ed|editor)
 			((OPTX)) && unset OPTX || OPTX=1
 			;;
-		-[wW]|audio|rec)
-			set -- "${*##@(-[wW]|audio|rec)$SPC2}"
+		-[wW]*|audio*|rec*)
+			OPTW=1
 			if [[ $* = [a-z][a-z][$IFS]*[[:graph:]]* ]]
-			then 	OPTW=1 ;set -- "${*:1:2}" "${*:4}"
-			elif [[ $* = [a-z][a-z] ]] || [[ $* = w* ]]
-			then 	OPTW=1
+			then 	set -- "${*:1:2}" "${*:4}"
+			elif [[ $* = [a-z][a-z] ]] || [[ $* = -w* ]]
+			then 	:
 			elif [[ $* = *[[:graph:]]* ]]
 			then 	OPTW=2
-			else 	OPTW=1 ;set --
-			fi ;INPUT_ORIG=("${@:-${INPUT_ORIG[@]}}")
+			fi ;(($#)) && set -- "${1##@(-[wW]|audio|rec)$SPC2}" "${@:2}"
+			INPUT_ORIG=("${@:-${INPUT_ORIG[@]}}")
 			;;
 		q|quit|exit|bye)
 			exit
@@ -1711,9 +1711,9 @@ else               #completions
 					${EDIT:+${BASH_VERSION:+-i "$REPLY"} ${KSH_VERSION:+-v}} REPLY
 				fi ;((OPTK)) || printf "${NC}" >&2
 				
-				if check_cmdf "$REPLY" && ((!OPTW))
-				then 	continue 2
-				elif [[ ${REPLY//[$IFS]} = */ ]] && ((!OPTW))
+				if check_cmdf "$REPLY"  && ((!OPTW))
+				then 	set -- ;continue 2
+				elif [[ ${REPLY//[$IFS]} = */ ]]  && ((!OPTW))
 				then
 					REPLY="${REPLY%/*}" REPLY_OLD="$REPLY"
 					optv_save=${OPTV:-0} OPTV=1 RETRY=1
