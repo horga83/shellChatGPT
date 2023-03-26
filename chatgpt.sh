@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.9.11  2023  by mountaineerbr  GPL+3
+# v0.9.12  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;zmodload zsh/zle ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
@@ -873,11 +873,9 @@ function check_cmdf
 			;;
 		-L*|log*)
 			((OPTLOG)) && unset OPTLOG || OPTLOG=1
-			set -- "${*##-L}" ;set -- "${*##log}"
-			USRLOG="${*:-$USRLOG}"
-			[[ "$USRLOG" = "$OLD_USRLOG" ]] \
-			|| __cmdmsgf $'\nLog file' "\`\`$USRLOG''"
-			OLD_USRLOG="$USRLOG"
+			set -- "${*##-L$SPC2}" ;set -- "${*##log$SPC2}"
+			USRLOG="${*:-${USRLOG:-$HOME/chatgpt.log}}"
+			__cmdmsgf $'\nLog file' "\`\`$USRLOG''"
 			;;
 		-m*|mod*|model*)
 			set -- "${*##model}" ;set -- "${*##mod}" ;set -- "${*##-m}"
