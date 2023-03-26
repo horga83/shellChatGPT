@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.9.12  2023  by mountaineerbr  GPL+3
+# v0.9.13  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;zmodload zsh/zle ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
@@ -873,7 +873,7 @@ function check_cmdf
 			;;
 		-L*|log*)
 			((OPTLOG)) && unset OPTLOG || OPTLOG=1
-			set -- "${*##-L$SPC2}" ;set -- "${*##log$SPC2}"
+			set -- "${*##@(-L|log)$SPC2}"
 			USRLOG="${*:-${USRLOG:-$HOME/chatgpt.log}}"
 			__cmdmsgf $'\nLog file' "\`\`$USRLOG''"
 			;;
@@ -1829,8 +1829,8 @@ else               #completions
 			ans="${ans##[\"]}" ans="${ans%%[\"]}" ans="${ans##\\[ntrvf]}"
 			((${#tkn[@]}>2)) && ((${#ans}))
 		}
-		then 	user_type="$SET_TYPE" SET_TYPE=
-			check_typef "$ans" && A_TYPE="${SET_TYPE:-$A_TYPE}" || ans="$A_TYPE ${ans## }"
+		then 	user_type="$SET_TYPE" SET_TYPE= ;((OPTC)) && glob="$SPC1" || unset glob
+			check_typef "$ans" && A_TYPE="${SET_TYPE:-$A_TYPE}" || ans="$A_TYPE ${ans##${glob:- }}"
 			push_tohistf "$(escapef "${REC_OUT:-$*}")" "$((tkn[0]-OLD_TOTAL))" "${tkn[2]}"
 			push_tohistf "$ans" "${tkn[1]}" "${tkn[2]}"
 			((OLD_TOTAL=tkn[0]+tkn[1]))
@@ -1838,10 +1838,10 @@ else               #completions
 		fi
 
 		SLEEP="${tkn[1]}"
-		((OPTLOG)) && usr_logf "$(unescapef "$*\\n$ans")"
+		((OPTLOG)) && usr_logf "$(unescapef "${*%%$SPC1@(${START:-%#}|${A_TYPE:-%#}|:)$SPC2}\\n${ans##$SPC1}")"
 
 		((++N)) ;set --
-		unset INSTRUCTION TKN_PREV MAX_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP RETRY OK Q user_type optv_save tkn arg ans s n
+		unset INSTRUCTION TKN_PREV MAX_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP RETRY OK Q user_type optv_save tkn arg ans glob s n
 		((OPTC+OPTRESUME)) || break
 	done ;unset OLD_TOTAL SLEEP N
 fi
