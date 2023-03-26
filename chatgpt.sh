@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.9.8  2023  by mountaineerbr  GPL+3
+# v0.9.9  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;zmodload zsh/zle ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
@@ -204,6 +204,7 @@ TEXT / CHAT COMPLETIONS
 		-t   |  !temp 	  Set temperature.
 		-v   |  !ver	  Set/unset verbose.
 		-x   |  !ed 	  Set/unset text editor.
+		-w   |  !rec      Start audio record.
 		!q   |  !quit	  Exit.
 	
 	Examples: \`!temp 0.7', \`!mod1', and \`!-p 0.2'.
@@ -908,15 +909,15 @@ function check_cmdf
 		-x|ed|editor)
 			((OPTX)) && unset OPTX || OPTX=1
 			;;
-		audio|rec)
-			set -- "${*##@(audio|rec)$SPC2}"
-			if [[ $* = [a-z][a-z] ]]
+		-[wW]|audio|rec)
+			set -- "${*##@(-[wW]|audio|rec)$SPC2}"
+			if [[ $* = [a-z][a-z][$IFS]*[[:graph:]]* ]]
+			then 	OPTW=1 ;set -- "${*:1:2}" "${*:4}"
+			elif [[ $* = [a-z][a-z] ]] || [[ $* = w* ]]
 			then 	OPTW=1
-			elif [[ $* = [a-z][a-z][$IFS]*[[:graph:]]* ]]
-			then 	set -- "${*:1:2}" "${*:4}" ;OPTW=1
 			elif [[ $* = *[[:graph:]]* ]]
 			then 	OPTW=2
-			else 	set --
+			else 	OPTW=1 ;set --
 			fi ;INPUT_ORIG=("${@:-${INPUT_ORIG[@]}}")
 			;;
 		q|quit|exit|bye)
