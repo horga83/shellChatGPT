@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.9.10  2023  by mountaineerbr  GPL+3
+# v0.9.11  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
 [[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;zmodload zsh/zle ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
@@ -910,14 +910,13 @@ function check_cmdf
 			((OPTX)) && unset OPTX || OPTX=1
 			;;
 		-[wW]*|audio*|rec*)
-			OPTW=1
-			if [[ $* = [a-z][a-z][$IFS]*[[:graph:]]* ]]
-			then 	set -- "${*:1:2}" "${*:4}"
-			elif [[ $* = [a-z][a-z] ]] || [[ $* = -w* ]]
-			then 	:
-			elif [[ $* = *[[:graph:]]* ]]
-			then 	OPTW=2
-			fi ;(($#)) && set -- "${1##@(-[wW]|audio|rec)$SPC2}" "${@:2}"
+			OPTW=1 ;[[ $* = -W* ]] && OPTW=2
+			set -- "${*##@(-[wW][wW]|-[wW]|audio|rec)$SPC2}"
+
+			var="$*"
+			[[ $var = [a-z][a-z][$IFS]*[[:graph:]]* ]] \
+			&& set -- "${var:0:2}" "${var:3}" ;unset var
+
 			INPUT_ORIG=("${@:-${INPUT_ORIG[@]}}")
 			;;
 		q|quit|exit|bye)
