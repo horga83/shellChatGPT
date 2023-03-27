@@ -5,7 +5,7 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 ## Features
 
 - GPT chat from the command line
-- Follow up conversations
+- Follow up conversations, preview/regenerate responses
 - Generate images from text input
 - Generate variations of images
 - Edit images, easily generate an alpha mask
@@ -211,10 +211,14 @@ ln -s /data/data/com.termux/files/usr/bin/zsh /data/data/com.termux/files/usr/bi
 
 ## Distinct Features
 
-- In chat mode, run command with operator `!` or `/`
-- In chat mode, edit history entries with command `!hist`, delete or comment them out with `#` to update context on the run
-- Add operator slash `/` to the end of prompt as last character to trigger completions preview mode
-- Code completions work with chat mode option `-c`
+- In chat mode, chat commands run with *operator* `!` or `/`,
+such as `!new` to start new session, `!temp 0.9` to set temperature,
+`!max 2048` to set max tokens,
+`!log ~/chat.log` to set a readable chat log, and so on
+- In chat mode, edit history entries with command `!hist`,
+delete or comment them out with `#` to update context on the run
+- Add operator slash `/` to the end of prompt (as last character) to trigger completions *preview mode*
+- One can regenerate a response typing in a new prompt a single slash `/`.
 - Hopefully, default colours are colour-blind friendly
 
 
@@ -246,6 +250,8 @@ Alternatively, check the script head source code for the help page.
     chatgpt.sh -ccW [opt]
     chatgpt.sh -l [MODEL_NAME]
 
+
+### DESCRIPTION
 
 All positional arguments are read as a single PROMPT. If the
 chosen model requires an INSTRUCTION and INPUT prompts, first
@@ -309,6 +315,9 @@ Script cache is kept at `~/.cache/chatgptsh`.
 A personal (free) OpenAI API is required, set it with -K. Also,
 see ENVIRONMENT section.
 
+Long option support, as `--chat`, `--temp=0.9`, `--max=1024+512`,
+`--presence-penalty=0.6`, and `--log=~/log.txt` is experimental.
+
 For complete model and settings information, refer to OpenAI
 API docs at <https://platform.openai.com/docs/>.
 
@@ -343,11 +352,8 @@ are also the best option for many non-chat use cases.
 ##### 2.3 Q & A Format
 
 The defaults chat format is `Q & A`. So, the `restart text`
-`Q:` and the `start text` `A:` must be injected
+`Q: ` and the `start text` `A:` must be injected
 for the chat bot to work well with text cmpls.
-
-If a name such as `NAME:` is typed in the new prompt, restart
-text is set to it instead of the defaults `Q` interlocutor.
 
 Typing only a colon `:` at the start of the prompt causes it to
 be appended after a newline to the last prompt (answer) in text
@@ -371,6 +377,8 @@ While in chat mode, the following commands preceeded by the operator
 	-t   |  !temp 	  Set temperature.
 	-v   |  !ver	  Set/unset verbose.
 	-x   |  !ed 	  Set/unset text editor.
+	-w   |  !rec      Start audio record.
+	!r   |  !regen    renegerate last response.
 	!q   |  !quit	  Exit.
 
 Examples: `!temp 0.7`, `!mod1`, and `!-p 0.2`.
@@ -379,11 +387,15 @@ To change the chat context at run time, the history file must be
 edited with `!hist`. Delete entries or comment them out with `#`.
 
 
-##### 2.5 Completion Preview
+##### 2.5 Completion Preview / Regeneration
 
 To preview a prompt completion before commiting it to history,
 append a slash `/` to the prompt as the last character. Regen-
-erate it or press ENTER to accept it.
+erate it again or press ENTER to accept it.
+
+After a response has been written to the history file, regenerate
+it with command `!regen` or type in a single slash in the new
+empty prompt.
 
 
 #### 3. Prompt Engineering and Design
@@ -415,9 +427,8 @@ Note that the model's steering and capabilities require prompt
 engineering to even know that it should answer the questions.
 
 For more on prompt design, see:
-
-    <https://platform.openai.com/docs/guides/completion/prompt-design>
-    <https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
+<https://platform.openai.com/docs/guides/completion/prompt-design>
+<https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
 
 
 #### 4. Settings (Abridged)
@@ -426,18 +437,17 @@ For more on prompt design, see:
 See <https://platform.openai.com/docs/>.
 
 
-### CODE COMPLETIONS / CODEX
+### CODE COMPLETIONS
 
-To use Codex, set a model with `code` in its name. This utilises
-the same endpoint as text completions.
+Codex models are discontinued. Use turbo models for coding tasks.
 
-Codex models can turn comments into code, complete the next line
-or function in context, add code comments, and rewrite code for
-efficiency, amongst others.
+Turn comments into code, complete the next line or function in
+context, add code comments, and rewrite code for efficiency,
+amongst other functions.
 
-Start with a comment with instructions, data or code. To get Codex
-to create useful completions it's helpful to think about what
-information a programmer would need to perform a task. 
+Start with a comment with instructions, data or code. To create
+useful completions it's helpful to think about what information
+a programmer would need to perform a task. 
 
 
 ### TEXT EDITS
@@ -513,7 +523,7 @@ many results to continue the out-painting process step-wise.
 
 Optionally, for all image generations, variations, and edits,
 set size of output image with 256x256 (Small), 512x512 (Medium)
-or 1024x1024 (Large) as the first positional argument. Defaults=512x512.
+or 1024x1024 (Large) as the first positional argument. Defaults=S.
 
 
 ### AUDIO / WHISPER
@@ -549,7 +559,7 @@ Setting temperature has an effect, the higher the more random.
 
     VISUAL
     EDITOR 		Text editor for external prompt editing.
-	        Defaults=vim
+    		Defaults=vim
 
 
 ### BUGS
@@ -574,7 +584,9 @@ JQ, ImageMagick, and Sox/Alsa-tools/FFmpeg are optionally required.
     -@ [[VAL%]COLOUR]
     	 Set transparent colour of image mask. Defaults=Black.
     	 Fuzz intensity can be set with [VAL%]. Defaults=0%.
-    -NUM 	 Set maximum tokens. Defaults=1024. Max=4096.
+    -NUM, -M [NUM][[+|-]NUM]
+    	 Set maximum number of tokens. Response tokens can be set
+    	 with a second NUMBER, (max. 2048 to 4000). Defaults=1024+256.
     -a [VAL] Set presence penalty  (cmpls/chat, -2.0 - 2.0).
     -A [VAL] Set frequency penalty (cmpls/chat, -2.0 - 2.0).
     -b [VAL] Set best of, VALUE must be greater than opt -n (cmpls).
@@ -598,34 +610,38 @@ JQ, ImageMagick, and Sox/Alsa-tools/FFmpeg are optionally required.
     -k 	 Disable colour output. Defaults=Auto.
     -K [KEY] Set API key (free).
     -l [MODEL]
-    	 List models or print details of MODEL.
+    	 List models or print details of MODEL. Set twice
+    	 to print model indexes instead.
     -L [FILEPATH]
     	 Set log file. FILEPATH is required.
     -m [MODEL]
     	 Set model by NAME.
-    -m [NUM] Set model by INDEX NUMBER:
-    	  # Completions           # Edits                  
-    	  0.  text-davinci-003    8.  text-davinci-edit-001
-    	  1.  text-curie-001      9.  code-davinci-edit-001
-    	  2.  text-babbage-001    # Chat
-    	  3.  text-ada-001        10. gpt-3.5-turbo
-    	  # Codex                 # Audio
-    	  4.  code-davinci-002    11. whisper-1
-    	  5.  code-cushman-001    # Gpt-4
-    	  # Moderation            12. gpt-4
-    	  6.  text-moderation-latest
-    	  7.  text-moderation-stable
+    -m [IND] Set model by INDEX number:
+    	# COMPLETIONS             # EDITS
+    	0.  text-davinci-003      8.  text-davinci-edit-001
+    	1.  text-curie-001        9.  code-davinci-edit-001
+    	2.  text-babbage-001      # AUDIO
+    	3.  text-ada-001          11. whisper-1
+    	# CHAT                    # GPT-4 
+    	4. gpt-3.5-turbo          12. gpt-4
+    	# MODERATION
+    	6.  text-moderation-latest
+    	7.  text-moderation-stable
     -n [NUM] Set number of results. Defaults=1.
     -p [VAL] Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
+    -r [SEQ] Set restart sequence string.
+    -R [SEQ] Set start sequence string.
     -s [SEQ] Set stop sequences, up to 4. Defaults="<|endoftext|>".
     -S [INSTRUCTION|FILE]
     	 Set an instruction prompt. It may be a text file.
     -t [VAL] Set temperature value (cmpls/chat/edits/audio),
-    	 (0.0 - 2.0, whisper 0.0 - 1.0). Defaults=0.
+    	 (0.0 - 2.0, whisper 0.0 - 1.0). Defaults=0.9.
     -vv 	 Less verbose.
     -VV 	 Pretty-print request. Set twice to dump raw request.
     -x 	 Edit prompt in text editor.
     -w [AUD] [LANG]
     	 Transcribe audio file into text. LANG is optional.
+    	 Set twice to get phrase-level timestamps. 
     -W [AUD] Translate audio file into English text.
+    	 Set twice to get phrase-level timestamps. 
     -z 	 Print last response JSON data.

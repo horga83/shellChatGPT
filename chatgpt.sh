@@ -1,9 +1,9 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.9.13  2023  by mountaineerbr  GPL+3
+# v0.9.14  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
-[[ -n $ZSH_VERSION  ]] && { 	emulate -R zsh ;zmodload zsh/zle ;setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH ;}
+[[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE ;}
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -205,6 +205,7 @@ TEXT / CHAT COMPLETIONS
 		-v   |  !ver	  Set/unset verbose.
 		-x   |  !ed 	  Set/unset text editor.
 		-w   |  !rec      Start audio record.
+		!r   |  !regen    renegerate last response.
 		!q   |  !quit	  Exit.
 	
 	Examples: \`!temp 0.7', \`!mod1', and \`!-p 0.2'.
@@ -213,10 +214,14 @@ TEXT / CHAT COMPLETIONS
 	edited with \`!hist'. Delete entries or comment them out with \`#'.
 
 
-	2.5 Completion Preview
+	2.5 Completion Preview / Regeneration
 	To preview a prompt completion before commiting it to history,
 	append a slash \`/' to the prompt as the last character. Regen-
-	erate it or press ENTER to accept it.
+	erate it again or press ENTER to accept it.
+
+	After a response has been written to the history file, regenerate
+	it with command \`!regen' or type in a single slash in the new
+	empty prompt.
 
 
 	3. Prompt Engineering and Design
@@ -920,7 +925,7 @@ function check_cmdf
 		q|quit|exit|bye)
 			exit
 			;;
-		''|[$IFS])  #regenerate last response
+		regen|regenerate|''|[$IFS])  #regenerate last response
 			REGEN=1 SKIP=1 EDIT=1 ;sed -i -e '$d' -- "$FILECHAT"
 			sed -i -e '$d' -- "$FILECHAT"
 			;;
@@ -1688,7 +1693,8 @@ else               #completions
 			while { 	((SKIP)) && { 	((OPTK)) || printf "${BCyan}" >&2 ;} ;} ||
 				printf "${BWhite}%s${NC}${Q:+[}${Purple}%s${NC}${Cyan}%s${NC}${Q:+]}:\\n${BCyan}" \
 				"Prompt" "${OPTW:+VOICE-}" "$Q" >&2
-			do 	if ((OPTW)) && ((!EDIT))
+			do
+				if ((OPTW)) && ((!EDIT))
 				then 	((OPTV==1)) && ((!WSKIP)) && [[ -t 1 ]] \
 					&& __read_charf -t $((SLEEP/4))  #3-6 (words/tokens)/sec
 					
@@ -1708,10 +1714,13 @@ else               #completions
 					${EDIT:+${BASH_VERSION:+-i "$REPLY"} ${KSH_VERSION:+-v}} REPLY
 				fi ;((OPTK)) || printf "${NC}" >&2
 				
-				if check_cmdf "$REPLY"  && ((!OPTW))
-				then 	set -- ;continue 2
-				elif [[ ${REPLY//[$IFS]} = */ ]]  && ((!OPTW))
+				if check_cmdf "$REPLY"
+				then 	REPLY="${REPLY_OLD:-$REPLY}"  #regen cmd integration
+					set --
+					continue 2
+				elif [[ ${REPLY//[$IFS]} = */ ]] && ((!OPTW)) #regen cmd
 				then
+					[[ $REPLY = /* ]] && REPLY="${REPLY_OLD:-$REPLY}"  #regen cmd integration
 					REPLY="${REPLY%/*}" REPLY_OLD="$REPLY"
 					optv_save=${OPTV:-0} OPTV=1 RETRY=1
 					((OPTK)) || BCyan='\e[0;36m' 
