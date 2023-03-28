@@ -215,12 +215,6 @@ ln -s /data/data/com.termux/files/usr/bin/zsh /data/data/com.termux/files/usr/bi
 - Provide the closest API defaults
 - Let the user customise defaults (homework)
 
-## Limitations
-
-OpenAI **APi v1** is the focus of the present project implementation.
-New versions of the API may not be implemented. I would rather fix bugs
-of existing features than incorporate new feature.
-
 
 ## Distinct Features
 
@@ -233,6 +227,13 @@ delete or comment them out with `#` to update context on the run
 - Add operator slash `/` to the end of prompt (as last character) to trigger completions *preview mode*
 - One can regenerate a response typing in a new prompt a single slash `/`.
 - Hopefully, default colours are colour-blind friendly
+
+
+## Limitations
+
+OpenAI **APi v1** is the focus of the present project implementation.
+New versions of the API may not be implemented. I would rather fix bugs
+of existing features than incorporate new feature.
 
 
 ## Help page
