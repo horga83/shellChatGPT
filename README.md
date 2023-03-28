@@ -137,10 +137,17 @@ Generate transcription from voice recording, set Portuguese as input language:
 
     chatgpt.sh -w pt
 
-Translate audio file or voice recording in any language to English.
+Translate audio file or voice recording in any language to English:
 
     chatgpt.sh -W [audio_file]
     chatgpt.sh -W
+
+Transcribe audio and print timestamps option `-ww`:
+
+    chatgpt.sh -ww pt audio_in.mp3
+    
+![Transcribe audio with timestamps](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/chat_trans.jpg)
+
 
 ### Voice + Chat Completions
 
@@ -207,6 +214,12 @@ ln -s /data/data/com.termux/files/usr/bin/zsh /data/data/com.termux/files/usr/bi
 - Implement most features available from OpenAI API
 - Provide the closest API defaults
 - Let the user customise defaults (homework)
+
+## Limitations
+
+OpenAI **APi v1** is the focus of the present project implementation.
+New versions of the API may not be implemented. I would rather fix bugs
+of existing features than incorporate new feature.
 
 
 ## Distinct Features
