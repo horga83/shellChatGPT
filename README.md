@@ -30,7 +30,7 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 ### Required packages
 
 - Free [OpenAI GPTChat key](https://platform.openai.com/account/api-keys)
-- Ksh93, Bash or Zsh
+- [Ksh93u+](https://github.com/ksh93/ksh), Bash or Zsh
 - cURL
 - JQ (optional)
 - Imagemagick (optional)
@@ -185,7 +185,8 @@ to even know that it should answer the questions.
 
 ## Shell Interpreters
 
-The script can be run with either Ksh93, Zsh nd Bash. If the defaults
+The script can be run with either [Ksh93u+](https://github.com/ksh93/ksh) (~~_not_ Ksh2020~~),
+Zsh and Bash. If the defaults
 interpreter is not available in your system, run the script
 such as `bash ./chatgpt.sh` (consider adding an alias in your rc file).
 
@@ -198,7 +199,7 @@ new prompts (with an up-arrow key stroke).
 
 ## Termux Users
 
-Users of Termux may have some difficulty compiling the oficial Ksh93 under Termux.
+Users of Termux may have some difficulty compiling the original Ksh93 under Termux.
 As a workaround, use Ksh emulation from Zsh. To make Zsh emulate Ksh, simply
 add a symlink to `zsh` under your path with the name `ksh`.
 
@@ -252,8 +253,8 @@ Alternatively, check the script head source code for the help page.
 
 ### SYNOPSIS
 
-    chatgpt.sh [-m [MODEL_NAME|NUMBER]] [opt] [PROMPT|TXT_FILE]
-    chatgpt.sh [-m [MODEL_NAME|NUMBER]] [opt] [INSTRUCTION] [INPUT]
+    chatgpt.sh [-m [MODEL_NAME|MODEL_INDEX]] [opt] [PROMPT|TXT_FILE]
+    chatgpt.sh [-m [MODEL_NAME|MODEL_INDEX]] [opt] [INSTRUCTION] [INPUT]
     chatgpt.sh -e [opt] [INSTRUCTION] [INPUT]
     chatgpt.sh -i [opt] [S|M|L] [PROMPT]
     chatgpt.sh -i [opt] [S|M|L] [PNG_FILE]
@@ -282,6 +283,14 @@ automatically set to un-lobotomise the bot.
 
 Set -C to resume from last history session. Setting -CC starts
 new session and history, but does not set any extra options.
+
+Set model with -m [NAME] (full model name). Some models have an
+equivalent INDEX as short-hand, so `-mtext-davinci-003` and
+`-m0` set the same model (list model by NAME with opt -l or
+by INDEX with opt -ll).
+
+Set `maximum response` and `maximum model` tokens with option
+`-NUM,NUM` or `-M [NUM,NUM]`. A second NUM sets `maximum model` tokens, too. Defaults=2048-256.
 
 If a plain text file path is set as first positional argument,
 it is loaded as text PROMPT (text cmpls, chat cmpls, and text/code
@@ -329,7 +338,7 @@ Script cache is kept at `~/.cache/chatgptsh`.
 A personal (free) OpenAI API is required, set it with -K. Also,
 see ENVIRONMENT section.
 
-Long option support, as `--chat`, `--temp=0.9`, `--max=1024+512`,
+Long option support, as `--chat`, `--temp=0.9`, `--max=1024,128`,
 `--presence-penalty=0.6`, and `--log=~/log.txt` is experimental.
 
 For complete model and settings information, refer to OpenAI
@@ -380,19 +389,19 @@ it works as the INSTRUCTION. In chat cmpls, setting a prompt with
 While in chat mode, the following commands preceeded by the operator
 `!` (or `/`), can be typed in the new prompt to set the new parameter:
 
-	!NUM |  !max 	  Set maximum tokens.
-	-a   |  !pre 	  Set presence.
-	-A   |  !freq 	  Set frequency.
+	!NUM |  !max 	  Set response / model maximum tokens.
+	-a   |  !pre 	  Set presence pensalty.
+	-A   |  !freq 	  Set frequency penalty.
 	-c   |  !new 	  Start new session.
-	-H   |  !hist 	  Edit history.
+	-H   |  !hist 	  Edit history in editor.
 	-L   |  !log 	  Save to log file.
-	-m   |  !mod 	  Set model by index number.
+	-m   |  !mod 	  Set model (by index or name).
 	-p   |  !top 	  Set top_p.
 	-t   |  !temp 	  Set temperature.
 	-v   |  !ver	  Set/unset verbose.
-	-x   |  !ed 	  Set/unset text editor.
-	-w   |  !rec      Start audio record.
-	!r   |  !regen    renegerate last response.
+	-x   |  !ed 	  Set/unset text editor interface.
+	-w   |  !rec      Start audio record chat.
+	!r   |  !regen    Renegerate last response.
 	!q   |  !quit	  Exit.
 
 Examples: `!temp 0.7`, `!mod1`, and `!-p 0.2`.
@@ -537,7 +546,7 @@ many results to continue the out-painting process step-wise.
 
 Optionally, for all image generations, variations, and edits,
 set size of output image with 256x256 (Small), 512x512 (Medium)
-or 1024x1024 (Large) as the first positional argument. Defaults=S.
+or 1024x1024 (Large) as the first positional argument. Defaults=512x512.
 
 
 ### AUDIO / WHISPER
@@ -562,21 +571,29 @@ Setting temperature has an effect, the higher the more random.
 ### ENVIRONMENT
 
     CHATGPTRC 	Path to user chatgpt.sh configuration.
-		    Defaults=~/.chatgpt.conf
+                Defaults=~/.chatgpt.conf
 
     INSTRUCTION 	Initial instruction set for the chatbot.
 
     OPENAI_API_KEY
     OPENAI_KEY 	Set your personal (free) OpenAI API key.
 
+
     REC_CMD 	Audio recording command.
+
 
     VISUAL
     EDITOR 		Text editor for external prompt editing.
-    		Defaults=vim
+                Defaults=vim
 
 
 ### BUGS
+
+~~Ksh2020~~ lacks functionality compared to **Ksh83u+m**, such as `read`
+with history.
+
+With the exception of Davinci models, older models were designed
+to be run as one-shot.
 
 Instruction prompts are required for the model to even know that
 it should answer questions.
@@ -588,7 +605,7 @@ Garbage in, garbage out.
 
 A free OpenAI API key.
 
-Ksh93, Bash or Zsh. cURL.
+Ksh93u+, Bash or Zsh. cURL.
 
 JQ, ImageMagick, and Sox/Alsa-tools/FFmpeg are optionally required.
 
@@ -596,41 +613,39 @@ JQ, ImageMagick, and Sox/Alsa-tools/FFmpeg are optionally required.
 ### OPTIONS
 
     -@ [[VAL%]COLOUR]
-    	 Set transparent colour of image mask. Defaults=Black.
-    	 Fuzz intensity can be set with [VAL%]. Defaults=0%.
-    -NUM, -M [NUM][[+|-]NUM]
-    	 Set maximum number of tokens. Response tokens can be set
-    	 with a second NUMBER, (max. 2048 to 4000). Defaults=1024+256.
+    	 Set transparent colour of image mask. Def=Black.
+    	 Fuzz intensity can be set with [VAL%]. Def=0%.
+    -NUM
+    -M [NUM[-NUM]]
+    	 Set maximum number of `response tokens`. Maximum
+    	 `model tokens` can be set with a second number. Def=2048-256.
     -a [VAL] Set presence penalty  (cmpls/chat, -2.0 - 2.0).
     -A [VAL] Set frequency penalty (cmpls/chat, -2.0 - 2.0).
-    -b [VAL] Set best of, VALUE must be greater than opt -n (cmpls).
-    	 Defaults=1.
+    -b [VAL] Set best of, must be greater than opt -n (cmpls). Def=1.
     -B 	 Print log probabilities to stderr (cmpls, 0 - 5).
     -c 	 Chat mode in text completions, new session.
     -cc 	 Chat mode in chat completions, new session.
     -C 	 Continue from last session (with -c, -cc, compls/chat).
     -e [INSTRUCT] [INPUT]
-    	 Set Edit mode. Model Defaults=text-davinci-edit-001.
+    	 Set Edit mode. Model Def=text-davinci-edit-001.
     -f 	 Don't read user config file.
     -h 	 Print this help page.
     -H 	 Edit history file with text editor.
     -i [PROMPT]
     	 Generate images given a prompt.
-    -i [PNG_PATH]
+    -i [PNG]
     	 Create variations of a given image.
-    -i [PNG_PATH] [MASK_PATH] [PROMPT]
+    -i [PNG] [MASK] [PROMPT]
     	 Edit image with mask and prompt (required).
     -j 	 Print raw JSON response (debug with -jVV).
-    -k 	 Disable colour output. Defaults=Auto.
+    -k 	 Disable colour output. Def=Auto.
     -K [KEY] Set API key (free).
-    -l [MODEL]
-    	 List models or print details of MODEL. Set twice
+    -l [MOD] List models or print details of MODEL. Set twice
     	 to print model indexes instead.
     -L [FILEPATH]
     	 Set log file. FILEPATH is required.
-    -m [MODEL]
-    	 Set model by NAME.
-    -m [IND] Set model by INDEX number:
+    -m [MOD] Set model by NAME.
+    -m [IND] Set model by INDEX:
     	# COMPLETIONS             # EDITS
     	0.  text-davinci-003      8.  text-davinci-edit-001
     	1.  text-curie-001        9.  code-davinci-edit-001
@@ -641,15 +656,15 @@ JQ, ImageMagick, and Sox/Alsa-tools/FFmpeg are optionally required.
     	# MODERATION
     	6.  text-moderation-latest
     	7.  text-moderation-stable
-    -n [NUM] Set number of results. Defaults=1.
+    -n [NUM] Set number of results. Def=1.
     -p [VAL] Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
     -r [SEQ] Set restart sequence string.
     -R [SEQ] Set start sequence string.
-    -s [SEQ] Set stop sequences, up to 4. Defaults="<|endoftext|>".
+    -s [SEQ] Set stop sequences, up to 4. Def="<|endoftext|>".
     -S [INSTRUCTION|FILE]
     	 Set an instruction prompt. It may be a text file.
     -t [VAL] Set temperature value (cmpls/chat/edits/audio),
-    	 (0.0 - 2.0, whisper 0.0 - 1.0). Defaults=0.9.
+    	 (0.0 - 2.0, whisper 0.0 - 1.0). Def=0.
     -vv 	 Less verbose.
     -VV 	 Pretty-print request. Set twice to dump raw request.
     -x 	 Edit prompt in text editor.

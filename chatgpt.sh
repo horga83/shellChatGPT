@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.9.16  2023  by mountaineerbr  GPL+3
+# v0.10.0  2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE ;}
@@ -21,8 +21,10 @@
 #OPTT=
 # Top_p probability mass (nucleus sampling)
 #OPTP=1
-# Maximum tokens (input and response)
-OPTMAX=1024+256
+# Maximum response tokens
+OPTMAX=256
+# Maximum model tokens
+#MODMAX=
 # Presence penalty
 #OPTA=
 # Frequency penalty
@@ -74,8 +76,8 @@ MAN="NAME
 
 
 SYNOPSIS
-	${0##*/} [-m [MODEL_NAME|NUMBER]] [opt] [PROMPT|TXT_FILE]
-	${0##*/} [-m [MODEL_NAME|NUMBER]] [opt] [INSTRUCTION] [INPUT]
+	${0##*/} [-m [MODEL_NAME|MODEL_INDEX]] [opt] [PROMPT|TXT_FILE]
+	${0##*/} [-m [MODEL_NAME|MODEL_INDEX]] [opt] [INSTRUCTION] [INPUT]
 	${0##*/} -e [opt] [INSTRUCTION] [INPUT]
 	${0##*/} -i [opt] [S|M|L] [PROMPT]
 	${0##*/} -i [opt] [S|M|L] [PNG_FILE]
@@ -103,6 +105,15 @@ DESCRIPTION
 
 	Set -C to resume from last history session. Setting -CC starts
 	new session and history, but does not set any extra options.
+
+	Set model with -m [NAME] (full model name). Some models have an
+	equivalent INDEX as short-hand, so \`-mtext-davinci-003' and
+	\`-m0' set the same model (list model by NAME with opt -l or
+	by INDEX with opt -ll).
+
+	Set \`maximum response' and \`maximum model' tokens with option
+	\`-NUM,NUM' or \`-M [NUM,NUM]'. A second NUM sets \`maximum
+	model' tokens, too. Defaults=$OPTMAX.
 
 	If a plain text file path is set as first positional argument,
 	it is loaded as text PROMPT (text cmpls, chat cmpls, and text/code
@@ -150,7 +161,7 @@ DESCRIPTION
 	A personal (free) OpenAI API is required, set it with -K. Also,
 	see ENVIRONMENT section.
 
-	Long option support, as \`--chat', \`--temp=0.9', \`--max=1024+512',
+	Long option support, as \`--chat', \`--temp=0.9', \`--max=1024,128',
 	\`--presence-penalty=0.6', and \`--log=~/log.txt' is experimental.
 
 	For complete model and settings information, refer to OpenAI
@@ -193,19 +204,19 @@ TEXT / CHAT COMPLETIONS
 	While in chat mode, the following commands preceeded by the operator
 	\`!' (or \`/'), can be typed in the new prompt to set the new parameter:
 
-		!NUM |  !max 	  Set maximum tokens.
-		-a   |  !pre 	  Set presence.
-		-A   |  !freq 	  Set frequency.
+		!NUM |  !max 	  Set response / model maximum tokens.
+		-a   |  !pre 	  Set presence pensalty.
+		-A   |  !freq 	  Set frequency penalty.
 		-c   |  !new 	  Start new session.
-		-H   |  !hist 	  Edit history.
+		-H   |  !hist 	  Edit history in editor.
 		-L   |  !log 	  Save to log file.
-		-m   |  !mod 	  Set model by index number.
+		-m   |  !mod 	  Set model (by index or name).
 		-p   |  !top 	  Set top_p.
 		-t   |  !temp 	  Set temperature.
 		-v   |  !ver	  Set/unset verbose.
-		-x   |  !ed 	  Set/unset text editor.
-		-w   |  !rec      Start audio record.
-		!r   |  !regen    renegerate last response.
+		-x   |  !ed 	  Set/unset text editor interface.
+		-w   |  !rec      Start audio record chat.
+		!r   |  !regen    Renegerate last response.
 		!q   |  !quit	  Exit.
 	
 	Examples: \`!temp 0.7', \`!mod1', and \`!-p 0.2'.
@@ -399,6 +410,12 @@ ENVIRONMENT
 
 
 BUGS
+	Ksh2020 lacks functionality compared to Ksh83u+m, such as \`read'
+	with history.
+
+	With the exception of Davinci models, older models were designed
+	to be run as one-shot.
+
 	Instruction prompts are required for the model to even know that
 	it should answer questions.
 
@@ -408,48 +425,46 @@ BUGS
 REQUIREMENTS
 	A free OpenAI API key.
 	
-	Ksh93, Bash or Zsh. cURL.
+	Ksh93u+, Bash or Zsh. cURL.
 
 	JQ, ImageMagick, and Sox/Alsa-tools/FFmpeg are optionally required.
 
 
 OPTIONS
 	-@ [[VAL%]COLOUR]
-		 Set transparent colour of image mask. Defaults=Black.
-		 Fuzz intensity can be set with [VAL%]. Defaults=0%.
-	-NUM, -M [NUM][[+|-]NUM]
-		 Set maximum number of tokens. Response tokens can be set
-		 with a second NUMBER, (max. 2048 to 4000). Defaults=$OPTMAX.
+		 Set transparent colour of image mask. Def=Black.
+		 Fuzz intensity can be set with [VAL%]. Def=0%.
+	-NUM
+	-M [NUM[-NUM]]
+		 Set maximum number of \`response tokens'. Maximum
+		 \`model tokens' can be set with a second number. Def=$OPTMAX.
 	-a [VAL] Set presence penalty  (cmpls/chat, -2.0 - 2.0).
 	-A [VAL] Set frequency penalty (cmpls/chat, -2.0 - 2.0).
-	-b [VAL] Set best of, VALUE must be greater than opt -n (cmpls).
-		 Defaults=1.
+	-b [VAL] Set best of, must be greater than opt -n (cmpls). Def=1.
 	-B 	 Print log probabilities to stderr (cmpls, 0 - 5).
 	-c 	 Chat mode in text completions, new session.
 	-cc 	 Chat mode in chat completions, new session.
 	-C 	 Continue from last session (with -c, -cc, compls/chat).
 	-e [INSTRUCT] [INPUT]
-		 Set Edit mode. Model Defaults=text-davinci-edit-001.
+		 Set Edit mode. Model Def=text-davinci-edit-001.
 	-f 	 Don't read user config file.
 	-h 	 Print this help page.
 	-H 	 Edit history file with text editor.
 	-i [PROMPT]
 		 Generate images given a prompt.
-	-i [PNG_PATH]
+	-i [PNG]
 		 Create variations of a given image.
-	-i [PNG_PATH] [MASK_PATH] [PROMPT]
+	-i [PNG] [MASK] [PROMPT]
 		 Edit image with mask and prompt (required).
 	-j 	 Print raw JSON response (debug with -jVV).
-	-k 	 Disable colour output. Defaults=Auto.
+	-k 	 Disable colour output. Def=Auto.
 	-K [KEY] Set API key (free).
-	-l [MODEL]
-		 List models or print details of MODEL. Set twice
+	-l [MOD] List models or print details of MODEL. Set twice
 		 to print model indexes instead.
 	-L [FILEPATH]
 		 Set log file. FILEPATH is required.
-	-m [MODEL]
-		 Set model by NAME.
-	-m [IND] Set model by INDEX number:
+	-m [MOD] Set model by NAME.
+	-m [IND] Set model by INDEX:
 		# COMPLETIONS             # EDITS
 		0.  text-davinci-003      8.  text-davinci-edit-001
 		1.  text-curie-001        9.  code-davinci-edit-001
@@ -460,15 +475,15 @@ OPTIONS
 		# MODERATION
 		6.  text-moderation-latest
 		7.  text-moderation-stable
-	-n [NUM] Set number of results. Defaults=$OPTN.
+	-n [NUM] Set number of results. Def=$OPTN.
 	-p [VAL] Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
 	-r [SEQ] Set restart sequence string.
 	-R [SEQ] Set start sequence string.
-	-s [SEQ] Set stop sequences, up to 4. Defaults=\"<|endoftext|>\".
+	-s [SEQ] Set stop sequences, up to 4. Def=\"<|endoftext|>\".
 	-S [INSTRUCTION|FILE]
 		 Set an instruction prompt. It may be a text file.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
-		 (0.0 - 2.0, whisper 0.0 - 1.0). Defaults=${OPTT:-0}.
+		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
 	-vv 	 Less verbose.
 	-VV 	 Pretty-print request. Set twice to dump raw request.
 	-x 	 Edit prompt in text editor.
@@ -716,17 +731,17 @@ function lastjsonf
 function token_prevf
 {
 	TKN_PREV=$(__tiktokenf "$*")
-	__sysmsgf "Prompt:" "~$TKN_PREV tkns"
+	__sysmsgf "Prompt:" "~$TKN_PREV tokens"
 }
 
 #set up $HIST and $HIST_C
 function set_histf
 {
-	typeset time token string user_type
+	typeset time token string user_type max_prev
 	[[ -s "$FILECHAT" ]] || return
 	(($#)) && OPTV=1 token_prevf "$@"
-	
-	((MAX_PREV=TKN_PREV)) ;unset HIST HIST_C
+
+	unset HIST HIST_C
 	while IFS=$'\t' read -r time token string
 	do 	[[ ${time//[$IFS]}${token//[$IFS]} = \#* ]] && continue
 		[[ -z $time$token$string ]] && continue
@@ -737,8 +752,8 @@ function set_histf
 			token=$(__tiktokenf "$string")
 		fi
 
-		if ((MAX_PREV+token < OPTMAX-OPTMAXR))
-		then 	((MAX_PREV+=token))
+		if ((max_prev+token+TKN_PREV+64 < MODMAX-OPTMAX))
+		then 	((max_prev+=token)) ;((N_LOOP)) || ((OLD_TOTAL+=token))
 
 			string="${string##$SPC1}" string="${string%%[\"]}"
 			if [[ $string = :* ]]
@@ -763,9 +778,9 @@ function set_histf
 				HIST_C="$(fmt_ccf "${string##$SPC1@(${user_type:-%#}|${SET_TYPE:-%#}|${RESTART:-%#}|${START:-%#}|${Q_TYPE:-%#}|${A_TYPE:-%#}|:)$SPC2}" "$role")${HIST_C:+,}$HIST_C"
 				SET_TYPE="$user_type"
 			fi
+		else 	break
 		fi
 	done < <(tac -- "$FILECHAT")
-	((MAX_PREV-=TKN_PREV))
 }
 #https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
 
@@ -836,16 +851,17 @@ function set_sizef
 
 function set_maxtknf
 {
+	typeset buff
 	set -- "${*:-$OPTMAX}"
 	set -- "${*##[+-]}" ;set -- "${*%%[+-]}"
 
-	[[ $* = *[0-9][+-][0-9]* ]] &&
-	OPTMAXR=${*##${*%[+-]*}} OPTMAXR=${OPTMAXR##[+]}
-	
-	((OPTMAXR>=0)) && set -- "$((${*}))" || set -- "${*%%[+-]*}"
-	
-	OPTMAX=${*:-${OPTMAX:-1024}}
-	OPTMAXR=${OPTMAXR##[-]} OPTMAXR=${OPTMAXR:-64}
+	if [[ $* = *[0-9][!0-9][0-9]* ]]
+	then 	OPTMAX="${*##${*%[!0-9]*}}" MODMAX="${*%%"$OPTMAX"}"
+		OPTMAX="${OPTMAX##[!0-9]}"
+	else 	OPTMAX="${*##[!0-9]}"
+	fi
+	((OPTMAX>MODMAX)) && \
+	buff="$MODMAX" MODMAX="$OPTMAX" OPTMAX="$buff" 
 }
 
 #check if input is a command
@@ -858,17 +874,17 @@ function check_cmdf
 			set -- "${*%.*}" ;set -- "${*//[!0-9+-]}"
 			OPTMM="${*:-$OPTMM}"
 			set_maxtknf $OPTMM
-			__cmdmsgf 'Max tokens' "$OPTMAX"
+			__cmdmsgf 'Response max tkns' "$OPTMAX"
 			;;
 		-a*|pre*|presence*)
 			set -- "${*//[!0-9.]}"
 			OPTA="${*:-$OPTA}"
-			fix_dotf OPTA  ;__cmdmsgf 'Presence' "$OPTA"
+			fix_dotf OPTA  ;__cmdmsgf 'Presence penalty' "$OPTA"
 			;;
 		-A*|freq*|frequency*)
 			set -- "${*//[!0-9.]}"
 			OPTAA="${*:-$OPTAA}"
-			fix_dotf OPTAA ;__cmdmsgf 'Frequency' "$OPTAA"
+			fix_dotf OPTAA ;__cmdmsgf 'Frequency penalty' "$OPTAA"
 			;;
 		-c|br|break|session)
 			break_sessionf
@@ -925,7 +941,7 @@ function check_cmdf
 		q|quit|exit|bye)
 			exit
 			;;
-		regen|regenerate|''|[$IFS])  #regenerate last response
+		r|regen*|regenerate|''|[$IFS])  #regenerate last response
 			REGEN=1 SKIP=1 EDIT=1 ;sed -i -e '$d' -- "$FILECHAT"
 			sed -i -e '$d' -- "$FILECHAT"
 			;;
@@ -1075,14 +1091,14 @@ function check_optrangef
 function set_optsf
 {
 	typeset s n
-	check_optrangef "$OPTA" -2.0 2.0 'Presence Penalty'
-	check_optrangef "$OPTAA" -2.0 2.0 'Frequency Penalty'
-	check_optrangef "${OPTB:-$OPTN}" $OPTN 50 BestOf
-	check_optrangef "$OPTBB" 0 5 LogProbs
-	check_optrangef "$OPTP" 0.0 1.0 Top_p
-	check_optrangef "$OPTT" 0.0 2.0 Temperature  #whisper max=1
-	check_optrangef "$((OPTMAX-OPTMAXR))" 1 4096 MaxTokens
-	((OPTI)) && check_optrangef "$OPTN" 1 10 'Number of Results'
+	check_optrangef "$OPTA"  -2.0 2.0 'Presence Penalty'
+	check_optrangef "$OPTAA"  -2.0 2.0 'Frequency Penalty'
+	check_optrangef "${OPTB:-$OPTN}"  "$OPTN" 50 'Best Of'
+	check_optrangef "$OPTBB"  0 5 'Log Probs'
+	check_optrangef "$OPTP"  0.0 1.0 Top_p
+	check_optrangef "$OPTT"  0.0 2.0 Temperature  #whisper max=1
+	check_optrangef "$OPTMAX"  1 "$MODMAX" 'Response Max Tokens'
+	((OPTI)) && check_optrangef "$OPTN"  1 10 'Number of Results'
 	[[ -n ${OPTT#0} ]] && [[ -n ${OPTP#1} ]] \
 	&& __warmsgf "Warning:" "Temperature and Top_P are both set"
 
@@ -1435,7 +1451,7 @@ function editf
 
 
 #parse opts
-optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:r:R:s:S:t:vVxwWz0123456789@:+-:"
+optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:r:R:s:S:t:vVxwWz0123456789@:/,.+-:"
 while getopts "$optstring" opt
 do
 	if [[ $opt = - ]]  #long options
@@ -1495,7 +1511,7 @@ do
 					OPT_AT="${OPT_AT##"$OPT_AT_PC%"}"
 				fi ;OPT_AT_PC="${OPT_AT_PC##0}"
 			fi;;
-		[0-9+-]) 	OPTMM="$OPTMM$opt";;
+		[0-9/,.+-]) 	OPTMM="$OPTMM$opt";;
 		M) 	OPTMM="$OPTARG";;
 		a) 	OPTA="$OPTARG";;
 		A) 	OPTAA="$OPTARG";;
@@ -1542,7 +1558,7 @@ do
 		z) 	OPTZ=1;;
 		\?) 	exit 1;;
 	esac
-done ; unset LANG OK N optstring opt
+done ; unset LANG OK N_LOOP optstring opt
 shift $((OPTIND -1))
 
 [[ -t 1 ]] || OPTK=1 ;((OPTK)) ||
@@ -1561,10 +1577,6 @@ def yellow: "\u001b[33m"; def byellow: "\u001b[1;33m"; def reset: "\u001b[0m";'
 
 OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
 ((OPTC)) && ((OPTE+OPTI)) && unset OPTC ;((OPTL+OPTZ)) && OPTX=
-
-set_maxtknf "${OPTMM:-$OPTMAX}"  #;unset OPTMM
-__sysmsgf "Max Input/Resp:" "$((OPTMAX-OPTMAXR)) + $OPTMAXR ($OPTMAX) tkns"
-set_optsf
 
 if ((OPTI+OPTII))
 then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
@@ -1590,13 +1602,32 @@ MOD="${MOD:-${MODELS[OPTM]}}"
 [[ -n $EPN ]] || set_model_epnf "$MOD"
 [[ -n ${INSTRUCTION//[$IFS]} ]] || unset INSTRUCTION
 
+#defaults ``max model tkns''
+((MODMAX)) ||
+case "$MOD" in
+	davinci|curie|babbage|ada) 	MODMAX=2049;;
+	code-davinci-002) MODMAX=8001;;
+	gpt4-*32k) 	MODMAX=32768;; 
+	gpt4-*) 	MODMAX=8192;;
+	*turbo*|*davinci*) 	MODMAX=4096;;
+	*) 	MODMAX=2048;;
+esac
+
+#set ``max response tkns''
+set_maxtknf "${OPTMM:-$OPTMAX}"
+((OPTI+OPTL+OPTZ+OPTW)) || __sysmsgf "Max Input / Response:" "$MODMAX / $OPTMAX tokens"
+
+#set other options
+set_optsf
+
+#load stdin
 (($#)) || [[ -t 0 ]] || set -- "$(</dev/stdin)"
 
 ((OPTX)) && ((OPTE+OPTEMBED+OPTI+OPTII)) &&
 edf "$@" && set -- "$(<"$FILETXT")"  #editor
 
 ((OPTC)) && OPTT="${OPTT:-0.6}" || OPTT="${OPTT:-0}"  #temp
-((OPTL+OPTZ+OPTW)) || ((!$#)) || token_prevf "$@"
+((OPTI+OPTL+OPTZ+OPTW)) || ((!$#)) || token_prevf "$@"
 
 for arg  #escape input
 do 	((init++)) || set --
@@ -1646,7 +1677,6 @@ else               #completions
 		  break_sessionf
 		  INSTRUCTION="${INSTRUCTION:-Be a nice chat bot.}"
 		  push_tohistf "$(escapef ":${INSTRUCTION##:}")"
-		  (( OLD_TOTAL += $(__tiktokenf ":$INSTRUCTION" "4") ))
 		  __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 
 		} ;unset INSTRUCTION
 		((OPTRESUME>1)) || {
@@ -1659,18 +1689,18 @@ else               #completions
 	#load history (only ksh/bash)
 	[[ -n $BASH_VERSION ]] && { 	history -c ;history -r ;}
 	[[ -n $KSH_VERSION ]] && read -s <<<""
-	WSKIP=1 SKIP= EDIT= N=0
-	while :
-	do 	if ((OPTC+OPTRESUME))  #chat mode
-		then 	if ((!N)) && (($#))  #first pass
-			then 	check_cmdf "$*" && { 	set -- ;continue ;}
-				if [[ -n $BASH_VERSION ]]
-				then 	history -s -- "$*"
-				else 	print -s -- "$*"  #zsh/ksh
-				fi
+	if ((OPTC+OPTRESUME))  #chat mode
+	then 	if check_cmdf "$*"
+		then 	set --
+		else 	if [[ -n $BASH_VERSION ]]
+			then 	history -s -- "$*"
+			else 	print -s -- "$*"  #zsh/ksh
 			fi
 		fi
-		((REGEN)) && { 	set -- "${PROMPT_LAST[@]:-$@}" ;unset REGEN ;}
+	fi
+	WSKIP=1 SKIP= EDIT= N_LOOP=0
+	while :
+	do 	((REGEN)) && { 	set -- "${PROMPT_LAST[@]:-$@}" ;unset REGEN ;}
 
 		#text editor prompter
 		if ((OPTX))
@@ -1849,8 +1879,8 @@ else               #completions
 		SLEEP="${tkn[1]}"
 		((OPTLOG)) && usr_logf "$(unescapef "${*%%$SPC1@(${START:-%#}|${A_TYPE:-%#}|:)$SPC2}\\n${ans##$SPC1}")"
 
-		((++N)) ;set --
-		unset INSTRUCTION TKN_PREV MAX_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP RETRY OK Q user_type optv_save tkn arg ans glob s n
+		((++N_LOOP)) ;set --
+		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP RETRY OK Q user_type optv_save tkn arg ans glob s n
 		((OPTC+OPTRESUME)) || break
-	done ;unset OLD_TOTAL SLEEP N
+	done ;unset OLD_TOTAL SLEEP N_LOOP
 fi
