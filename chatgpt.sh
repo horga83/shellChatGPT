@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.4  april/2023  by mountaineerbr  GPL+3
+# v0.10.5  april/2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob pipefail
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -569,7 +569,7 @@ function block_printf
 function new_prompt_confirmf
 {
 	typeset REPLY
-	((OPTV)) && return
+	((OPTV==1)) && return
 
 	__sysmsgf 'Confirm prompt?' '[Y]es, [n]o, [e]dit, [r]edo or [a]bort ' ''
 	REPLY=$(__read_charf)
@@ -933,14 +933,14 @@ function check_cmdf
 #command run feedback
 function __cmdmsgf
 {
-	((OPTV)) || printf "${BWhite}%-11s => %s${NC}\\n" "$1" "${2:-unset}" >&2
+	((OPTV-OPTV_AUTO)) || printf "${BWhite}%-11s => %s${NC}\\n" "$1" "${2:-unset}" >&2
 }
 
 #print msg to stderr
 #usage: __sysmsgf [string_one] [string_two] ['']
 function __sysmsgf
 {
-	((OPTV)) || printf "${BWhite}%s${NC}${2:+ }%s${3-\\n}" "$1" "$2" >&2
+	((OPTV-OPTV_AUTO)) || printf "${BWhite}%s${NC}${2:+ }%s${3-\\n}" "$1" "$2" >&2
 }
 
 function __warmsgf
@@ -1594,7 +1594,6 @@ OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key requ
 ((OPTL+OPTZ)) && unset OPTX
 ((OPTE+OPTI)) && unset OPTC
 ((OPTC)) || unset Q_TYPE A_TYPE
-((OPTC)) && { 	((OPTV)) && unset OPTV || OPTV=1 ;}  #chat mode less verb by defs
 
 if ((OPTI+OPTII))
 then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
@@ -1684,6 +1683,15 @@ else               #text/chat completions
 	((OPTW)) && { 	INPUT_ORIG=("$@") ;unset OPTX ;set -- ;}  #whisper input
 	((OPTE)) && function set_typef { : ;}
 	((OPTC)) || unset Q_TYPE A_TYPE
+	if ((OPTC))  #chat mode less verb by defs
+	then 	if ((!OPTV))
+		then 	((OPTV=1, OPTV_AUTO=1))
+		elif ((OPTV==1))
+		then 	((OPTV=2, OPTV_AUTO=2))
+		elif ((OPTV>1))  #-vvv
+		then 	unset OPTV
+		fi
+	fi
 
 	#chatbot instruction
 	if ((OPTC+OPTRESUME))
