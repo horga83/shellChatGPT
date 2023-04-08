@@ -58,6 +58,8 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 
 ## Examples
 
+![Chat cmpls with prompt confirmation](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/chat_cpls_verb.gif)
+
 ### Text and Chat Completions
 
 One-shot text completion:

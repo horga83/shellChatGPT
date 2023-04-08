@@ -1,8 +1,8 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.5  april/2023  by mountaineerbr  GPL+3
-[[ -n $BASH_VERSION ]] && shopt -s extglob pipefail
+# v0.10.6  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
+[[ -n $BASH_VERSION ]] && { 	shopt -s extglob pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
 
 # OpenAI API key
@@ -606,8 +606,7 @@ function prompt_printf
 		  (.text//.message.content) | gsub(\"^[\\\\n\\\\t ]\"; \"\") |
 		  if ${OPTC:-0} > 0 then gsub(\"[\\\\n\\\\t ]+$\"; \"\") else . end
 		  ) + reset,
-		  if \$sep != null then \"---\" else empty end)" "$FILE" 2>/dev/null \
-			| if ((COLUMNS>16)) && [[ -t 1 ]] ;then 	fold -s -w $COLUMNS 2>/dev/null || cat ;else 	cat ;fi ||
+		  if \$sep != null then \"---\" else empty end)" "$FILE" 2>/dev/null | foldf ||
 
 		jq -r '.choices[]|.text//.message.content' "$FILE" 2>/dev/null ||
 		jq . "$FILE" 2>/dev/null || cat -- "$FILE"
@@ -719,7 +718,7 @@ function set_histf
 {
 	typeset time token string user_type max_prev
 	[[ -s "$FILECHAT" ]] || return
-	(($#)) && OPTV=1 token_prevf "$@"
+	(($#)) && OPTV=1 OPTV_AUTO= token_prevf "$@"
 
 	unset HIST HIST_C
 	while IFS=$'\t' read -r time token string
@@ -1076,6 +1075,15 @@ function usr_logf
 	[[ -d $USRLOG ]] && USRLOG="$USRLOG/${FILETXT##*/}"
 	[[ "$USRLOG" = '~'* ]] && USRLOG="${HOME}${USRLOG##\~}"
 	printf '%s\n\n' "$(date -R 2>/dev/null||date)" "${@//$'\n'/$'\n\n'}" > "$USRLOG"
+}
+
+#wrap text at spaces rather than mid-word
+function foldf
+{
+	if ((COLUMNS>16)) && [[ -t 1 ]]
+	then 	fold -s -w $COLUMNS 2>/dev/null || cat
+	else 	cat
+	fi
 }
 
 #check if a value if within a fp range
@@ -1699,7 +1707,7 @@ else               #text/chat completions
 		  break_sessionf
 		  INSTRUCTION="${INSTRUCTION:-Be a helpful assistant.}"
 		  push_tohistf "$(escapef ":${INSTRUCTION##:}")"
-		  __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 
+		  __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
 		} ;unset INSTRUCTION
 		((OPTRESUME>1)) || {
 		  #chatbot must sound like a human, shouldn't be lobotomised
@@ -1743,11 +1751,9 @@ else               #text/chat completions
 		#defaults prompter
 		if [[ ${*//[$'\t\n'\"]} = *($TYPE_GLOB:) ]]
 		then
-			Q="${SET_TYPE:-${RESTART:-$Q_TYPE}}" Q="${Q%%*([$IFS:])$SPC2}"
+			Q="${SET_TYPE:-${RESTART:-${Q_TYPE:-:}}}" Q="${Q%%$SPC2}"
 			while { 	((SKIP)) && { 	((OPTK)) || printf "${BCyan}" >&2 ;} ;} ||
-				{ 	((OPTV)) && printf "${Purple}%s${NC}${Cyan}%s${NC}: ${BCyan}" "${OPTW:+VOICE-}" "$Q" >&2 ;} ||
-				printf "${BWhite}%s${NC}${Q:+[}${Purple}%s${NC}${Cyan}%s${NC}${Q:+]}: ${ZSH_VERSION:+\\n}${BCyan}" \
-				"Prompt" "${OPTW:+VOICE-}" "$Q" >&2
+				printf "${Purple}%s${NC}${Cyan}%s${NC}\\r${BCyan}" "${OPTW:+VOICE-}" "$Q" >&2
 			do
 				if ((OPTW)) && ((!EDIT))
 				then 	((OPTV==1)) && ((!WSKIP)) && [[ -t 1 ]] \
