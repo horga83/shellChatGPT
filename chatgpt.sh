@@ -1,9 +1,9 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.0  2023  by mountaineerbr  GPL+3
-[[ -n $BASH_VERSION ]] && shopt -s extglob
-[[ -n $KSH_VERSION  ]] && set -o emacs -o multiline
-[[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE ;}
+# v0.10.1  april/2023  by mountaineerbr  GPL+3
+[[ -n $BASH_VERSION ]] && shopt -s extglob pipefail
+[[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
+[[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
 
 # OpenAI API key
 #OPENAI_KEY=
@@ -263,6 +263,7 @@ TEXT / CHAT COMPLETIONS
 	engineering to even know that it should answer the questions.
 
 	For more on prompt design, see:
+
 	<https://platform.openai.com/docs/guides/completion/prompt-design>
 	<https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
 
@@ -297,7 +298,7 @@ TEXT / CHAT COMPLETIONS
 	Best_of must be greater than n (option -n). Defaults to 1.
 	Note: This parameter can quickly consume your token quota.
 
-	For more on settings, see <https://platform.openai.com/docs/>.
+	See also <https://platform.openai.com/docs/>.
 
 
 CODE COMPLETIONS
@@ -393,6 +394,13 @@ AUDIO / WHISPER
 	Setting temperature has an effect, the higher the more random.
 
 
+QUOTING AND SPECIAL SYMBOLS
+	The special sequences (\`\\b', \`\\f', \`\\n', \`\\r', \`\\t' and \`\\uHEX')
+	are interpreted as quoted backspace, form feed, new line, return,
+	tab and unicode hex. To preserve these symbols as literals instead
+	(e. g. Latex syntax), type in an extra slash such as \`\\\\theta'.
+
+
 ENVIRONMENT
 	CHATGPTRC 	Path to user ${0##*/} configuration.
 			Defaults=${CHATGPTRC:-${CONFFILE/$HOME/"~"}}
@@ -419,7 +427,7 @@ BUGS
 	Instruction prompts are required for the model to even know that
 	it should answer questions.
 
-	Garbage in, garbage out.
+	Garbage in, garbage out. An idiot savant.
 
 
 REQUIREMENTS
@@ -621,12 +629,13 @@ function prompt_printf
 			"\(.usage.completion_tokens) = \(.usage.total_tokens//empty) tkns"' "$FILE" >&2
 
 		jq -r "def byellow: \"\"; def reset: \"\"; $JQCOL $JQCOL2
-		.choices[1] as \$sep | .choices[] |
-		(byellow + (
-		(.text//.message.content) | gsub(\"^[\\\\n\\\\t ]\"; \"\") |
-		if ${OPTC:-0} > 0 then gsub(\"[\\\\n\\\\t ]+$\"; \"\") else . end
-		) + reset,
-		if \$sep != null then \"---\" else empty end)" "$FILE" 2>/dev/null ||
+		  .choices[1] as \$sep | .choices[] |
+		  (byellow + (
+		  (.text//.message.content) | gsub(\"^[\\\\n\\\\t ]\"; \"\") |
+		  if ${OPTC:-0} > 0 then gsub(\"[\\\\n\\\\t ]+$\"; \"\") else . end
+		  ) + reset,
+		  if \$sep != null then \"---\" else empty end)" "$FILE" 2>/dev/null \
+			| if ((COLUMNS)) && [[ -t 1 ]] ;then 	fold -s -w $COLUMNS 2>/dev/null || cat ;else 	cat ;fi ||
 
 		jq -r '.choices[]|.text//.message.content' "$FILE" 2>/dev/null ||
 
@@ -818,10 +827,11 @@ function check_typef
 {
 	typeset glob ;OK=1
 	for glob in "$TYPE_GLOB:" "${RESTART:-${Q_TYPE%%$SPC2}}" "${START:-${A_TYPE%%$SPC2}}"
-	do 	[[ -n $glob ]] || continue ;{
-		[[ ${*} = ${SPC1}${glob}${SPC2}* ]] ||
-		[[ ${*} = *@(\\n|$'\n')${SPC1}${glob}${SPC2}* ]] 
-		} && return 0 ;unset OK
+	do 	[[ -n $glob ]] || continue
+		{ 	[[ ${*} = ${SPC1}${glob}${SPC2}* ]] ||
+			[[ ${*} = *@(\\n|$'\n')${SPC1}${glob}${SPC2}* ]] 
+		} && return 0
+		unset OK
 	done ;return 1
 }
 #set interlocutor from string
@@ -830,7 +840,6 @@ function set_typef
 	((OPTE)) && return 0
 	check_typef "$*" || return 1
 	((OK)) || return 0 
-	#((OPTC+OPTRESUME)) || return 0
 
 	SET_TYPE="$*"
 	SET_TYPE="${SET_TYPE##$SPC1}"
@@ -977,60 +986,88 @@ function __edf
 #text editor wrapper
 function edf
 {
-	typeset ed_msg pre pos_input pos REPLY
-	
-	if ((OPTC>0))
-	then 	pos_input="${*:-${SET_TYPE:-${RESTART:-$Q_TYPE}}}"
-		EPN= set_histf "$pos_input"
-		ed_msg=",,,,,,(edit below this line),,,,,,"
-		pre=$(unescapef "$HIST${HIST:+\\n\\n$ed_msg}")
-		printf "%s${pre:+\\n}" "$pre" >"$FILETXT"
-		printf "${pre:+\\n}%s\\n" "$pos_input" >>"$FILETXT"
-	elif ((!OPTC))
-	then 	printf "%s\\n" "$*" >"$FILETXT"
+	typeset ed_msg pre restart pos REPLY
+
+	restart="${SET_TYPE:-${RESTART:-$Q_TYPE}}"
+	if ((OPTC+OPTRESUME))
+	then 	ed_msg=$'\n\n'",,,,,,(edit below this line),,,,,,"
+		EPN= N_LOOP=1 set_histf "${restart}${*}"
 	fi
+		
+	pre="$(unescapef "${INSTRUCTION}")"${INSTRUCTION:+$'\n\n'}"$(unescapef "$HIST")""${ed_msg}"
+	[[ -n $restart ]] && pre="${pre}"$'\n\n'"${restart}" || set -- $'\n\n'"$@"
+	printf "%s\\n" "${pre}${*}" >"$FILETXT"
 	
 	__edf "$FILETXT"
+
+	pos=$(<"$FILETXT")
+	while [[ "$pos" != "${pre%%$SPC2"${restart}"$SPC2}"$SPC2?("${restart%%$SPC2}")* ]] \
+		|| [[ "$pos" = *"${restart:-%#}" ]]
+	do 	__warmsgf "Warning:" "Bad edit: [E]dit, [r]edo, [c]ontinue or [a]bort? " ''
+		REPLY=$(__read_charf)
+		case "${REPLY:-$1}" in
+			[AaQq]) return 201;;      #abort	
+			[CcNn]) break;;           #continue
+			[Rr]*)  return 200;;      #redo
+			[Ee]|*) __edf "$FILETXT"  #edit
+				pos=$(<"$FILETXT");;
+		esac
+	done
 	
-	if ((OPTC)) && pos=$(<"$FILETXT") && [[ "$pos" != "$pre" ]]
-	then 	while [[ "$pos" != "$pre"* ]] || [[ "$pos" = *"${pos_input:-$*}" ]]
-		do 	__warmsgf "Warning:" "Bad edit: [E]dit, [r]edo or [c]ontinue? " ''
-			REPLY=$(__read_charf)
-			case "${REPLY:-$1}" in
-				[CcNnQqAa]) 	break;;  #continue
-				[Rr]*) 	return 200;;  #redo
-				[Ee]|*) __edf "$FILETXT"  #edit
-					pos=$(<"$FILETXT");;
-			esac
-		done
-		set -- "${pos#*"$pre"}" ;set -- "${*##*([$IFS])}"
-		printf "%s\\n" "$*" >"$FILETXT"
-		check_cmdf "${*#*:}" && return 200
+	set -- "${pos#*"${pre%%$SPC2"${restart}"$SPC2}"$SPC2?("${restart%%$SPC2}")$SPC2}"
+	set -- "${*##*([$IFS])}"
+	printf "%s\\n" "$*" >"$FILETXT"
+
+	if ((OPTC+OPTRESUME))
+	then 	check_cmdf "${*#*:}" && return 200
 	fi
 	return 0
 }
 
+#special json chars
+JSON_CHARS=(\" / b f n r t u)  #\\ uHEX
 function escapef
 {
-	typeset var
-	var="${*%%*([$IFS])}" var="${var##*([$IFS])}"
- 	var=${var//[\"]/\\\"}          #double quote marks
-	var=${var//[$'\t']/\\t}        #tabs
-	var=${var//[$'\n\r\v\f']/\\n}  #new line/form feed
- 	var=${var//\\\\[\"]/\\\"}      #rm excess escapes
- 	var=${var//\\\\[n]/\\n}
- 	var=${var//\\\\[t]/\\t}
+	typeset var b c
+	var="$*" b='@#'
+
+	#escape slash
+ 	for c in "${JSON_CHARS[@]}"
+	do 	var="${var//"\\\\$c"/$b$b$c}"
+		var="${var//"\\$c"/$b$c}"
+	done
+ 		var="${var//"\\"/\\\\}"
+	for c in "${JSON_CHARS[@]}"
+	do 	var="${var//"$b$b$c"/\\\\$c}"
+		var="${var//"$b$c"/\\$c}"
+	done
+
+	var="${var//[$'\t']/\\t}"    #tabs
+	var="${var//[$'\n']/\\n}"    #new line
+	var="${var//[$'\b\f\r\v']}"  #rm literal form-feed, v-tab, ret
+	var="${var//"\\\""/\"}"      #rm excess double quote escapes
+ 	var="${var//"\""/\\\"}"      #double quote marks
+
 	printf '%s\n' "$var"
 }
 
-function unescapef
-{
-	typeset var
- 	var=${*//\\\"/\"}
-	var=${var//\\t/$'\t'}
-	var=${var//\\n/$'\n'}
-	printf '%s\n' "$var"
-}
+function unescapef { 	printf "${*//\%/%%}" ;}
+#function unescapef
+#{ 	typeset var b c
+#	var="$*" b='@#';
+# 	for c in "${JSON_CHARS[@]}"
+#	do 	var="${var//"\\\\$c"/$b$c}"
+#	done;
+#	var="${var//"\\t"/$'\t'}"
+#	var="${var//"\\n"/$'\n'}"
+#	var="${var//\\[bfrv]}"
+# 	var="${var//"\\\""/\"}"
+# 	var="${var//"\\\\"/\\}";
+# 	for c in "${JSON_CHARS[@]}"
+#	do 	var="${var//"$b$c"/\\$c}"
+#	done;
+#	printf '%s\n' "$var"
+#}
 
 function break_sessionf
 {
@@ -1055,8 +1092,10 @@ function json_minif
 }
 
 #format for chat completions endpoint
+#usage: fmt_ccf [prompt] [role]
 function fmt_ccf
 {
+	[[ -n ${1//[$IFS]} ]] || return
 	printf '{"role": "%s", "content": "%s"}\n' "${2:-user}" "$1"
 }
 
@@ -1122,8 +1161,8 @@ function set_optsf
 		then 	OPTSTOP="\"stop\":[${OPTSTOP}],"
 		fi
 	fi #https://help.openai.com/en/articles/5072263-how-do-i-use-stop-sequences
-	[[ -n $RESTART ]] && RESTART=$(escapef "$RESTART")
-	[[ -n $START ]] && START=$(escapef "$START")
+	[[ -n $RESTART ]] && RESTART="$(escapef "$RESTART")"
+	[[ -n $START ]] && START="$(escapef "$START")"
 }
 
 #record mic
@@ -1172,7 +1211,7 @@ function __set_langf
 {
 	if [[ $1 = [a-z][a-z] ]]
 	then 	if ((!OPTWW))
-		then 	LANG="-F language=$1"
+		then 	LANGW="-F language=$1"
 			((OPTV)) || __sysmsgf 'Language:' "$1" >&2
 		fi
 		return 0
@@ -1218,7 +1257,7 @@ function whisperf
 		OPTW_FMT=verbose_json   #json, text, srt, verbose_json, or vtt.
 		[[ -n $OPTW_FMT ]] && set -- -F response_format="$OPTW_FMT" "$@"
 
-		prompt_audiof "$file" $LANG "$@"
+		prompt_audiof "$file" $LANGW "$@"
 		jq -r "def yellow: \"\"; def bpurple: \"\"; def reset: \"\"; $JQCOL
 			def pad(x): tostring | (length | if . >= x then \"\" else \"0\" * (x - .) end) as \$padding | \"\(\$padding)\(.)\";
 			def seconds_to_time_string:
@@ -1239,7 +1278,7 @@ function whisperf
 			#https://rosettacode.org/wiki/Convert_seconds_to_compound_duration#jq
 			#https://stackoverflow.com/questions/64957982/how-to-pad-numbers-with-jq
 	else
-		prompt_audiof "$file" $LANG "$@"
+		prompt_audiof "$file" $LANGW "$@"
 		jq -r "def bpurple: \"\"; def reset: \"\"; $JQCOL
 		bpurple + .text + reset" "$FILE" || cat -- "$FILE"
 	fi
@@ -1522,7 +1561,11 @@ do
 		e) 	OPTE=1 EPN=2;;
 		f$OPTF) 	unset MOD MOD_AUDIO INSTRUCTION CHATINSTR EPN OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTP OPTT KSH_EDIT_MODE
 			OPTF=1 ;. "$0" "$@" ;exit;;
-		h) 	printf '%s\n' "$MAN" ;exit;;
+		h) 	while read
+			do 	[[ $REPLY = \#\ v* ]] && break
+			done <"$0"
+			printf '%s\n' "$REPLY" "$MAN"
+			exit;;
 		H) 	if [[ -t 1 ]]
 			then 	__edf "$FILECHAT"
 			else 	cat -- "$FILECHAT"
@@ -1558,7 +1601,7 @@ do
 		z) 	OPTZ=1;;
 		\?) 	exit 1;;
 	esac
-done ; unset LANG OK N_LOOP optstring opt
+done ; unset LANGW OK N_LOOP optstring opt
 shift $((OPTIND -1))
 
 [[ -t 1 ]] || OPTK=1 ;((OPTK)) ||
@@ -1576,7 +1619,9 @@ def purple: "\u001b[0;35m"; def bpurple: "\u001b[1;35m"; def bwhite: "\u001b[1;3
 def yellow: "\u001b[33m"; def byellow: "\u001b[1;33m"; def reset: "\u001b[0m";'
 
 OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
-((OPTC)) && ((OPTE+OPTI)) && unset OPTC ;((OPTL+OPTZ)) && OPTX=
+((OPTL+OPTZ)) && unset OPTX
+((OPTE+OPTI)) && unset OPTC
+((OPTC)) || unset Q_TYPE A_TYPE
 
 if ((OPTI+OPTII))
 then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
@@ -1591,7 +1636,6 @@ fi
 [[ -n $OPTMARG ]] ||
 if ((OPTE))  #edits
 then 	OPTM=8 MOD="$MOD_EDIT"
-	unset RESTART START Q_TYPE A_TYPE
 elif ((OPTC>1))  #chat
 then 	OPTM=4 MOD="$MOD_CHAT"
 elif ((OPTW)) && ((!OPTC))  #audio
@@ -1650,32 +1694,29 @@ elif ((OPTI))      #image generations
 then 	__sysmsgf 'Image Generations'
 	imggenf "$@"
 elif ((OPTEMBED))  #embeds
-then 	[[ $MOD = *embedding* ]] \
-	|| __warmsgf "Warning:" "Not an embedding model -- $MOD"
+then 	[[ $MOD = *embed* ]] || __warmsgf "Warning:" "Not an embedding model -- $MOD"
+	unset Q_TYPE A_TYPE OPTC
 	embedf "$@"
 elif ((OPTE))      #edits
-then 	[[ -e $1 ]] && set -- "$(<"$1")" "${@:2}"
+then 	__sysmsgf 'Text Edits'
+	[[ $MOD = *edit* ]] || __warmsgf "Warning:" "Not an edits model -- $MOD"
+	[[ -e $1 ]] && set -- "$(<"$1")" "${@:2}"
 	if (($# == 1)) && ((${#INSTRUCTION}))
 	then 	set -- "$INSTRUCTION" "$@"
 		__sysmsgf 'INSTRUCTION:' "$INSTRUCTION" 
 	fi
-	[[ $MOD = *edit* ]] \
-	|| __warmsgf "Warning:" "Not an edits model -- $MOD"
 	editf "$@"
-else               #completions
-	if ((OPTE))
-	then 	function set_typef { : ;}
-		__sysmsgf 'Code Completions'
-	fi
+else               #text/chat completions
 	[[ -e $1 ]] && set -- "$(<"$1")" "${@:2}"  #load file as 1st arg
 	((OPTW)) && { 	INPUT_ORIG=("$@") ;unset OPTX ;set -- ;}  #whisper input
+	((OPTE)) && function set_typef { : ;}
 	((OPTC)) || unset Q_TYPE A_TYPE
 
 	#chatbot instruction
 	if ((OPTC+OPTRESUME))
 	then 	((OPTRESUME==1)) || {
 		  break_sessionf
-		  INSTRUCTION="${INSTRUCTION:-Be a nice chat bot.}"
+		  INSTRUCTION="${INSTRUCTION:-Be a helpful assistant.}"
 		  push_tohistf "$(escapef ":${INSTRUCTION##:}")"
 		  __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 
 		} ;unset INSTRUCTION
@@ -1704,17 +1745,18 @@ else               #completions
 
 		#text editor prompter
 		if ((OPTX))
-		then 	edf "$@" || continue  #bad edit: sig: 200
-			while printf "${BCyan}%s${NC}\\n" "${REC_OUT##$SPC1"${SET_TYPE:-${RESTART:-${Q_TYPE%%$SPC2}}}"$SPC2}"
+		then 	edf "$@" || case $? in 200) 	continue;; 201) 	break;; esac
+			while Q="$(<"$FILETXT")" QQ="${Q##$SPC1"${SET_TYPE:-${RESTART:-${Q_TYPE%%$SPC2}}}"$SPC2}"
+				printf "${BRed}${QQ:+${BCyan}}%s${NC}\\n" "${QQ:-(EMPTY)}"
 			do 	((OPTV==1)) || new_prompt_confirmf
 				case $? in
 					201) 	break 2;;  #abort
 					200) 	continue 2;;  #redo
-					199) 	OPTC=-1 edf "$@" || break 2;;  #edit
-					0) 	set -- "$(<"$FILETXT")" ; break;;  #yes
+					199) 	edf "${Q:-$*}" || break 2;;  #edit
+					0) 	set -- "$Q" ; break;;  #yes
 					*) 	set -- ; break;;  #no
 				esac
-			done
+			done ;unset Q QQ
 		fi
 
 		#defaults prompter
@@ -1785,7 +1827,7 @@ else               #completions
 		if [[ -z "$INSTRUCTION$*" ]]
 		then 	__warmsgf "Err:" "PROMPT is empty!"
 			__read_charf -t 1 ;set -- ; continue
-		fi ;set -- "${*##$SPC1}"
+		fi  ;set -- "${*##$SPC1}" #!#
 
 		if ((OPTC+OPTRESUME))
 		then 	((RETRY==1)) ||
@@ -1811,28 +1853,24 @@ else               #completions
 			fi
 		fi
 
-		((RETRY>1)) ||
-		if ((EPN==6))
-		then  #chat cmpls
-			((OPTC+OPTRESUME)) && set_histf "$@"
-			[[ ${*//[$IFS]} = :* ]] && role=system || role=user
-			set -- "$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q_TYPE%%$SPC2}}}"$SPC2}")" "$role")"
-			[[ -n $HIST_C ]] && set -- "${HIST_C},$*"
-			[[ -n $INSTRUCTION ]] && set -- "$(fmt_ccf "$(escapef "$INSTRUCTION")" system),$*"
-			unset role
-		else  #text compls
-			((OPTC+OPTRESUME)) && set_histf "$@"
-			[[ -n $INSTRUCTION ]] && INSTRUCTION="$(escapef "$INSTRUCTION")"
-			set -- "$INSTRUCTION${INSTRUCTION:+\\n\\n}$HIST${*:+\\n}$(escapef "$*")"
-			if ((OPTC))
-			then 	set -- "${*}\\n${A_TYPE}"
-			elif [[ -n $RESTART ]]
-			then 	set -- "${*}\\n${RESTART}"
+		if ((RETRY<2))
+		then 	((OPTC+OPTRESUME)) && set_histf "$@"
+			ESC="$(escapef "$INSTRUCTION")${INSTRUCTION:+\\n\\n}$HIST${HIST:+\\n}$(escapef "$*")"
+			if ((EPN==6))
+			then 	#chat cmpls
+				[[ ${*//[$IFS]} = :* ]] && role=system || role=user
+				set -- "$(fmt_ccf "$(escapef "$INSTRUCTION")" system)${INSTRUCTION:+,}\
+${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q_TYPE%%$SPC2}}}"$SPC2}")" "$role")"
+				unset role
+			else 	#text compls
+				if ((OPTC))
+				then 	set -- "${ESC}${A_TYPE:+\\n}${A_TYPE}"
+				else 	set -- "${ESC}${START:+\\n}${START}"
+				fi
 			fi
 		fi
 		
 		set_optsf
-
 		if ((EPN==6))
 		then 	BLOCK="\"messages\": [${*%,}],"
 		else 	BLOCK="\"prompt\": \"${*}\","
@@ -1845,15 +1883,13 @@ else               #completions
 		}"
 
 		#request prompt
-		((RETRY>1)) || promptf \
-		|| { 	EDIT=1 SKIP=1 ; set -- ;continue ;} #opt -VV
+		((RETRY>1)) || promptf || { 	EDIT=1 SKIP=1 ;set -- ;continue ;} #opt -VV
 		
-		#response prompt
-		if ((RETRY>1))  #jq colours
-		then 	unset JQCOL2
-		elif ((RETRY))
-		then 	((OPTK)) || JQCOL2='def byellow: yellow;'
+		#response colours for jq
+		if ((RETRY>1)) ;then 	unset JQCOL2
+		elif ((RETRY)) ;then 	((OPTK)) || JQCOL2='def byellow: yellow;'
 		fi
+		#response prompt
 		prompt_printf ;[[ -t 1 ]] || OPTV=1 prompt_printf >&2
 		
 		((RETRY==1)) && { 	SKIP=1 EDIT=1 ;set -- ;continue ;}
@@ -1868,19 +1904,23 @@ else               #completions
 			ans="${ans##[\"]}" ans="${ans%%[\"]}" ans="${ans##\\[ntrvf]}"
 			((${#tkn[@]}>2)) && ((${#ans}))
 		}
-		then 	user_type="$SET_TYPE" SET_TYPE= ;((OPTC)) && glob="$SPC1" || unset glob
-			check_typef "$ans" && A_TYPE="${SET_TYPE:-$A_TYPE}" || ans="$A_TYPE ${ans##${glob:- }}"
+		then 	user_type="$SET_TYPE" SET_TYPE= glob=
+			if check_typef "$ans"
+			then 	A_TYPE="${SET_TYPE:-${START:-$A_TYPE}}"
+			elif ((OPTC))
+			then 	ans="${START:-$A_TYPE} ${ans##$SPC1}"
+			else 	ans="${START}${ans}"
+			fi
 			push_tohistf "$(escapef "${REC_OUT:-$*}")" "$((tkn[0]-OLD_TOTAL))" "${tkn[2]}"
 			push_tohistf "$ans" "${tkn[1]}" "${tkn[2]}"
 			((OLD_TOTAL=tkn[0]+tkn[1]))
 			SET_TYPE="$user_type"
 		fi
-
 		SLEEP="${tkn[1]}"
-		((OPTLOG)) && usr_logf "$(unescapef "${*%%$SPC1@(${START:-%#}|${A_TYPE:-%#}|:)$SPC2}\\n${ans##$SPC1}")"
+		((OPTLOG)) && usr_logf "$(unescapef "$ESC\\n${ans##$SPC1}")"
 
 		((++N_LOOP)) ;set --
-		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP RETRY OK Q user_type optv_save tkn arg ans glob s n
+		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP RETRY ESC OK QQ Q user_type optv_save role tkn arg ans glob s n
 		((OPTC+OPTRESUME)) || break
 	done ;unset OLD_TOTAL SLEEP N_LOOP
 fi

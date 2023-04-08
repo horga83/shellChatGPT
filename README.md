@@ -163,7 +163,9 @@ Chat in Portuguese with voice in and voice out (pipe output to voice synthesiser
 
 ### Code Completions (Codex)
 
-Choose a `code` model to use this endpoint. Start with a commented out
+Codex models are discontinued. Use davinci models or gpt-3.5.
+
+Start with a commented out
 code or instruction for the model, or ask it in comments
 to optimise the following code, for example.
 
@@ -234,7 +236,9 @@ delete or comment them out with `#` to update context on the run
 
 OpenAI **APi v1** is the focus of the present project implementation.
 New versions of the API may not be implemented. I would rather fix bugs
-of existing features than incorporate new feature.
+of existing features than incorporate new ones.
+
+See also BUGS section in the script help page.
 
 
 ## Help page
@@ -568,6 +572,14 @@ as last positional argument. This prompt should be in English.
 Setting temperature has an effect, the higher the more random.
 
 
+### QUOTING AND SPECIAL SYMBOLS
+	
+The special sequences (`\b`, `\f`, `\n`, `\r`, `\t` and `\uHEX`)
+are interpreted as quoted backspace, form feed, new line, return,
+tab and unicode hex. To preserve these symbols as literals instead
+(e. g. *Latex syntax*), type in an extra slash such as `\\theta`.
+
+
 ### ENVIRONMENT
 
     CHATGPTRC 	Path to user chatgpt.sh configuration.
@@ -598,7 +610,7 @@ to be run as one-shot.
 Instruction prompts are required for the model to even know that
 it should answer questions.
 
-Garbage in, garbage out.
+Garbage in, garbage out. An idiot savant.
 
 
 ### REQUIREMENTS
