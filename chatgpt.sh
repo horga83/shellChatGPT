@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.2  april/2023  by mountaineerbr  GPL+3
+# v0.10.3  april/2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob pipefail
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -268,7 +268,7 @@ TEXT / CHAT COMPLETIONS
 	<https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
 
 
-	See detailed info on settings at:
+	See detailed info on settings for each endpoint at:
 
 	<https://platform.openai.com/docs/>
 
@@ -607,7 +607,7 @@ function prompt_printf
 		  if ${OPTC:-0} > 0 then gsub(\"[\\\\n\\\\t ]+$\"; \"\") else . end
 		  ) + reset,
 		  if \$sep != null then \"---\" else empty end)" "$FILE" 2>/dev/null \
-			| if ((COLUMNS)) && [[ -t 1 ]] ;then 	fold -s -w $COLUMNS 2>/dev/null || cat ;else 	cat ;fi ||
+			| if ((COLUMNS>16)) && [[ -t 1 ]] ;then 	fold -s -w $COLUMNS 2>/dev/null || cat ;else 	cat ;fi ||
 
 		jq -r '.choices[]|.text//.message.content' "$FILE" 2>/dev/null ||
 
