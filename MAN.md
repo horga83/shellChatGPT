@@ -166,8 +166,8 @@ edited with `!hist`. Delete entries or comment them out with `#`.
 ##### 2.5 Completion Preview / Regeneration
 
 To preview a prompt completion before commiting it to history,
-append a slash `/` to the prompt as the last character. Regen-
-erate it again or press ENTER to accept it.
+append a slash `/` to the prompt as the last character. Regenerate
+it again or press ENTER to accept it.
 
 After a response has been written to the history file, regenerate
 it with command `!regen` or type in a single slash in the new
@@ -192,8 +192,8 @@ chat compls models.
 
 Certain prompts may return empty responses. Maybe the model has
 nothing to further complete input or it expects more text. Try
-trimming spaces, appending a full stop/ellipsis, resetting tem-
-perature or adding more text.
+trimming spaces, appending a full stop/ellipsis, resetting
+temperature or adding more text.
 
 Prompts ending with a space character may result in lower quality
 output. This is because the API already incorporates trailing
@@ -203,14 +203,14 @@ Note that the model's steering and capabilities require prompt
 engineering to even know that it should answer the questions.
 
 For more on prompt design, see:
-<https://platform.openai.com/docs/guides/completion/prompt-design>
-<https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
+
+    <https://platform.openai.com/docs/guides/completion/prompt-design>
+    <https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
 
 
-#### 4. Settings (Abridged)
+See detailed info on settings for each endpoint at:
 
-
-See <https://platform.openai.com/docs/>.
+    <https://platform.openai.com/docs/>
 
 
 ### CODE COMPLETIONS
