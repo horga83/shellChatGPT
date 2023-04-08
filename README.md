@@ -234,14 +234,14 @@ delete or comment them out with `#` to update context on the run
 
 ## Limitations
 
-OpenAI **APi v1** is the focus of the present project implementation.
+OpenAI **API v1** is the focus of the present project implementation.
 New versions of the API may not be implemented. I would rather fix bugs
 of existing features than incorporate new ones.
 
-See also BUGS section in the script help page.
+See also BUGS section in the script [help page](MAN.md).
 
 
-## Help page 
+## HELP PAGE 
 
 Read the markdown [**help page here**](MAN.md).
 
