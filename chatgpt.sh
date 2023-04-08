@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.1  april/2023  by mountaineerbr  GPL+3
+# v0.10.2  april/2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob pipefail
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -268,37 +268,9 @@ TEXT / CHAT COMPLETIONS
 	<https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
 
 
-	4. Settings (Abridged)
-	Max Tokens
-	The maximum number of tokens to generate in completions.
-	Beware that setting this to the maximum allowed may stop the
-	model itself.
+	See detailed info on settings at:
 
-	Temperature
-	Also known as creativity, more random outputs. Defaults to 1.
-	We generally recommend altering this or top_p but not both.
-
-	Top_p
-	Alternative to temperature, called nucleus sampling, where the
-	model considers the results with top_p probability mass. So 0.1
-	means only the tokens from the top 10% probability mass are
-	considered. Defaults to 1
-
-	Presence Penalty
-	Number between -2.0 and 2.0. Positive values penalize new tokens
-	based on whether they appear in the text so far. Defaults to 0.
-
-	Frequency Penalty
-	Number between -2.0 and 2.0. Positive values penalize new tokens
-	based on their existing frequency in the text so far. Defaults to 0.
-
-	Best_of
-	Returns the \`best' of ou n results. Best_of controls the number
-	of candidate completions and n specifies how many to return.
-	Best_of must be greater than n (option -n). Defaults to 1.
-	Note: This parameter can quickly consume your token quota.
-
-	See also <https://platform.openai.com/docs/>.
+	<https://platform.openai.com/docs/>
 
 
 CODE COMPLETIONS
