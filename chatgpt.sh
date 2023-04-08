@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.3  april/2023  by mountaineerbr  GPL+3
+# v0.10.4  april/2023  by mountaineerbr  GPL+3
 [[ -n $BASH_VERSION ]] && shopt -s extglob pipefail
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -595,10 +595,10 @@ function prompt_printf
 {
 	if ((OPTJ)) #print raw json
 	then 	cat -- "$FILE"
-	else 	((OPTV)) || jq -r '.choices[].logprobs//empty,
-			"Model_: \(.model//"?") (\(.object//"?"))",
-			"Usage_: \(.usage.prompt_tokens)" + "+" +
-			"\(.usage.completion_tokens) = \(.usage.total_tokens//empty) tkns"' "$FILE" >&2
+	else 	((OPTV)) || jq -r '(.choices[].logprobs//empty),
+			(.model//"'"$MOD"'"//"?")+" ("+(.object//"?")+") ["
+			+(.usage.prompt_tokens//"?"|tostring)+" + "+(.usage.completion_tokens//"?"|tostring)+" = "
+			+(.usage.total_tokens//"?"|tostring)+" tkns]"' "$FILE" >&2
 
 		jq -r "def byellow: \"\"; def reset: \"\"; $JQCOL $JQCOL2
 		  .choices[1] as \$sep | .choices[] |
@@ -610,7 +610,6 @@ function prompt_printf
 			| if ((COLUMNS>16)) && [[ -t 1 ]] ;then 	fold -s -w $COLUMNS 2>/dev/null || cat ;else 	cat ;fi ||
 
 		jq -r '.choices[]|.text//.message.content' "$FILE" 2>/dev/null ||
-
 		jq . "$FILE" 2>/dev/null || cat -- "$FILE"
 	fi
 }
@@ -1076,7 +1075,7 @@ function usr_logf
 {
 	[[ -d $USRLOG ]] && USRLOG="$USRLOG/${FILETXT##*/}"
 	[[ "$USRLOG" = '~'* ]] && USRLOG="${HOME}${USRLOG##\~}"
-	printf '%s\n\n' "$(date -R 2>/dev/null||date)" "$@" > "$USRLOG"
+	printf '%s\n\n' "$(date -R 2>/dev/null||date)" "${@//$'\n'/$'\n\n'}" > "$USRLOG"
 }
 
 #check if a value if within a fp range
@@ -1118,6 +1117,7 @@ function set_optsf
 	[[ -n $OPTB ]] && OPTB_OPT="\"best_of\": $OPTB," || unset OPTB_OPT
 	[[ -n $OPTBB ]] && OPTBB_OPT="\"logprobs\": $OPTBB," || unset OPTBB_OPT
 	[[ -n $OPTP ]] && OPTP_OPT="\"top_p\": $OPTP," || unset OPTP_OPT
+	((!OPTV)) && unset OPTV
 	
 	if ((${#STOPS[@]}))
 	then  #compile stop sequences  #def: <|endoftext|>
@@ -1594,6 +1594,7 @@ OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key requ
 ((OPTL+OPTZ)) && unset OPTX
 ((OPTE+OPTI)) && unset OPTC
 ((OPTC)) || unset Q_TYPE A_TYPE
+((OPTC)) && { 	((OPTV)) && unset OPTV || OPTV=1 ;}  #chat mode less verb by defs
 
 if ((OPTI+OPTII))
 then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
@@ -1733,9 +1734,11 @@ else               #text/chat completions
 
 		#defaults prompter
 		if [[ ${*//[$'\t\n'\"]} = *($TYPE_GLOB:) ]]
-		then 	Q="${SET_TYPE:-${Q_TYPE%%$SPC2}}" Q="${Q%%*([$IFS:])$SPC2}"
+		then
+			Q="${SET_TYPE:-${RESTART:-$Q_TYPE}}" Q="${Q%%*([$IFS:])$SPC2}"
 			while { 	((SKIP)) && { 	((OPTK)) || printf "${BCyan}" >&2 ;} ;} ||
-				printf "${BWhite}%s${NC}${Q:+[}${Purple}%s${NC}${Cyan}%s${NC}${Q:+]}:\\n${BCyan}" \
+				{ 	((OPTV)) && printf "${Purple}%s${NC}${Cyan}%s${NC}: ${BCyan}" "${OPTW:+VOICE-}" "$Q" >&2 ;} ||
+				printf "${BWhite}%s${NC}${Q:+[}${Purple}%s${NC}${Cyan}%s${NC}${Q:+]}: ${ZSH_VERSION:+\\n}${BCyan}" \
 				"Prompt" "${OPTW:+VOICE-}" "$Q" >&2
 			do
 				if ((OPTW)) && ((!EDIT))
@@ -1856,6 +1859,7 @@ ${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q
 
 		#request prompt
 		((RETRY>1)) || promptf || { 	EDIT=1 SKIP=1 ;set -- ;continue ;} #opt -VV
+		((OPTV)) && printf '\n' >&2
 		
 		#response colours for jq
 		if ((RETRY>1)) ;then 	unset JQCOL2
@@ -1863,6 +1867,7 @@ ${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q
 		fi
 		#response prompt
 		prompt_printf ;[[ -t 1 ]] || OPTV=1 prompt_printf >&2
+		((OPTC+OPTRESUME)) && printf '\n' >&2
 		
 		((RETRY==1)) && { 	SKIP=1 EDIT=1 ;set -- ;continue ;}
 
