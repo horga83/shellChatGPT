@@ -1,8 +1,8 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.7  april/2023  by mountaineerbr  GPL+3
+# v0.10.8  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
-[[ -n $BASH_VERSION ]] && { 	shopt -s extglob pipefail ;HISTCONTROL=erasedups:ignoredups ;}
+[[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
 
 # OpenAI API key
@@ -1097,9 +1097,9 @@ function check_optrangef
 
 	if [[ -n $ZSH_VERSION$KSH_VERSION ]]
 	then 	ret=$(( (val < min) || (val > max) ))
-	elif command -v bc
-	then 	ret=$(bc <<<"($val < $min) || ($val > $max)")
-	fi >/dev/null 2>&1
+	elif ${OK_BC} command -v bc
+	then 	ret=$(bc <<<"($val < $min) || ($val > $max)") && OK_BC=:
+	fi  >/dev/null 2>&1
 	
 	if [[ $val = *[!0-9.,+-]* ]] || ((ret))
 	then 	printf "${Red}Warning: Bad %s -- ${BRed}%s${NC}  ${Yellow}(%s - %s)${NC}\\n" "$prop" "$val" "$min" "$max" >&2
