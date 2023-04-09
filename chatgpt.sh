@@ -1097,8 +1097,8 @@ function check_optrangef
 
 	if [[ -n $ZSH_VERSION$KSH_VERSION ]]
 	then 	ret=$(( (val < min) || (val > max) ))
-	elif ${OK_BC} command -v bc
-	then 	ret=$(bc <<<"($val < $min) || ($val > $max)") && OK_BC=:
+	elif ${OK_BC} command -v bc && OK_BC=:
+	then 	ret=$(bc <<<"($val < $min) || ($val > $max)")
 	fi  >/dev/null 2>&1
 	
 	if [[ $val = *[!0-9.,+-]* ]] || ((ret))
