@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.8  april/2023  by mountaineerbr  GPL+3
+# v0.10.9  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -1692,15 +1692,17 @@ else               #text/chat completions
 	[[ -e $1 ]] && set -- "$(<"$1")" "${@:2}"  #load file as 1st arg
 	((OPTW)) && { 	INPUT_ORIG=("$@") ;unset OPTX ;set -- ;}  #whisper input
 	((OPTE)) && function set_typef { : ;}
-	((OPTC)) || unset Q_TYPE A_TYPE
-	if ((OPTC))  #chat mode less verb by defs
-	then 	if ((!OPTV))
+	if ((OPTC))
+	then 	__sysmsgf 'Chat Completions'
+		if ((!OPTV))  #chat less verb by defs
 		then 	((OPTV=1, OPTV_AUTO=1))
 		elif ((OPTV==1))
 		then 	((OPTV=2, OPTV_AUTO=2))
 		elif ((OPTV>1))  #-vvv
 		then 	unset OPTV
 		fi
+	else 	__sysmsgf 'Text Completions'
+		unset Q_TYPE A_TYPE
 	fi
 
 	#chatbot instruction
