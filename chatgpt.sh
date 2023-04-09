@@ -29,6 +29,8 @@ OPTMAX=256
 #OPTA=
 # Frequency penalty
 #OPTAA=
+# Best of N
+#OPTB=
 # Number of responses
 OPTN=1
 # Image size
