@@ -29,7 +29,7 @@ OPTMAX=256
 #OPTA=
 # Frequency penalty
 #OPTAA=
-# Best of N
+# N responses of Best_of
 #OPTB=
 # Number of responses
 OPTN=1
