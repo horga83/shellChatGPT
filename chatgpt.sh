@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.9  april/2023  by mountaineerbr  GPL+3
+# v0.10.10  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -93,9 +93,9 @@ SYNOPSIS
 
 DESCRIPTION
 	All positional arguments are read as a single PROMPT. If the
-	chosen model requires an INSTRUCTION and INPUT prompts, first
-	positional argument is taken as INSTRUCTION and the following
-	ones as INPUT or PROMPT.
+	chosen model requires an INSTRUCTION and INPUT prompts, the
+	first positional argument is taken as INSTRUCTION and the
+	following ones as INPUT or PROMPT.
 
 	Set option -c to start the chat mode via the text completions
 	and record the conversation. This option accepts various
@@ -106,16 +106,16 @@ DESCRIPTION
 	automatically set to un-lobotomise the bot.
 
 	Set -C to resume from last history session. Setting -CC starts
-	new session and history, but does not set any extra options.
+	a new session in history, but does not set any extra options.
 
 	Set model with -m [NAME] (full model name). Some models have an
 	equivalent INDEX as short-hand, so \`-mtext-davinci-003' and
-	\`-m0' set the same model (list model by NAME with opt -l or
-	by INDEX with opt -ll).
+	\`-m0' set the same model (list model by NAME with option -l or
+	by INDEX with option -ll).
 
 	Set \`maximum response' and \`maximum model' tokens with option
 	\`-NUM,NUM' or \`-M [NUM,NUM]'. A second NUM sets \`maximum
-	model' tokens, too. Defaults=$OPTMAX.
+	model' tokens. Defaults=$OPTMAX.
 
 	If a plain text file path is set as first positional argument,
 	it is loaded as text PROMPT (text cmpls, chat cmpls, and text/code
@@ -130,27 +130,27 @@ DESCRIPTION
 	the \`edit' model family.
 
 	Option -i generates images according to text PROMPT. If the first
-	positional argument is an image file, then generate variations of
-	it. If the first positional argument is an image file and the second
-	a mask file (with alpha channel and transparency), and a text prompt
-	(required), then edit the image according to mask and prompt.
-	If mask is not provided, image must have transparency.
+	positional argument is an IMAGE file, then generate variations of
+	it. If the first positional argument is an IMAGE file and the second
+	a MASK file (with alpha channel and transparency), and a text PROMPT
+	(required), then edit the IMAGE according to MASK and PROMPT.
+	If MASK is not provided, IMAGE must have transparency.
 
-	Optionally, size of output image with may be set with [S]mall,
-	[M]edium or [L]arge as the first positional argument. See IMAGES
-	section below for more information on inpaint and outpaint.
+	Optionally, size of output image may be set with [S]mall, [M]edium
+	or [L]arge as the first positional argument. See IMAGES section
+	below for more information on inpaint and outpaint.
 
 	Option -w transcribes audio from mp3, mp4, mpeg, mpga, m4a, wav,
-	and webm files. First positional argument must be an audio file.
-	Optionally, set a two letter input language (ISO-639-1) as second
-	argument. A prompt may also be set after language (must be in the
+	and webm files. First positional argument must be an AUDIO file.
+	Optionally, set a TWO-LETTER input language (ISO-639-1) as second
+	argument. A PROMPT may also be set after language (must be in the
 	same language as the audio).
 
-	Option -W translates audio stream to English text. A prompt in
+	Option -W translates audio stream to English text. A PROMPT in
 	English may be set to guide the model as the second positional
 	argument.
 
-	Combine -wW with -cc to start chat with voice input (whisper)
+	Combine -wW with -cc to start chat with voice input (Whisper)
 	support. Output may be piped to a voice synthesiser to have a
 	full voice in and out experience.
 
@@ -188,8 +188,8 @@ TEXT / CHAT COMPLETIONS
 	with a variety of models.
 
 	2.2 Native Chat Completions
-	Set the double option -cc to start chat cmpls mode. Turbo models
-	are also the best option for many non-chat use cases.
+	Set the double option -cc to start chat completions mode. Turbo
+	models are also the best option for many non-chat use cases.
 
 	2.3 Q & A Format
 	The defaults chat format is \`Q & A'. So, the \`\`restart text''
@@ -200,37 +200,41 @@ TEXT / CHAT COMPLETIONS
 	be appended after a newline to the last prompt (answer) in text
 	cmpls. If this trick is used with the initial prompt in text cmpls,
 	it works as the INSTRUCTION. In chat cmpls, setting a prompt with
-	\`:' always sets it as a \`system' message.
+	\`:' always sets it as a \`SYSTEM' message.
 
 	2.4 Chat Commands
-	While in chat mode, the following commands preceeded by the operator
-	\`!' (or \`/'), can be typed in the new prompt to set the new parameter:
+	While in chat mode, the following commands can be typed in the
+	new prompt to set a new parameter:
 
-		!NUM |  !max 	  Set response / model maximum tokens.
-		-a   |  !pre 	  Set presence pensalty.
-		-A   |  !freq 	  Set frequency penalty.
-		-c   |  !new 	  Start new session.
-		-H   |  !hist 	  Edit history in editor.
-		-L   |  !log 	  Save to log file.
-		-m   |  !mod 	  Set model (by index or name).
-		-p   |  !top 	  Set top_p.
-		-t   |  !temp 	  Set temperature.
-		-v   |  !ver	  Set/unset verbose.
-		-x   |  !ed 	  Set/unset text editor interface.
-		-w   |  !rec      Start audio record chat.
-		!r   |  !regen    Renegerate last response.
-		!q   |  !quit	  Exit.
+	    ------    --------    ----------------------------------
+	     !NUM      !max       Set response / model max tokens.
+	       -a      !pre       Set presence pensalty.
+	       -A      !freq      Set frequency penalty.
+	       -c      !new       Start new session.
+	       -H      !hist      Edit history in editor.
+	       -L      !log       Save to log file.
+	       -m      !mod       Set model (by index or name).
+	       -p      !top       Set top_p.
+	       -t      !temp      Set temperature.
+	       -v      !ver       Set/unset verbose.
+	       -x      !ed        Set/unset text editor interface.
+	       -w      !rec       Start audio record chat.
+	       !r      !regen     Renegerate last response.
+	       !q      !quit      Exit.
+	    ------    --------    ----------------------------------
 	
-	Examples: \`!temp 0.7', \`!mod1', and \`!-p 0.2'.
+	Examples: \`!temp 0.7', \`!mod1', and \`-p 0.2'.
+	Note that the command operator may be either \`!', or \`/'.
 
 	To change the chat context at run time, the history file must be
-	edited with \`!hist'. Delete entries or comment them out with \`#'.
+	edited with \`!hist'. Delete history entries or comment them out
+	with \`#'.
 
 
 	2.5 Completion Preview / Regeneration
 	To preview a prompt completion before commiting it to history,
-	append a slash \`/' to the prompt as the last character. Regen-
-	erate it again or press ENTER to accept it.
+	append a slash \`/' to the prompt as the last character.
+	Regenerate it again or press ENTER to accept it.
 
 	After a response has been written to the history file, regenerate
 	it with command \`!regen' or type in a single slash in the new
@@ -238,11 +242,11 @@ TEXT / CHAT COMPLETIONS
 
 
 	3. Prompt Engineering and Design
-	Unless the chat options -c or -cc are set, _no_ instruction is
+	Unless the chat options -c or -cc are set, _NO_ **INSTRUCTION** is
 	given to the language model (as would, otherwise, be the initial
 	prompt).
 
-	On chat mode, if no instruction is set, a short one is given,
+	On chat mode, if no INSTRUCTION is set, a short one is given,
 	and some options set, such as increasing temp and presence penalty,
 	in order to un-lobotomise the bot. With cheap and fast models of
 	text cmpls, such as Curie, the best_of option may even be worth
@@ -254,8 +258,8 @@ TEXT / CHAT COMPLETIONS
 
 	Certain prompts may return empty responses. Maybe the model has
 	nothing to further complete input or it expects more text. Try
-	trimming spaces, appending a full stop/ellipsis, resetting tem-
-	perature or adding more text.
+	trimming spaces, appending a full stop/ellipsis, resetting
+	temperature or adding more text.
 
 	Prompts ending with a space character may result in lower quality
 	output. This is because the API already incorporates trailing
@@ -300,31 +304,31 @@ TEXT EDITS
 
 IMAGES / DALL-E
 	1. Image Generations
-	An image can be created given a text prompt. A text description
-	of the desired image(s) is required. The maximum length is 1000
+	An image can be created given a text prompt. A text PROMPT of
+	the desired image(s) is required. The maximum length is 1000
 	characters.
 
 
 	2. Image Variations
-	Variations of a given image can be generated. The image to use as
+	Variations of a given IMAGE can be generated. The IMAGE to use as
 	the basis for the variations must be a valid PNG file, less than
 	4MB and square.
 
 
 	3. Image Edits
-	Image and, optionally, a mask file must be provided. If mask is
-	not provided, image must have transparency, which will be used
+	To edit an IMAGE, a MASK file may be optionally provided. If MASK
+	is not provided, IMAGE must have transparency, which will be used
 	as the mask. A text prompt is required.
 
 	3.1 ImageMagick
-	If ImageMagick is available, input image and mask will be checked
-	and edited (converted) to fit dimensions and other requirements.
+	If ImageMagick is available, input IMAGE and MASK will be checked
+	and processed to fit dimensions and other requirements.
 
 	3.2 Transparent Colour and Fuzz
 	A transparent colour must be set with \`-@[COLOUR]' to create the
 	mask. Defaults=black.
 
-	By defaults, the colour must be exact. Use the fuzz option to match
+	By defaults, the COLOUR must be exact. Use the fuzz option to match
 	colours that are close to the target colour. This can be set with
 	\`-@[VALUE%]' as a percentage of the maximum possible intensity,
 	for example \`-@10%black'.
@@ -333,36 +337,36 @@ IMAGES / DALL-E
 	    <https://imagemagick.org/script/color.php>
 	    <https://imagemagick.org/script/command-line-options.php#fuzz>
 
-	3.3 Alpha Channel
+	3.3 Mask File / Alpha Channel
 	An alpha channel is generated with ImageMagick from any image
 	with the set transparent colour (defaults to black). In this way,
 	it is easy to make a mask with any black and white image as a
 	template.
 
 	3.4 In-Paint and Out-Paint
-	In-painting is achieved setting an image with a mask and a prompt.
+	In-painting is achieved setting an image with a MASK and a prompt.
 	Out-painting can also be achieved manually with the aid of this
-	script. Paint a portion of the outer area of an image with alpha
+	script. Paint a portion of the outer area of an image with alpha,
 	or a defined colour which will be used as the mask, and set the
 	same colour in the script with -@. Choose the best result amongst
 	many results to continue the out-painting process step-wise.
 
 
 	Optionally, for all image generations, variations, and edits,
-	set size of output image with 256x256 (Small), 512x512 (Medium)
+	set size of output image with 256x256 (Small), 512x512 (Medium),
 	or 1024x1024 (Large) as the first positional argument. Defaults=$OPTS.
 
 
 AUDIO / WHISPER
 	1. Transcriptions
-	Transcribes audio into the input language. Set a two letter
+	Transcribes audio into the input language. Set a two-letter
 	ISO-639-1 language as the second positional parameter. A prompt
 	may also be set as last positional parameter to help guide the
 	model. This prompt should match the audio language.
 
 	2. Translations
-	Translates audio into into English. An optional text to guide
-	the model's style or continue a previous audio segment is optional
+	Translates audio into English. An optional text to guide the
+	model's style or continue a previous audio segment is optional
 	as last positional argument. This prompt should be in English.
 	
 	Setting temperature has an effect, the higher the more random.
@@ -414,7 +418,7 @@ REQUIREMENTS
 
 OPTIONS
 	-@ [[VAL%]COLOUR]
-		 Set transparent colour of image mask. Def=Black.
+		 Set transparent colour of image mask. Def=black.
 		 Fuzz intensity can be set with [VAL%]. Def=0%.
 	-NUM
 	-M [NUM[-NUM]]
@@ -427,11 +431,14 @@ OPTIONS
 	-c 	 Chat mode in text completions, new session.
 	-cc 	 Chat mode in chat completions, new session.
 	-C 	 Continue from last session (with -c, -cc, compls/chat).
+		 Set twice to start new session and enter chat mode with
+		 any model.
 	-e [INSTRUCT] [INPUT]
-		 Set Edit mode. Model Def=text-davinci-edit-001.
+		 Set Edit mode. Model def=text-davinci-edit-001.
 	-f 	 Don't read user config file.
 	-h 	 Print this help page.
-	-H 	 Edit history file with text editor.
+	-H 	 Edit history file with text editor or pipe to stdout.
+	-HH 	 Pretty print last history session to stdout.
 	-i [PROMPT]
 		 Generate images given a prompt.
 	-i [PNG]
@@ -439,7 +446,7 @@ OPTIONS
 	-i [PNG] [MASK] [PROMPT]
 		 Edit image with mask and prompt (required).
 	-j 	 Print raw JSON response (debug with -jVV).
-	-k 	 Disable colour output. Def=Auto.
+	-k 	 Disable colour output. Def=auto.
 	-K [KEY] Set API key (free).
 	-l [MOD] List models or print details of MODEL. Set twice
 		 to print model indexes instead.
@@ -454,7 +461,7 @@ OPTIONS
 		3.  text-ada-001          11. whisper-1
 		# CHAT                    # GPT-4 
 		4. gpt-3.5-turbo          12. gpt-4
-		# MODERATION
+		# MODERATION              13. gpt-4-32k
 		6.  text-moderation-latest
 		7.  text-moderation-stable
 	-n [NUM] Set number of results. Def=$OPTN.
@@ -466,8 +473,8 @@ OPTIONS
 		 Set an instruction prompt. It may be a text file.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
-	-vv 	 Less verbose.
-	-VV 	 Pretty-print request. Set twice to dump raw request.
+	-v 	 Less verbose. May set multiple times.
+	-V 	 Pretty-print request. Set twice to dump raw request.
 	-x 	 Edit prompt in text editor.
 	-w [AUD] [LANG]
 		 Transcribe audio file into text. LANG is optional.
@@ -496,7 +503,7 @@ MODELS=(
 	whisper-1                 # 11
 	#GPT4                     #
 	gpt-4                     # 12
-	gpt-4-0314  #June 14      #-13
+	gpt-4-32k   #June 14      # 13
 )
 
 ENDPOINTS=(
@@ -510,6 +517,7 @@ ENDPOINTS=(
 	audio/transcriptions      #7
 	audio/translations        #8
 	images/edits              #9
+	#fine-tunes                #10
 )
 
 
@@ -711,7 +719,7 @@ function lastjsonf
 #usage: token_prevf [string]
 function token_prevf
 {
-	TKN_PREV=$(__tiktokenf "$*")
+	TKN_PREV=$(__tiktokenf "$@")
 	__sysmsgf "Prompt:" "~$TKN_PREV tokens"
 }
 
@@ -720,7 +728,7 @@ function set_histf
 {
 	typeset time token string user_type max_prev
 	[[ -s "$FILECHAT" ]] || return
-	(($#)) && OPTV=1 OPTV_AUTO= token_prevf "$@"
+	(($#)) && OPTV=1 OPTV_AUTO= token_prevf "$*"
 
 	unset HIST HIST_C
 	while IFS=$'\t' read -r time token string
@@ -746,13 +754,13 @@ function set_histf
 			then 	user_type="$SET_TYPE" SET_TYPE= ;set_typef "$string"
 
 				case "${SET_TYPE:-$string}" in
-					"${user_type:-%#}"*|"${RESTART:-%#}"*|"${Q_TYPE:-%#}"*)
-						role=user
-						;;
 					:*) 	role=system
 						;;
-					*|"$START"|"$A_TYPE")
+					"$A_TYPE"*|"$START"*)
 						role=assistant
+						;;
+					*|"${Q_TYPE:-%#}"*|"${user_type:-%#}"*|"${RESTART:-%#}"*)
+						role=user
 						;;
 				esac
 
@@ -1076,7 +1084,11 @@ function usr_logf
 {
 	[[ -d $USRLOG ]] && USRLOG="$USRLOG/${FILETXT##*/}"
 	[[ "$USRLOG" = '~'* ]] && USRLOG="${HOME}${USRLOG##\~}"
-	printf '%s\n\n' "$(date -R 2>/dev/null||date)" "${@//$'\n'/$'\n\n'}" > "$USRLOG"
+	set -- "$(date -R 2>/dev/null||date)" "${@//$'\n'/$'\n\n'}"
+	if [[ "$USRLOG" = - ]]
+	then 	printf '%s\n\n' "$@"
+	else 	printf '%s\n\n' "$@" > "$USRLOG"
+	fi
 }
 
 #wrap text at spaces rather than mid-word
@@ -1548,10 +1560,7 @@ do
 			done <"$0"
 			printf '%s\n' "$REPLY" "$MAN"
 			exit;;
-		H) 	if [[ -t 1 ]]
-			then 	__edf "$FILECHAT"
-			else 	cat -- "$FILECHAT"
-			fi ;exit;;
+		H) 	((++OPTHH));;
 		i) 	OPTI=1 EPN=3 MOD=image;;
 		j) 	OPTJ=1;;
 		l) 	((++OPTL));;
@@ -1630,7 +1639,7 @@ MOD="${MOD:-${MODELS[OPTM]}}"
 
 #defaults ``max model tkns''
 ((MODMAX)) ||
-case "$MOD" in
+case "$MOD" in  #set model max tokens
 	davinci|curie|babbage|ada) 	MODMAX=2049;;
 	code-davinci-002) MODMAX=8001;;
 	gpt4-*32k) 	MODMAX=32768;; 
@@ -1641,7 +1650,7 @@ esac
 
 #set ``max response tkns''
 set_maxtknf "${OPTMM:-$OPTMAX}"
-((OPTI+OPTL+OPTZ+OPTW)) || __sysmsgf "Max Input / Response:" "$MODMAX / $OPTMAX tokens"
+((OPTHH+OPTI+OPTL+OPTZ+OPTW)) || __sysmsgf "Max Input / Response:" "$MODMAX / $OPTMAX tokens"
 
 #set other options
 set_optsf
@@ -1653,7 +1662,7 @@ set_optsf
 edf "$@" && set -- "$(<"$FILETXT")"  #editor
 
 ((OPTC)) && OPTT="${OPTT:-0.6}" || OPTT="${OPTT:-0}"  #temp
-((OPTI+OPTL+OPTZ+OPTW)) || ((!$#)) || token_prevf "$@"
+((OPTHH+OPTI+OPTL+OPTZ+OPTW)) || ((!$#)) || token_prevf "$*"
 
 for arg  #escape input
 do 	((init++)) || set --
@@ -1663,7 +1672,15 @@ done ;unset arg init
 mkdir -p "$CACHEDIR" || exit
 command -v jq >/dev/null 2>&1 || function jq { 	false ;}
 
-if ((OPTZ))        #last received json
+if ((OPTHH))  #edit history/pretty print last session
+then 	if ((OPTHH>1))
+	then 	EPN= set_histf "${restart}${*}"
+		USRLOG=- usr_logf "$(unescapef "$HIST")"
+	elif [[ -t 1 ]]
+	then 	__edf "$FILECHAT"
+	else 	cat -- "$FILECHAT"
+	fi
+elif ((OPTZ))        #last received json
 then 	lastjsonf
 elif ((OPTL))      #model list
 then 	list_modelsf "$@"
@@ -1701,7 +1718,7 @@ else               #text/chat completions
 		elif ((OPTV>1))  #-vvv
 		then 	unset OPTV
 		fi
-	else 	__sysmsgf 'Text Completions'
+	else 	((EPN==6)) || __sysmsgf 'Text Completions'
 		unset Q_TYPE A_TYPE
 	fi
 
