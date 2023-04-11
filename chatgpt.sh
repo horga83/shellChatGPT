@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.11  april/2023  by mountaineerbr  GPL+3
+# v0.10.12  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -113,9 +113,12 @@ DESCRIPTION
 	\`-m0' set the same model (list model by NAME with option -l or
 	by INDEX with option -ll).
 
-	Set \`maximum response' and \`maximum model' tokens with option
-	\`-NUM,NUM' or \`-M [NUM,NUM]'. A second NUM sets \`maximum
-	model' tokens. Defaults=$OPTMAX.
+	Set \`maximum response' tokens with \`-NUM' or \`-M NUM'. This
+	defaults to $OPTMAX tokens in chat and single-turn modes.
+
+	\`Maximum model' tokens can be set with a second NUM such as
+	\`-NUM,NUM' or \`-M NUM-NUM', otherwise it is set automatically
+	to the capacity of known models, or to 2048 tokens as fallback.
 
 	If a plain text file path is set as first positional argument,
 	it is loaded as text PROMPT (text cmpls, chat cmpls, and text/code
@@ -280,7 +283,8 @@ TEXT / CHAT COMPLETIONS
 
 
 CODE COMPLETIONS
-	Codex models are discontinued. Use turbo models for coding tasks.
+	Codex models are discontinued. Use davinci or turbo models for
+	coding tasks.
 
 	Turn comments into code, complete the next line or function in
 	context, add code comments, and rewrite code for efficiency,
@@ -345,11 +349,13 @@ IMAGES / DALL-E
 
 	3.4 In-Paint and Out-Paint
 	In-painting is achieved setting an image with a MASK and a prompt.
+
 	Out-painting can also be achieved manually with the aid of this
 	script. Paint a portion of the outer area of an image with alpha,
-	or a defined colour which will be used as the mask, and set the
-	same colour in the script with -@. Choose the best result amongst
-	many results to continue the out-painting process step-wise.
+	or a defined transparent colour which will be used as the mask,
+	and set the same colour in the script with -@. Choose the best
+	result amongst many results to continue the out-painting process
+	step-wise.
 
 
 	Optionally, for all image generations, variations, and edits,
@@ -359,8 +365,9 @@ IMAGES / DALL-E
 
 AUDIO / WHISPER
 	1. Transcriptions
-	Transcribes audio into the input language. Set a two-letter
-	ISO-639-1 language as the second positional parameter. A prompt
+	Transcribes audio file or voice record into the input language.
+	Set a two-letter ISO-639-1 language code (en, es, ja, or zh) as
+	the positional argument following the input audio file. A prompt
 	may also be set as last positional parameter to help guide the
 	model. This prompt should match the audio language.
 
@@ -574,7 +581,8 @@ function block_printf
 	fi >&2
 }
 
-#prompt confirmation prompt
+#prompt confirmation prompter
+ESCK="$(printf '\e')"
 function new_prompt_confirmf
 {
 	typeset REPLY
@@ -582,11 +590,11 @@ function new_prompt_confirmf
 
 	__sysmsgf 'Confirm prompt?' '[Y]es, [n]o, [e]dit, [r]edo or [a]bort ' ''
 	REPLY=$(__read_charf)
-	case "${REPLY:-$1}" in
-		[AaQq]*) 	return 201;;  #break
-		[Rr]*) 	return 200;;  #continue
-		[EeVv]*) 	return 199;;  #edit
-		[Nn]*) 	unset REC_OUT ;return 1;;  #no
+	case "${REPLY}" in
+		[AaQq]|"$ESCK") 	return 201;;  #break
+		[Rr]) 	return 200;;  #continue
+		[EeVv]) 	return 199;;  #edit
+		[Nn]) 	unset REC_OUT ;return 1;;  #no
 	esac  #yes
 }
 
@@ -595,7 +603,7 @@ function __read_charf
 {
 	typeset REPLY
 	read -n ${ZSH_VERSION:+-k} 1 "$@"
-	printf '%s\n' "$REPLY"
+	printf '%.1s\n' "$REPLY"
 	[[ -z ${REPLY//[$IFS]} ]] || printf '\n' >&2
 }
 
@@ -985,7 +993,7 @@ function edf
 	do 	__warmsgf "Warning:" "Bad edit: [E]dit, [r]edo, [c]ontinue or [a]bort? " ''
 		REPLY=$(__read_charf)
 		case "${REPLY:-$1}" in
-			[AaQq]) return 201;;      #abort	
+			[AaQq]|"$ESCK") return 201;; #abort	
 			[CcNn]) break;;           #continue
 			[Rr]*)  return 200;;      #redo
 			[Ee]|*) __edf "$FILETXT"  #edit
@@ -1165,9 +1173,10 @@ function recordf
 	typeset termux pid REPLY
 
 	[[ -e $1 ]] && rm -- "$1"  #remove file before writing to it
-	if { 	((!OPTV)) && ((!WSKIP)) ;} || [[ ! -t 1 ]]
+	if { 	((! (OPTV-OPTV_AUTO))) && ((!WSKIP)) ;} || [[ ! -t 1 ]]
 	then 	printf "\\r${BWhite}${On_Purple}%s${NC} " ' * Press ENTER to START record * ' >&2
-		__read_charf
+		REPLY=$(__read_charf)
+		case "$REPLY" in [AaNnQq]|"$ESCK") 	return 201;; esac
 	fi ;printf "\\r${BWhite}${On_Purple}%s${NC}\\n\\n" ' * Press ENTER to STOP record * ' >&2
 
 	if [[ -n ${REC_CMD%% *} ]] && command -v ${REC_CMD%% *} >/dev/null 2>&1
@@ -1230,14 +1239,15 @@ function whisperf
 	then 	printf "${Purple}%s${NC} " 'Record mic input? [Y/n] ' >&2
 		REPLY=$(__read_charf)
 		case "$REPLY" in
-			[AaNnQq]) 	:;;
+			[AaNnQq]|"$ESCK") 	:;;
 			*) 	WSKIP=1 recordf "$FILEINW"
 				set -- "$FILEINW" "$@";;
 		esac
 	fi
 	
 	if [[ ! -e $1 ]] || [[ $1 != *@(mp3|mp4|mpeg|mpga|m4a|wav|webm) ]]
-	then 	printf "${BRed}Err: %s -- %s${NC}\\n" 'Unknown audio format' "$1" >&2 ;exit 1
+	then 	printf "${BRed}Err: %s -- %s${NC}\\n" 'Unknown audio format' "$1" >&2
+		return 1
 	else 	file="$1" ;shift
 	fi ;[[ -e $1 ]] && shift  #get rid of eventual second filename
 	
@@ -1301,7 +1311,7 @@ function imgvarf
 					printf '%s\n' 'Alpha not needed, transparent image' >&2
 				fi
 			fi
-			__img_convf "$1" $ARGS "${png32}${FILEIN}" &&
+			__img_convf "$1" $ARGS "${PNG32}${FILEIN}" &&
 				set -- "${FILEIN}" "${@:2}"  #adjusted
 		else 	((OPTV)) ||
 			printf '%s\n' 'No adjustment needed in image file' >&2
@@ -1323,7 +1333,7 @@ function imgvarf
 		fi
 	fi ;unset ARGS PNG32
 	
-	__chk_imgsizef "$1" || exit 2
+	__chk_imgsizef "$1" || return 2
 
 	## one prompt  --  generations
 	## one file  --  variations
@@ -1377,7 +1387,7 @@ function __set_alphaf
 function __is_pngf
 {
 	if [[ $1 != *.[Pp][Nn][Gg] ]]
-	then 	((OPV)) || printf '%s\n' 'Not a PNG image' >&2
+	then 	((OPTV)) || printf '%s\n' 'Not a PNG image' >&2
 		return 1
 	fi ;return 0
 }
@@ -1390,15 +1400,15 @@ function __img_convf
 		[[ $ARGS = *-transparent* ]] &&
 		printf "${BWhite}%-12s -- %s${NC}\\n" "Alpha colour" "${OPT_AT:-black}" "Fuzz" "${OPT_AT_PC:-2}%" >&2
 		__sysmsgf 'Edit with ImageMagick?' '[Y/n] ' ''
-		REPLY=$(__read_charf) ;case "$REPLY" in [AaNnQq]) 	return 2;; *) 	:;; esac
+		REPLY=$(__read_charf) ;case "$REPLY" in [AaNnQq]|"$ESCK") 	return 2;; esac
 	}
 
 	if magick convert "$1" -background none -gravity center -extent 1:1 "${@:2}"
 	then
 		((OPTV)) || {
-			set -- "${@##png32:}" ;__openf "${@:$#}"
+			set -- "${@##PNG32}" ;__openf "${@:$#}"
 			__sysmsgf 'Confirm edit?' '[Y/n] ' ''
-			REPLY=$(__read_charf) ;case "$REPLY" in [AaNnQq]) 	return 2;; *) 	:;; esac
+			REPLY=$(__read_charf) ;case "$REPLY" in [AaNnQq]|"$ESCK") 	return 2;; esac
 		}
 	fi
 }
@@ -1717,6 +1727,10 @@ else               #text/chat completions
 		elif ((OPTV>1))  #-vvv
 		then 	unset OPTV
 		fi
+		#chatbot must sound like a human, shouldn't be lobotomised
+		#playGround: presencePenalty:0.6 temp:0.9
+		OPTA="${OPTA:-0.4}" OPTT="${OPTT:-0.6}"
+		STOPS+=("${Q_TYPE%%$SPC2}" "${A_TYPE%%$SPC2}")
 	else 	((EPN==6)) || __sysmsgf 'Text Completions'
 		unset Q_TYPE A_TYPE
 	fi
@@ -1729,12 +1743,6 @@ else               #text/chat completions
 		  push_tohistf "$(escapef ":${INSTRUCTION##:}")"
 		  __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
 		} ;unset INSTRUCTION
-		((OPTC)) && {
-		  #chatbot must sound like a human, shouldn't be lobotomised
-		  #playGround: temp:0.9 presencePenalty:0.6
-		  OPTA="${OPTA:-0.4}" OPTT="${OPTT:-0.6}"
-		  STOPS+=("${Q_TYPE%%$SPC2}" "${A_TYPE%%$SPC2}")  #append chat stop seqs
-		}
 	fi
 
 	#load history (only ksh/bash)
@@ -1779,14 +1787,15 @@ else               #text/chat completions
 				if ((OPTW)) && ((!EDIT))
 				then 	((OPTV==1)) && ((!WSKIP)) && [[ -t 1 ]] \
 					&& __read_charf -t $((SLEEP/4))  #3-6 (words/tokens)/sec
-					
-					recordf "$FILEINW" || break
-					REPLY=$(
+
+					if recordf "$FILEINW"
+					then 	REPLY=$(
 						MOD="${MOD_AUDIO:-${MODELS[11]}}" JQCOL= OPTT=0
 						set_model_epnf "$MOD"
 						whisperf "$FILEINW" "${INPUT_ORIG[@]}"
 					)
-					printf "${BPurple}%s${NC}\\n${REPLY:+---\\n}" "${REPLY:-"(EMPTY)"}" >&2
+					else 	unset OPTW
+					fi ;printf "${BPurple}%s${NC}\\n${REPLY:+---\\n}" "${REPLY:-"(EMPTY)"}" >&2
 				elif [[ -n $ZSH_VERSION ]]
 				then 	((EDIT)) || unset REPLY ;unset arg
 					((OPTK)) || arg='-p%B%F{14}' #cyan=14
@@ -1821,10 +1830,8 @@ else               #text/chat completions
 					then 	if [[ "$REPLY" = "$REPLY_OLD" ]]
 						then 	RETRY=2 REPLY_OLD= 
 							((OPTK)) || BCyan='\e[1;36m'
-						fi
-						REPLY_OLD="$REPLY"
-					fi
-					OPTV=${optv_save:-$OPTV}
+						fi ;REPLY_OLD="$REPLY"
+					fi ;OPTV=${optv_save:-$OPTV}
 					unset optv_save
 				else
 					set --
@@ -1935,5 +1942,5 @@ ${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q
 		((++N_LOOP)) ;set --
 		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP RETRY ESC OK QQ Q user_type optv_save role tkn arg ans glob s n
 		((OPTC+OPTRESUME)) || break
-	done ;unset OLD_TOTAL SLEEP N_LOOP
+	done ;unset OLD_TOTAL SLEEP N_LOOP SPC1 SPC2 TYPE_GLOB ESCK
 fi

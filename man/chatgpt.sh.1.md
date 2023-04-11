@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.10.11 | General Commands Manual
+% CHATGPT.SH(1) v0.10.12 | General Commands Manual
 % Jamil Soni N
 % April 2023
 
@@ -46,9 +46,12 @@ equivalent _INDEX_ as short-hand, so "`-m`_text-davinci-003_" and
 "`-m`_0_" set the same model (list model by _NAME_ with `option -l` or
 by _INDEX_ with `option -ll`).
 
-Set _maximum response_ and _maximum model_ tokens with `option "-`_NUM,NUM_"
-or "`-M` _NUM,NUM_". A second _NUM_ sets _maximum model tokens_.
-Defaults=_2048-256_.
+Set _maximum response tokens_ with `option` "`-`NUM" or "`-M` NUM". This
+defaults to 256 tokens in chat and single-turn modes.
+
+_Maximum model tokens_ can be set with a second _NUM_ such as
+"`-`_NUM,NUM_" or "`-M` NUM-NUM", otherwise it is set automatically
+to the capacity of known models, or to _2048_ tokens as fallback.
 
 If a plain text file path is set as first positional argument,
 it is loaded as text PROMPT (text cmpls, chat cmpls, and text/code
@@ -85,7 +88,7 @@ same language as the audio).
 English may be set to guide the model as the second positional
 argument.
 
-Combine `-wW with -cc` to start **chat with voice input** (Whisper)
+Combine `-wW` **with** `-cc` to start **chat with voice input** (Whisper)
 support. Output may be piped to a voice synthesiser to have a
 full voice in and out experience.
 
@@ -225,7 +228,7 @@ See detailed info on settings for each endpoint at:
 
 ### CODE COMPLETIONS
 
-Codex models are discontinued. Use turbo models for coding tasks.
+Codex models are discontinued. Use davinci or turbo models for coding tasks.
 
 Turn comments into code, complete the next line or function in
 context, add code comments, and rewrite code for efficiency,
@@ -300,9 +303,10 @@ template.
 ##### 3.4 In-Paint and Out-Paint
 
 In-painting is achieved setting an image with a MASK and a prompt.
+
 Out-painting can also be achieved manually with the aid of this
 script. Paint a portion of the outer area of an image with _alpha_,
-or a defined _colour_ which will be used as the mask, and set the
+or a defined _transparent_ _colour_ which will be used as the mask, and set the
 same _colour_ in the script with `-@`. Choose the best result amongst
 many results to continue the out-painting process step-wise.
 
@@ -316,10 +320,12 @@ or "_1024x1024_" ("_Large_") as the first positional argument. Defaults=_512x512
 
 #### 1. Transcriptions
 
-Transcribes audio into the input language. Set a _two-letter_
-_ISO-639-1_ language as the second positional parameter. A prompt
+Transcribes audio file or voice record into the input language.
+Set a _two-letter_ _ISO-639-1_ language code (_en_, _es_, _ja_, or _zh_) as
+the positional argument following the input audio file. A prompt
 may also be set as last positional parameter to help guide the
 model. This prompt should match the audio language.
+
 
 #### 2. Translations
 
@@ -410,9 +416,9 @@ A free OpenAI **API key**.
 
 **-M** \[_NUM_[_-NUM_]]
 
-:     Set maximum number of `response tokens`.
+:     Set maximum number of `response tokens`. Def=_256_.
 
-      Maximum `model tokens` can be set with a second number. Def=_2048-256_.
+      Maximum `model tokens` can be set with a second number. Def=_auto-256_.
 
 
 **-a** \[_VAL_]

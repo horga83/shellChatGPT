@@ -2,7 +2,7 @@
 author:
 - Jamil Soni N
 date: April 2023
-title: CHATGPT.SH(1) v0.10.11 \| General Commands Manual
+title: CHATGPT.SH(1) v0.10.12 \| General Commands Manual
 ---
 
 ### NAME
@@ -218,7 +218,8 @@ See detailed info on settings for each endpoint at:
 
 ### CODE COMPLETIONS
 
-Codex models are discontinued. Use turbo models for coding tasks.
+Codex models are discontinued. Use davinci or turbo models for coding
+tasks.
 
 Turn comments into code, complete the next line or function in context,
 add code comments, and rewrite code for efficiency, amongst other
@@ -287,11 +288,12 @@ easy to make a mask with any black and white image as a template.
 ##### 3.4 In-Paint and Out-Paint
 
 In-painting is achieved setting an image with a MASK and a prompt.
+
 Out-painting can also be achieved manually with the aid of this script.
 Paint a portion of the outer area of an image with *alpha*, or a defined
-*colour* which will be used as the mask, and set the same *colour* in
-the script with `-@`. Choose the best result amongst many results to
-continue the out-painting process step-wise.
+*transparent* *colour* which will be used as the mask, and set the same
+*colour* in the script with `-@`. Choose the best result amongst many
+results to continue the out-painting process step-wise.
 
 Optionally, for all image generations, variations, and edits, set **size
 of output image** with “*256x256*” (“*Small*”), “*512x512*”
@@ -302,8 +304,9 @@ argument. Defaults=*512x512*.
 
 #### 1. Transcriptions
 
-Transcribes audio into the input language. Set a *two-letter*
-*ISO-639-1* language as the second positional parameter. A prompt may
+Transcribes audio file or voice record into the input language. Set a
+*two-letter* *ISO-639-1* language code (*en*, *es*, *ja*, or *zh*) as
+the positional argument following the input audio file. A prompt may
 also be set as last positional parameter to help guide the model. This
 prompt should match the audio language.
 

@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.10.11" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "April 2023" "v0.10.12" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -377,7 +377,7 @@ See detailed info on settings for each endpoint at:
 .SS CODE COMPLETIONS
 .PP
 Codex models are discontinued.
-Use turbo models for coding tasks.
+Use davinci or turbo models for coding tasks.
 .PP
 Turn comments into code, complete the next line or function in context,
 add code comments, and rewrite code for efficiency, amongst other
@@ -447,10 +447,12 @@ a template.
 .SS 3.4 In-Paint and Out-Paint
 .PP
 In-painting is achieved setting an image with a MASK and a prompt.
+.PP
 Out-painting can also be achieved manually with the aid of this script.
 Paint a portion of the outer area of an image with \f[I]alpha\f[R], or a
-defined \f[I]colour\f[R] which will be used as the mask, and set the
-same \f[I]colour\f[R] in the script with \f[V]-\[at]\f[R].
+defined \f[I]transparent\f[R] \f[I]colour\f[R] which will be used as the
+mask, and set the same \f[I]colour\f[R] in the script with
+\f[V]-\[at]\f[R].
 Choose the best result amongst many results to continue the out-painting
 process step-wise.
 .PP
@@ -463,9 +465,10 @@ Defaults=\f[I]512x512\f[R].
 .SS AUDIO / WHISPER
 .SS 1. Transcriptions
 .PP
-Transcribes audio into the input language.
-Set a \f[I]two-letter\f[R] \f[I]ISO-639-1\f[R] language as the second
-positional parameter.
+Transcribes audio file or voice record into the input language.
+Set a \f[I]two-letter\f[R] \f[I]ISO-639-1\f[R] language code
+(\f[I]en\f[R], \f[I]es\f[R], \f[I]ja\f[R], or \f[I]zh\f[R]) as the
+positional argument following the input audio file.
 A prompt may also be set as last positional parameter to help guide the
 model.
 This prompt should match the audio language.
