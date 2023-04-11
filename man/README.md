@@ -2,7 +2,7 @@
 author:
 - Jamil Soni N
 date: April 2023
-title: CHATGPT.SH(1) v0.10.10 \| General Commands Manual
+title: CHATGPT.SH(1) v0.10.11 \| General Commands Manual
 ---
 
 ### NAME
@@ -43,7 +43,7 @@ and use the turbo models. While in chat mode, some options are
 automatically set to un-lobotomise the bot.
 
 Set `-C` to **resume** from last history session. Setting `-CC` starts a
-**new session** in history, but does not set any extra options.
+**new session** in the history file (without `-c` or `-cc`).
 
 Set model with “`-m` \[*NAME*\]” (full model name). Some models have an
 equivalent *INDEX* as short-hand, so “`-m`*text-davinci-003*” and
@@ -265,7 +265,7 @@ checked and processed to fit dimensions and other requirements.
 
 ##### 3.2 Transparent Colour and Fuzz
 
-A transparent colour must be set with `-@`\[*COLOUR*\] to create the
+A transparent colour must be set with “`-@`\[*COLOUR*\]” to create the
 mask. Defaults=*black*.
 
 By defaults, the *COLOUR* must be exact. Use the `fuzz option` to match
@@ -402,9 +402,9 @@ Chat mode in text completions, new session.
 Chat mode in chat completions, new session.
 
 **-C**  
-Continue from last session (with -c, -cc, compls/chat).
+Continue from last session (compls/chat).
 
-Set twice to start new session and enter chat mode with any model.
+Set twice to start new session in chat mode (without -c, -cc).
 
 **-e** \[*INSTRUCT*\] \[*INPUT*\]  
 Set Edit mode. Model def=*text-davinci-edit-001*.
@@ -453,18 +453,18 @@ Set model by *NAME*.
 **-m** \[*IND*\]  
 Set model by *INDEX*:
 
-|     |     |                             |                            |
-|-----|-----|-----------------------------|----------------------------|
-|     |     | **COMPLETIONS**             | **EDITS**                  |
-|     |     | *0*. text-davinci-003       | *8*. text-davinci-edit-001 |
-|     |     | *1*. text-curie-001         | *9*. code-davinci-edit-001 |
-|     |     | *2*. text-babbage-001       | **AUDIO**                  |
-|     |     | *3*. text-ada-001           | *11*. whisper-1            |
-|     |     | **CHAT**                    | **GPT-4**                  |
-|     |     | *4*. gpt-3.5-turbo          | *12*. gpt-4                |
-|     |     | **MODERATION**              | *13*. gpt-4-32k            |
-|     |     | *6*. text-moderation-latest |                            |
-|     |     | *7*. text-moderation-stable |                            |
+|     |                             |                            |
+|-----|-----------------------------|----------------------------|
+|     | **COMPLETIONS**             | **EDITS**                  |
+|     | *0*. text-davinci-003       | *8*. text-davinci-edit-001 |
+|     | *1*. text-curie-001         | *9*. code-davinci-edit-001 |
+|     | *2*. text-babbage-001       | **AUDIO**                  |
+|     | *3*. text-ada-001           | *11*. whisper-1            |
+|     | **CHAT**                    | **GPT-4**                  |
+|     | *4*. gpt-3.5-turbo          | *12*. gpt-4                |
+|     | **MODERATION**              | *13*. gpt-4-32k            |
+|     | *6*. text-moderation-latest |                            |
+|     | *7*. text-moderation-stable |                            |
 
 **-n** \[*NUM*\]  
 Set number of results. Def=*1*.

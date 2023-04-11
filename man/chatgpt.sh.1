@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.10.10" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "April 2023" "v0.10.11" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -93,8 +93,8 @@ While in chat mode, some options are automatically set to un-lobotomise
 the bot.
 .PP
 Set \f[V]-C\f[R] to \f[B]resume\f[R] from last history session.
-Setting \f[V]-CC\f[R] starts a \f[B]new session\f[R] in history, but
-does not set any extra options.
+Setting \f[V]-CC\f[R] starts a \f[B]new session\f[R] in the history file
+(without \f[V]-c\f[R] or \f[V]-cc\f[R]).
 .PP
 Set model with \[lq]\f[V]-m\f[R] [\f[I]NAME\f[R]]\[rq] (full model
 name).
@@ -422,8 +422,8 @@ If \f[B]ImageMagick\f[R] is available, input \f[I]IMAGE\f[R] and
 requirements.
 .SS 3.2 Transparent Colour and Fuzz
 .PP
-A transparent colour must be set with \f[V]-\[at]\f[R][\f[I]COLOUR\f[R]]
-to create the mask.
+A transparent colour must be set with
+\[lq]\f[V]-\[at]\f[R][\f[I]COLOUR\f[R]]\[rq] to create the mask.
 Defaults=\f[I]black\f[R].
 .PP
 By defaults, the \f[I]COLOUR\f[R] must be exact.
@@ -580,10 +580,10 @@ Chat mode in text completions, new session.
 Chat mode in chat completions, new session.
 .TP
 \f[B]-C\f[R]
-Continue from last session (with -c, -cc, compls/chat).
+Continue from last session (compls/chat).
 .RS
 .PP
-Set twice to start new session and enter chat mode with any model.
+Set twice to start new session in chat mode (without -c, -cc).
 .RE
 .TP
 \f[B]-e\f[R] [\f[I]INSTRUCT\f[R]] [\f[I]INPUT\f[R]]
@@ -640,16 +640,14 @@ Set model by \f[I]INDEX\f[R]:
 .PP
 .TS
 tab(@);
-l l l l.
+l l l.
 T{
-T}@T{
 T}@T{
 \f[B]COMPLETIONS\f[R]
 T}@T{
 \f[B]EDITS\f[R]
 T}
 T{
-T}@T{
 T}@T{
 \f[I]0\f[R].
 text-davinci-003
@@ -659,7 +657,6 @@ text-davinci-edit-001
 T}
 T{
 T}@T{
-T}@T{
 \f[I]1\f[R].
 text-curie-001
 T}@T{
@@ -668,14 +665,12 @@ code-davinci-edit-001
 T}
 T{
 T}@T{
-T}@T{
 \f[I]2\f[R].
 text-babbage-001
 T}@T{
 \f[B]AUDIO\f[R]
 T}
 T{
-T}@T{
 T}@T{
 \f[I]3\f[R].
 text-ada-001
@@ -685,13 +680,11 @@ whisper-1
 T}
 T{
 T}@T{
-T}@T{
 \f[B]CHAT\f[R]
 T}@T{
 \f[B]GPT-4\f[R]
 T}
 T{
-T}@T{
 T}@T{
 \f[I]4\f[R].
 gpt-3.5-turbo
@@ -701,7 +694,6 @@ gpt-4
 T}
 T{
 T}@T{
-T}@T{
 \f[B]MODERATION\f[R]
 T}@T{
 \f[I]13\f[R].
@@ -709,13 +701,11 @@ gpt-4-32k
 T}
 T{
 T}@T{
-T}@T{
 \f[I]6\f[R].
 text-moderation-latest
 T}@T{
 T}
 T{
-T}@T{
 T}@T{
 \f[I]7\f[R].
 text-moderation-stable

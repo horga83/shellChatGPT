@@ -6,7 +6,7 @@ set -f
 
 pandoc --standalone --to man "${1}" -o "${1%%?(.1)?(.md)}".1
 
-pandoc --standalone --to gfm "${1}" -o README.gfm.md
+pandoc --standalone --to gfm "${1}" -o README.md
 
 pandoc --standalone --to plain "${1}" -o plain.txt
 

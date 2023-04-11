@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.10  april/2023  by mountaineerbr  GPL+3
+# v0.10.11  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -105,8 +105,8 @@ DESCRIPTION
 	and use the turbo models. While in chat mode, some options are
 	automatically set to un-lobotomise the bot.
 
-	Set -C to resume from last history session. Setting -CC starts
-	a new session in history, but does not set any extra options.
+	Set -C to resume from last history session. Setting -CC starts a
+	new session in the history file (without -c or -cc).
 
 	Set model with -m [NAME] (full model name). Some models have an
 	equivalent INDEX as short-hand, so \`-mtext-davinci-003' and
@@ -430,9 +430,8 @@ OPTIONS
 	-B 	 Print log probabilities to stderr (cmpls, 0 - 5).
 	-c 	 Chat mode in text completions, new session.
 	-cc 	 Chat mode in chat completions, new session.
-	-C 	 Continue from last session (with -c, -cc, compls/chat).
-		 Set twice to start new session and enter chat mode with
-		 any model.
+	-C 	 Continue from last session (compls/chat). Set twice
+		 to start new session in chat mode (without -c, -cc).
 	-e [INSTRUCT] [INPUT]
 		 Set Edit mode. Model def=text-davinci-edit-001.
 	-f 	 Don't read user config file.
@@ -1661,7 +1660,7 @@ set_optsf
 ((OPTX)) && ((OPTE+OPTEMBED+OPTI+OPTII)) &&
 edf "$@" && set -- "$(<"$FILETXT")"  #editor
 
-((OPTC)) && OPTT="${OPTT:-0.6}" || OPTT="${OPTT:-0}"  #temp
+((OPTC)) || OPTT="${OPTT:-0}"  #temp
 ((OPTHH+OPTI+OPTL+OPTZ+OPTW)) || ((!$#)) || token_prevf "$*"
 
 for arg  #escape input
@@ -1724,15 +1723,16 @@ else               #text/chat completions
 
 	#chatbot instruction
 	if ((OPTC+OPTRESUME))
-	then 	((OPTRESUME==1)) || {
+	then 	{ 	((OPTC)) && ((OPTRESUME)) ;} || ((OPTRESUME==1)) || {
 		  break_sessionf
 		  INSTRUCTION="${INSTRUCTION:-Be a helpful assistant.}"
 		  push_tohistf "$(escapef ":${INSTRUCTION##:}")"
 		  __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
 		} ;unset INSTRUCTION
-		((OPTRESUME>1)) || {
+		((OPTC)) && {
 		  #chatbot must sound like a human, shouldn't be lobotomised
-		  [[ -n $OPTA ]] || OPTA=0.4  #playGround: temp:0.9 presencePenalty:0.6
+		  #playGround: temp:0.9 presencePenalty:0.6
+		  OPTA="${OPTA:-0.4}" OPTT="${OPTT:-0.6}"
 		  STOPS+=("${Q_TYPE%%$SPC2}" "${A_TYPE%%$SPC2}")  #append chat stop seqs
 		}
 	fi

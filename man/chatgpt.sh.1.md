@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.10.10 | General Commands Manual
+% CHATGPT.SH(1) v0.10.11 | General Commands Manual
 % Jamil Soni N
 % April 2023
 
@@ -38,8 +38,8 @@ Set `option -cc` to start the chat mode via **native chat completions**
 and use the turbo models. While in chat mode, some options are
 automatically set to un-lobotomise the bot.
 
-Set `-C` to **resume** from last history session. Setting `-CC` starts
-a **new session** in history, but does not set any extra options.
+Set `-C` to **resume** from last history session. Setting `-CC` starts a
+**new session** in the history file (without `-c` or `-cc`).
 
 Set model with "`-m` \[_NAME_]" (full model name). Some models have an
 equivalent _INDEX_ as short-hand, so "`-m`_text-davinci-003_" and
@@ -277,7 +277,7 @@ and processed to fit dimensions and other requirements.
 
 ##### 3.2 Transparent Colour and Fuzz
 
-A transparent colour must be set with `-@`\[_COLOUR_] to create the
+A transparent colour must be set with "`-@`\[_COLOUR_]" to create the
 mask. Defaults=_black_.
 
 By defaults, the _COLOUR_ must be exact. Use the `fuzz option` to match
@@ -447,9 +447,9 @@ A free OpenAI **API key**.
 
 **-C**
 
-:     Continue from last session (with -c, -cc, compls/chat).
+:     Continue from last session (compls/chat).
 
-      Set twice to start new session and enter chat mode with any model.
+      Set twice to start new session in chat mode (without -c, -cc).
 
 
 **-e** \[_INSTRUCT_] \[_INPUT_]
@@ -528,18 +528,18 @@ A free OpenAI **API key**.
 
 : Set model by _INDEX_:
 
-  ----  ----  ---------------               -----
-              **COMPLETIONS**               **EDITS**
-              _0_.  text-davinci-003          _8_.  text-davinci-edit-001
-              _1_.  text-curie-001            _9_.  code-davinci-edit-001
-              _2_.  text-babbage-001          **AUDIO**
-              _3_.  text-ada-001              _11_. whisper-1
-              **CHAT**                        **GPT-4**
-              _4_. gpt-3.5-turbo              _12_. gpt-4
-              **MODERATION**                  _13_. gpt-4-32k
-              _6_.  text-moderation-latest
-              _7_.  text-moderation-stable
-  ----  ----  --------------------------    -----
+  ----  ---------------               -----
+        **COMPLETIONS**               **EDITS**
+        _0_.  text-davinci-003          _8_.  text-davinci-edit-001
+        _1_.  text-curie-001            _9_.  code-davinci-edit-001
+        _2_.  text-babbage-001          **AUDIO**
+        _3_.  text-ada-001              _11_. whisper-1
+        **CHAT**                        **GPT-4**
+        _4_. gpt-3.5-turbo              _12_. gpt-4
+        **MODERATION**                  _13_. gpt-4-32k
+        _6_.  text-moderation-latest
+        _7_.  text-moderation-stable
+  ----  --------------------------    -----
 
 
 **-n** \[_NUM_]
