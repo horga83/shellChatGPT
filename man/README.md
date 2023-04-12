@@ -2,7 +2,7 @@
 author:
 - Jamil Soni N
 date: April 2023
-title: CHATGPT.SH(1) v0.10.13 \| General Commands Manual
+title: CHATGPT.SH(1) v0.10.14 \| General Commands Manual
 ---
 
 ### NAME
@@ -416,7 +416,7 @@ Set twice to start new session in chat mode (without -c, -cc).
 Set Edit mode. Model def=*text-davinci-edit-001*.
 
 **-f**  
-Don’t read user config file.
+Ignore user config file and environment.
 
 **-h**  
 Print this help page.

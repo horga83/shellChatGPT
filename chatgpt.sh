@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.13  april/2023  by mountaineerbr  GPL+3
+# v0.10.14  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -441,7 +441,7 @@ OPTIONS
 		 to start new session in chat mode (without -c, -cc).
 	-e [INSTRUCT] [INPUT]
 		 Set Edit mode. Model def=text-davinci-edit-001.
-	-f 	 Don't read user config file.
+	-f 	 Ignore user config file and environment.
 	-h 	 Print this help page.
 	-H 	 Edit history file with text editor or pipe to stdout.
 	-HH 	 Pretty print last history session to stdout.
@@ -1066,6 +1066,7 @@ function break_sessionf
 #fix variable value, add zero before/after dot.
 function fix_dotf
 {
+	eval "[[ \$$1 = [0-9.] ]] || return"
 	eval "[[ \$$1 = .[0-9]* ]] && $1=0\$${1}"
 	eval "[[ \$$1 = *[0-9]. ]] && $1=\${${1}}0"
 }
@@ -1562,8 +1563,8 @@ do
 		c) 	((++OPTC));;
 		C) 	((++OPTRESUME));;
 		e) 	OPTE=1 EPN=2;;
-		f$OPTF) 	unset MOD MOD_AUDIO INSTRUCTION CHATINSTR EPN OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTP OPTT KSH_EDIT_MODE
-			OPTF=1 ;. "$0" "$@" ;exit;;
+		f$OPTF) unset EPN MOD MOD_CHAT MOD_EDIT MOD_AUDIO MODMAX INSTRUCTION CHATINSTR OPTC OPTRESUME OPTHH OPTL OPTMARG OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTN OPTP OPTT OPTV OPTVV OPTW OPTWW OPT_AT_PC OPT_AT Q_TYPE A_TYPE RESTART START STOPS
+			OPTF=1 OPTIND=1 ;. "$0" "$@" ;exit;;
 		h) 	while read
 			do 	[[ $REPLY = \#\ v* ]] && break
 			done <"$0"
@@ -1600,8 +1601,8 @@ do
 		W) 	((OPTW)) || OPTW=1 ;((++OPTWW));;
 		z) 	OPTZ=1;;
 		\?) 	exit 1;;
-	esac
-done ; unset LANGW OK N_LOOP optstring opt
+	esac ;unset OPTARG
+done ;unset LANGW OK N_LOOP optstring opt
 shift $((OPTIND -1))
 
 [[ -t 1 ]] || OPTK=1 ;((OPTK)) ||

@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.10.13 | General Commands Manual
+% CHATGPT.SH(1) v0.10.14 | General Commands Manual
 % Jamil Soni N
 % April 2023
 
@@ -465,8 +465,7 @@ A free OpenAI **API key**.
 
 **-f**
 
-: Don't read user config file.
-
+: Ignore user config file and environment.
 
 **-h**
 
