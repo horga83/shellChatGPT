@@ -1683,7 +1683,7 @@ command -v jq >/dev/null 2>&1 || function jq { 	false ;}
 
 if ((OPTHH))  #edit history/pretty print last session
 then 	if ((OPTHH>1))
-	then 	EPN= MODMAX=65536 set_histf "${restart}${*}"
+	then 	EPN= MODMAX=65536 set_histf
 		USRLOG=- usr_logf "$(unescapef "$HIST")"
 	elif [[ -t 1 ]]
 	then 	__edf "$FILECHAT"
