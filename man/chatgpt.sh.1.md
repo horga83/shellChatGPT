@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.10.15 | General Commands Manual
+% CHATGPT.SH(1) v0.10.16 | General Commands Manual
 % Jamil Soni N
 % April 2023
 

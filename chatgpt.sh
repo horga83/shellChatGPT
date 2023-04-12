@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.15  april/2023  by mountaineerbr  GPL+3
+# v0.10.16  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -1683,7 +1683,7 @@ command -v jq >/dev/null 2>&1 || function jq { 	false ;}
 
 if ((OPTHH))  #edit history/pretty print last session
 then 	if ((OPTHH>1))
-	then 	EPN= set_histf "${restart}${*}"
+	then 	EPN= MODMAX=65536 set_histf "${restart}${*}"
 		USRLOG=- usr_logf "$(unescapef "$HIST")"
 	elif [[ -t 1 ]]
 	then 	__edf "$FILECHAT"
