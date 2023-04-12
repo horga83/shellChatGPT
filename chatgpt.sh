@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.14  april/2023  by mountaineerbr  GPL+3
+# v0.10.15  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -582,7 +582,6 @@ function block_printf
 }
 
 #prompt confirmation prompter
-ESCK="$(printf '\e')"
 function new_prompt_confirmf
 {
 	typeset REPLY
@@ -591,7 +590,7 @@ function new_prompt_confirmf
 	__sysmsgf 'Confirm prompt?' '[Y]es, [n]o, [e]dit, [r]edo or [a]bort ' ''
 	REPLY=$(__read_charf)
 	case "${REPLY}" in
-		[AaQq]|"$ESCK") 	return 201;;  #break
+		[AaQq]|$'\e') 	return 201;;  #break
 		[Rr]) 	return 200;;  #continue
 		[EeVv]) 	return 199;;  #edit
 		[Nn]) 	unset REC_OUT ;return 1;;  #no
@@ -993,7 +992,7 @@ function edf
 	do 	__warmsgf "Warning:" "Bad edit: [E]dit, [r]edo, [c]ontinue or [a]bort? " ''
 		REPLY=$(__read_charf)
 		case "${REPLY:-$1}" in
-			[AaQq]|"$ESCK") return 201;; #abort	
+			[AaQq]|$'\e') return 201;; #abort	
 			[CcNn]) break;;           #continue
 			[Rr]*)  return 200;;      #redo
 			[Ee]|*) __edf "$FILETXT"  #edit
@@ -1177,7 +1176,7 @@ function recordf
 	if { 	((! (OPTV-OPTV_AUTO))) && ((!WSKIP)) ;} || [[ ! -t 1 ]]
 	then 	printf "\\r${BWhite}${On_Purple}%s${NC} " ' * Press ENTER to START record * ' >&2
 		REPLY=$(__read_charf)
-		case "$REPLY" in [AaNnQq]|"$ESCK") 	return 201;; esac
+		case "$REPLY" in [AaNnQq]|$'\e') 	return 201;; esac
 	fi ;printf "\\r${BWhite}${On_Purple}%s${NC}\\n\\n" ' * Press ENTER to STOP record * ' >&2
 
 	if [[ -n ${REC_CMD%% *} ]] && command -v ${REC_CMD%% *} >/dev/null 2>&1
@@ -1240,7 +1239,7 @@ function whisperf
 	then 	printf "${Purple}%s${NC} " 'Record mic input? [Y/n] ' >&2
 		REPLY=$(__read_charf)
 		case "$REPLY" in
-			[AaNnQq]|"$ESCK") 	:;;
+			[AaNnQq]|$'\e') 	:;;
 			*) 	WSKIP=1 recordf "$FILEINW"
 				set -- "$FILEINW" "$@";;
 		esac
@@ -1401,7 +1400,7 @@ function __img_convf
 		[[ $ARGS = *-transparent* ]] &&
 		printf "${BWhite}%-12s -- %s${NC}\\n" "Alpha colour" "${OPT_AT:-black}" "Fuzz" "${OPT_AT_PC:-2}%" >&2
 		__sysmsgf 'Edit with ImageMagick?' '[Y/n] ' ''
-		REPLY=$(__read_charf) ;case "$REPLY" in [AaNnQq]|"$ESCK") 	return 2;; esac
+		REPLY=$(__read_charf) ;case "$REPLY" in [AaNnQq]|$'\e') 	return 2;; esac
 	}
 
 	if magick convert "$1" -background none -gravity center -extent 1:1 "${@:2}"
@@ -1409,7 +1408,7 @@ function __img_convf
 		((OPTV)) || {
 			set -- "${@##png32:}" ;__openf "${@:$#}"
 			__sysmsgf 'Confirm edit?' '[Y/n] ' ''
-			REPLY=$(__read_charf) ;case "$REPLY" in [AaNnQq]|"$ESCK") 	return 2;; esac
+			REPLY=$(__read_charf) ;case "$REPLY" in [AaNnQq]|$'\e') 	return 2;; esac
 		}
 	fi
 }
@@ -1943,5 +1942,5 @@ ${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q
 		((++N_LOOP)) ;set --
 		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP RETRY ESC OK QQ Q user_type optv_save role tkn arg ans glob s n
 		((OPTC+OPTRESUME)) || break
-	done ;unset OLD_TOTAL SLEEP N_LOOP SPC1 SPC2 TYPE_GLOB ESCK
+	done ;unset OLD_TOTAL SLEEP N_LOOP SPC1 SPC2 TYPE_GLOB
 fi
