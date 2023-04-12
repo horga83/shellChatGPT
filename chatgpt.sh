@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.12  april/2023  by mountaineerbr  GPL+3
+# v0.10.13  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -113,8 +113,8 @@ DESCRIPTION
 	\`-m0' set the same model (list model by NAME with option -l or
 	by INDEX with option -ll).
 
-	Set \`maximum response' tokens with \`-NUM' or \`-M NUM'. This
-	defaults to $OPTMAX tokens in chat and single-turn modes.
+	Set \`maximum response' tokens with option \`-NUM' or \`-M NUM'.
+	This defaults to $OPTMAX tokens in chat and single-turn modes.
 
 	\`Maximum model' tokens can be set with a second NUM such as
 	\`-NUM,NUM' or \`-M NUM-NUM', otherwise it is set automatically
@@ -1406,7 +1406,7 @@ function __img_convf
 	if magick convert "$1" -background none -gravity center -extent 1:1 "${@:2}"
 	then
 		((OPTV)) || {
-			set -- "${@##PNG32}" ;__openf "${@:$#}"
+			set -- "${@##png32:}" ;__openf "${@:$#}"
 			__sysmsgf 'Confirm edit?' '[Y/n] ' ''
 			REPLY=$(__read_charf) ;case "$REPLY" in [AaNnQq]|"$ESCK") 	return 2;; esac
 		}

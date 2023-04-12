@@ -12,6 +12,7 @@ pandoc --standalone --to gfm "${1}" -o README.md
 #https://jeromebelleman.gitlab.io/posts/publishing/manpages/
 
 
+exit
 ## Compared md with script help (word by word)
 pandoc --standalone --to plain "${1}" -o plain.txt
 chars="[\]<>_\'\"\`\“\”\’"

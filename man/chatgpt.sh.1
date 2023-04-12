@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.10.12" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "April 2023" "v0.10.13" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -104,11 +104,14 @@ Some models have an equivalent \f[I]INDEX\f[R] as short-hand, so
 \f[I]NAME\f[R] with \f[V]option -l\f[R] or by \f[I]INDEX\f[R] with
 \f[V]option -ll\f[R]).
 .PP
-Set \f[I]maximum response\f[R] and \f[I]maximum model\f[R] tokens with
-\f[V]option \[dq]-\f[R]\f[I]NUM,NUM\f[R]\[rq] or \[lq]\f[V]-M\f[R]
-\f[I]NUM,NUM\f[R]\[rq].
-A second \f[I]NUM\f[R] sets \f[I]maximum model tokens\f[R].
-Defaults=\f[I]2048-256\f[R].
+Set \f[I]maximum response tokens\f[R] with \f[V]option\f[R]
+\[lq]\f[V]-\f[R]NUM\[rq] or \[lq]\f[V]-M\f[R] NUM\[rq].
+This defaults to 256 tokens in chat and single-turn modes.
+.PP
+\f[I]Maximum model tokens\f[R] can be set with a second \f[I]NUM\f[R]
+such as \[lq]\f[V]-\f[R]\f[I]NUM,NUM\f[R]\[rq] or \[lq]\f[V]-M\f[R]
+NUM-NUM\[rq], otherwise it is set automatically to the capacity of known
+models, or to \f[I]2048\f[R] tokens as fallback.
 .PP
 If a plain text file path is set as first positional argument, it is
 loaded as text PROMPT (text cmpls, chat cmpls, and text/code edits).
@@ -152,8 +155,8 @@ text\f[R].
 A PROMPT in English may be set to guide the model as the second
 positional argument.
 .PP
-Combine \f[V]-wW with -cc\f[R] to start \f[B]chat with voice input\f[R]
-(Whisper) support.
+Combine \f[V]-wW\f[R] \f[B]with\f[R] \f[V]-cc\f[R] to start \f[B]chat
+with voice input\f[R] (Whisper) support.
 Output may be piped to a voice synthesiser to have a full voice in and
 out experience.
 .PP
@@ -557,10 +560,11 @@ Def=\f[I]0%\f[R].
 .TP
 \f[B]-M\f[R] [\f[I]NUM\f[R][\f[I]-NUM\f[R]]]
 Set maximum number of \f[V]response tokens\f[R].
+Def=\f[I]256\f[R].
 .RS
 .PP
 Maximum \f[V]model tokens\f[R] can be set with a second number.
-Def=\f[I]2048-256\f[R].
+Def=\f[I]auto-256\f[R].
 .RE
 .TP
 \f[B]-a\f[R] [\f[I]VAL\f[R]]

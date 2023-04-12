@@ -2,7 +2,7 @@
 author:
 - Jamil Soni N
 date: April 2023
-title: CHATGPT.SH(1) v0.10.12 \| General Commands Manual
+title: CHATGPT.SH(1) v0.10.13 \| General Commands Manual
 ---
 
 ### NAME
@@ -50,9 +50,12 @@ equivalent *INDEX* as short-hand, so “`-m`*text-davinci-003*” and
 “`-m`*0*” set the same model (list model by *NAME* with `option -l` or
 by *INDEX* with `option -ll`).
 
-Set *maximum response* and *maximum model* tokens with
-`option "-`*NUM,NUM*” or “`-M` *NUM,NUM*”. A second *NUM* sets *maximum
-model tokens*. Defaults=*2048-256*.
+Set *maximum response tokens* with `option` “`-`NUM” or “`-M` NUM”. This
+defaults to 256 tokens in chat and single-turn modes.
+
+*Maximum model tokens* can be set with a second *NUM* such as
+“`-`*NUM,NUM*” or “`-M` NUM-NUM”, otherwise it is set automatically to
+the capacity of known models, or to *2048* tokens as fallback.
 
 If a plain text file path is set as first positional argument, it is
 loaded as text PROMPT (text cmpls, chat cmpls, and text/code edits).
@@ -86,9 +89,9 @@ language (must be in the same language as the audio).
 `Option -W` **translates audio** stream to **English text**. A PROMPT in
 English may be set to guide the model as the second positional argument.
 
-Combine `-wW with -cc` to start **chat with voice input** (Whisper)
-support. Output may be piped to a voice synthesiser to have a full voice
-in and out experience.
+Combine `-wW` **with** `-cc` to start **chat with voice input**
+(Whisper) support. Output may be piped to a voice synthesiser to have a
+full voice in and out experience.
 
 Stdin is supported when there is no positional arguments left after
 option parsing. Stdin input sets a single PROMPT.
@@ -382,9 +385,9 @@ Fuzz intensity can be set with \[VAL%\]. Def=*0%*.
 **-NUM**
 
 **-M** \[*NUM*\[*-NUM*\]\]  
-Set maximum number of `response tokens`.
+Set maximum number of `response tokens`. Def=*256*.
 
-Maximum `model tokens` can be set with a second number. Def=*2048-256*.
+Maximum `model tokens` can be set with a second number. Def=*auto-256*.
 
 **-a** \[*VAL*\]  
 Set presence penalty (cmpls/chat, -2.0 - 2.0).
