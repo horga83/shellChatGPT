@@ -2,7 +2,7 @@
 author:
 - Jamil Soni N
 date: April 2023
-title: CHATGPT.SH(1) v0.10.16 \| General Commands Manual
+title: CHATGPT.SH(1) v0.10.17 \| General Commands Manual
 ---
 
 ### NAME
@@ -118,6 +118,11 @@ For example, given a partial input, the language model will try
 completing it until probable “`<|endoftext|>`”, or other stop sequences
 (stops may be set with `-s`).
 
+To enable **multiline input**, type in a backslash “*\\*” as the last
+character of the input line and press ENTER (backslash will be removed
+from input). Once enabled, press ENTER twice to confirm the multiline
+prompt.
+
 Language model **SKILLS** can activated, with specific prompts, see
 <https://platform.openai.com/examples>.
 
@@ -140,7 +145,7 @@ The defaults chat format is “`Q & A`”. So, the **restart text** “*Q: *”
 and the **start text** “*A:*” must be injected for the chat bot to work
 well with text cmpls.
 
-Typing only a colon “`:`” at the start of the prompt causes it to be
+Typing only a colon “*:*” at the start of the prompt causes it to be
 appended after a newline to the last prompt (answer) in text cmpls. If
 this trick is used with the initial prompt in text cmpls, it works as
 the **INSTRUCTION**. In chat cmpls, setting a prompt with “`:`” always
@@ -177,12 +182,12 @@ with “`!hist`”. Delete history entries or comment them out with “`#`”.
 ##### 2.5 Completion Preview / Regeneration
 
 To preview a prompt completion before commiting it to history, append a
-slash “`/`” to the prompt as the last character. Regenerate it again or
-press ENTER to accept it.
+forward slash “*/*” to the prompt as the last character. Regenerate it
+again or press ENTER to accept it.
 
 After a response has been written to the history file, **regenerate** it
-with command “`!regen`” or type in a single slash in the new empty
-prompt.
+with command “`!regen`” or type in a single forward slash in the new
+empty prompt.
 
 #### 3. Prompt Engineering and Design
 
@@ -326,7 +331,8 @@ Setting **temperature** has an effect, the higher the more random.
 The special sequences (`\b`, `\f`, `\n`, `\r`, `\t` and `\uHEX`) are
 interpreted as quoted *backspace*, *form feed*, *new line*, *return*,
 *tab* and *unicode hex*. To preserve these symbols as literals instead
-(e. g. **Latex syntax**), type in an extra slash such as “`\\theta`”.
+(e. g. **Latex syntax**), type in an extra backslash such as
+“`\\theta`”.
 
 ### ENVIRONMENT
 

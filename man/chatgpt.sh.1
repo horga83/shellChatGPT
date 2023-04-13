@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.10.16" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "April 2023" "v0.10.17" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -186,6 +186,11 @@ For example, given a partial input, the language model will try
 completing it until probable \[lq]\f[V]<|endoftext|>\f[R]\[rq], or other
 stop sequences (stops may be set with \f[V]-s\f[R]).
 .PP
+To enable \f[B]multiline input\f[R], type in a backslash
+\[lq]\f[I]\[rs]\f[R]\[rq] as the last character of the input line and
+press ENTER (backslash will be removed from input).
+Once enabled, press ENTER twice to confirm the multiline prompt.
+.PP
 Language model \f[B]SKILLS\f[R] can activated, with specific prompts,
 see <https://platform.openai.com/examples>.
 .SS 2. Chat Mode
@@ -205,7 +210,7 @@ So, the \f[B]restart text\f[R] \[lq]\f[I]Q:\ \f[R]\[rq] and the
 \f[B]start text\f[R] \[lq]\f[I]A:\f[R]\[rq] must be injected for the
 chat bot to work well with text cmpls.
 .PP
-Typing only a colon \[lq]\f[V]:\f[R]\[rq] at the start of the prompt
+Typing only a colon \[lq]\f[I]:\f[R]\[rq] at the start of the prompt
 causes it to be appended after a newline to the last prompt (answer) in
 text cmpls.
 If this trick is used with the initial prompt in text cmpls, it works as
@@ -332,12 +337,12 @@ Delete history entries or comment them out with \[lq]\f[V]#\f[R]\[rq].
 .SS 2.5 Completion Preview / Regeneration
 .PP
 To preview a prompt completion before commiting it to history, append a
-slash \[lq]\f[V]/\f[R]\[rq] to the prompt as the last character.
+forward slash \[lq]\f[I]/\f[R]\[rq] to the prompt as the last character.
 Regenerate it again or press ENTER to accept it.
 .PP
 After a response has been written to the history file,
 \f[B]regenerate\f[R] it with command \[lq]\f[V]!regen\f[R]\[rq] or type
-in a single slash in the new empty prompt.
+in a single forward slash in the new empty prompt.
 .SS 3. Prompt Engineering and Design
 .PP
 Unless the chat \f[V]options -c\f[R] or \f[V]-cc\f[R] are set,
@@ -492,7 +497,7 @@ The special sequences (\f[V]\[rs]b\f[R], \f[V]\[rs]f\f[R],
 and \f[I]unicode hex\f[R].
 To preserve these symbols as literals instead (e.
 g.
-\f[B]Latex syntax\f[R]), type in an extra slash such as
+\f[B]Latex syntax\f[R]), type in an extra backslash such as
 \[lq]\f[V]\[rs]\[rs]theta\f[R]\[rq].
 .SS ENVIRONMENT
 .TP

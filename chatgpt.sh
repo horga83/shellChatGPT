@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.16  april/2023  by mountaineerbr  GPL+3
+# v0.10.17  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -190,6 +190,11 @@ TEXT / CHAT COMPLETIONS
 	a history file, and keeps new questions in context. This works
 	with a variety of models.
 
+	To enable multiline input, type in a backslash \`\\' as the last
+	character of the input line and press ENTER (backslash will be
+	removed from input). Once enabled, press ENTER twice to confirm
+	the multiline prompt.
+
 	2.2 Native Chat Completions
 	Set the double option -cc to start chat completions mode. Turbo
 	models are also the best option for many non-chat use cases.
@@ -236,12 +241,12 @@ TEXT / CHAT COMPLETIONS
 
 	2.5 Completion Preview / Regeneration
 	To preview a prompt completion before commiting it to history,
-	append a slash \`/' to the prompt as the last character.
+	append a forward slash \`/' to the prompt as the last character.
 	Regenerate it again or press ENTER to accept it.
 
 	After a response has been written to the history file, regenerate
-	it with command \`!regen' or type in a single slash in the new
-	empty prompt.
+	it with command \`!regen' or type in a single forward slash in the
+	new empty prompt.
 
 
 	3. Prompt Engineering and Design
@@ -383,7 +388,7 @@ QUOTING AND SPECIAL SYMBOLS
 	The special sequences (\`\\b', \`\\f', \`\\n', \`\\r', \`\\t' and \`\\uHEX')
 	are interpreted as quoted backspace, form feed, new line, return,
 	tab and unicode hex. To preserve these symbols as literals instead
-	(e. g. Latex syntax), type in an extra slash such as \`\\\\theta'.
+	(e. g. Latex syntax), type in an extra backslash such as \`\\\\theta'.
 
 
 ENVIRONMENT
@@ -562,11 +567,14 @@ function promptf
 	then 	block_printf || { 	! printf '\n' >&2 ;return ;}
 	fi
 
-	curl -\# ${OPTV:+-s} -L "https://api.openai.com/v1/${ENDPOINTS[EPN]}" \
+	curl -\# -L "https://api.openai.com/v1/${ENDPOINTS[EPN]}" \
 		-H "Content-Type: application/json" \
 		-H "Authorization: Bearer $OPENAI_KEY" \
 		-d "$BLOCK" \
-		-o "$FILE"
+		-o "$FILE" \
+	&& ((OPTV)) && printf '\e[A\e[K' >&2
+	
+	return 0
 }
 
 #pretty print request body or dump and exit
@@ -1757,7 +1765,7 @@ else               #text/chat completions
 			fi
 		fi
 	fi
-	WSKIP=1 SKIP= EDIT= N_LOOP=0
+	WSKIP=1 SKIP= EDIT= N_LOOP=0 input= arg=
 	while :
 	do 	((REGEN)) && { 	set -- "${PROMPT_LAST[@]:-$@}" ;unset REGEN ;}
 
@@ -1796,14 +1804,24 @@ else               #text/chat completions
 					)
 					else 	unset OPTW
 					fi ;printf "${BPurple}%s${NC}\\n${REPLY:+---\\n}" "${REPLY:-"(EMPTY)"}" >&2
-				elif [[ -n $ZSH_VERSION ]]
-				then 	((EDIT)) || unset REPLY ;unset arg
-					((OPTK)) || arg='-p%B%F{14}' #cyan=14
-					vared -c -e -h $arg REPLY
 				else
-					read -r ${BASH_VERSION:+-e} \
-					${EDIT:+${BASH_VERSION:+-i "$REPLY"} ${KSH_VERSION:+-v}} REPLY
-				fi ;((OPTK)) || printf "${NC}" >&2
+					while if [[ -n $ZSH_VERSION ]]
+						then 	((EDIT)) || unset REPLY ;((OPTK)) || arg='-p%B%F{14}' #cyan=14
+							vared -c -e -h $arg REPLY
+						else 	read -r ${BASH_VERSION:+-e} \
+							${EDIT:+${BASH_VERSION:+-i "$REPLY"} ${KSH_VERSION:+-v}} REPLY
+						fi
+					do 	case "$REPLY" in
+							*\\) 	cont=1
+								REPLY="${REPLY%%?(\\)\\}"
+								[[ -n $REPLY ]] || continue
+								;;
+						esac ;[[ -n $REPLY ]] || break
+						input="${input}"${input:+$'\n'}"${REPLY}"
+						((cont)) || break
+					done ;REPLY="${input:-$REPLY}"
+				fi ;unset arg cont input
+				((OPTK)) || printf "${NC}" >&2
 				
 				if check_cmdf "$REPLY"
 				then 	REPLY="${REPLY_OLD:-$REPLY}"  #regen cmd integration
@@ -1849,10 +1867,10 @@ else               #text/chat completions
 		if ((OPTC+OPTRESUME))
 		then 	((RETRY==1)) ||
 			if [[ -n $KSH_VERSION ]]
-			then 	read -r -s <<<"$*"
+			then 	read -r -s <<<"${*//$'\n'/\\n}"
 			elif [[ -n $BASH_VERSION ]]
-			then 	history -s -- "$*" ;history -a
-			else 	print -s -- "$*"  #zsh
+			then 	history -s -- "${*//$'\n'/\\n}" ;history -a
+			else 	print -s -- "${*//$'\n'/\\n}"  #zsh
 			fi
 
 			if [[ $* = :* ]]

@@ -201,6 +201,14 @@ Zsh cannot read a history file unless started in interactive mode,
 so only commands of the running session are available for retrieval in
 new prompts (with an up-arrow key stroke).
 
+<!--
+## Arch Linux Users
+
+There is a [*PKGBUILD*](PKGBUILD) file available to install the package
+in Arch Linux and derivative distros (I am still perfecting the PKGBUILD
+but it should work fine).
+-->
+
 ## Termux Users
 
 Users of Termux may have some difficulty compiling the original Ksh93 under Termux.
@@ -225,13 +233,13 @@ ln -s /data/data/com.termux/files/usr/bin/zsh /data/data/com.termux/files/usr/bi
 
 - In chat mode, chat commands run with *operator* `!` or `/`,
 such as `!new` to start new session, `!temp 0.9` to set temperature,
-`!max 2048` to set max tokens,
-`!log ~/chat.log` to set a readable chat log, and so on
+`!max 2048` to set max tokens, `!log ~/chat.log` to set a readable chat log, and so on.
 - In chat mode, edit history entries with command `!hist`,
-delete or comment them out with `#` to update context on the run
-- Add operator slash `/` to the end of prompt (as last character) to trigger completions *preview mode*
+delete or comment them out with `#` to update context on the run.
+- In chat mode, end a line with a backslash to type in a new line.
+- Add operator forward slash `/` to the end of prompt (as last character) to trigger completions *preview mode*.
 - One can regenerate a response typing in a new prompt a single slash `/`.
-- Hopefully, default colours are colour-blind friendly
+- Hopefully, default colours are colour-blind friendly.
 
 
 ## Limitations
