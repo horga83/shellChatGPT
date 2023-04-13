@@ -572,9 +572,7 @@ function promptf
 		-H "Authorization: Bearer $OPENAI_KEY" \
 		-d "$BLOCK" \
 		-o "$FILE" \
-	&& ((OPTV)) && printf '\e[A\e[K' >&2
-	
-	return 0
+	&& { 	((OPTV)) && printf '\e[A\e[K' >&2 ;: ;}
 }
 
 #pretty print request body or dump and exit
