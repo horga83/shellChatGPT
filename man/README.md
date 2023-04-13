@@ -2,7 +2,7 @@
 author:
 - Jamil Soni N
 date: April 2023
-title: CHATGPT.SH(1) v0.10.17 \| General Commands Manual
+title: CHATGPT.SH(1) v0.10.18 \| General Commands Manual
 ---
 
 ### NAME
@@ -118,13 +118,13 @@ For example, given a partial input, the language model will try
 completing it until probable “`<|endoftext|>`”, or other stop sequences
 (stops may be set with `-s`).
 
+Language model **SKILLS** can activated, with specific prompts, see
+<https://platform.openai.com/examples>.
+
 To enable **multiline input**, type in a backslash “*\\*” as the last
 character of the input line and press ENTER (backslash will be removed
 from input). Once enabled, press ENTER twice to confirm the multiline
 prompt.
-
-Language model **SKILLS** can activated, with specific prompts, see
-<https://platform.openai.com/examples>.
 
 #### 2. Chat Mode
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.17  april/2023  by mountaineerbr  GPL+3
+# v0.10.18  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -183,17 +183,17 @@ TEXT / CHAT COMPLETIONS
 	Language model SKILLS can activated, with specific prompts,
 	see <https://platform.openai.com/examples>.
 
+	To enable multiline input, type in a backslash \`\\' as the last
+	character of the input line and press ENTER (backslash will be
+	removed from input). Once enabled, press ENTER twice to confirm
+	the multiline prompt.
+
 
 	2. Chat Mode
 	2.1 Text Completions Chat
 	Set option -c to start chat mode of text completions. It keeps
 	a history file, and keeps new questions in context. This works
 	with a variety of models.
-
-	To enable multiline input, type in a backslash \`\\' as the last
-	character of the input line and press ENTER (backslash will be
-	removed from input). Once enabled, press ENTER twice to confirm
-	the multiline prompt.
 
 	2.2 Native Chat Completions
 	Set the double option -cc to start chat completions mode. Turbo
@@ -1763,7 +1763,8 @@ else               #text/chat completions
 			fi
 		fi
 	fi
-	WSKIP=1 SKIP= EDIT= N_LOOP=0 input= arg=
+
+	WSKIP=1 ;unset REPLY N_LOOP SKIP EDIT input arg
 	while :
 	do 	((REGEN)) && { 	set -- "${PROMPT_LAST[@]:-$@}" ;unset REGEN ;}
 
@@ -1812,8 +1813,10 @@ else               #text/chat completions
 					do 	case "$REPLY" in
 							*\\) 	cont=1
 								REPLY="${REPLY%%?(\\)\\}"
-								[[ -n $REPLY ]] || continue
-								;;
+								if [[ -z $REPLY ]]
+								then 	input="${input}"${input:+$'\n'}
+									continue
+								fi;;
 						esac ;[[ -n $REPLY ]] || break
 						input="${input}"${input:+$'\n'}"${REPLY}"
 						((cont)) || break
