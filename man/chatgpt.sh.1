@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.10.19" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "April 2023" "v0.10.20" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -553,6 +553,33 @@ A free OpenAI \f[B]API key\f[R].
 \f[V]JQ\f[R], \f[V]ImageMagick\f[R], and
 \f[V]Sox\f[R]/\f[V]Alsa-tools\f[R]/\f[V]FFmpeg\f[R] are optionally
 required.
+.SS LONG OPTIONS
+.PP
+Long options can be set with an argument, or multiple times when
+appropriate.
+.PP
+Ex: \[lq]\f[V]--chat\f[R]\[rq],
+\[lq]\f[V]--temp\f[R]=\f[I]0.9\f[R]\[rq],
+\[lq]\f[V]--max\f[R]=\f[I]1024,128\f[R]\[rq], and
+\[lq]\f[V]--presence-penalty\f[R] \f[I]0.6\f[R]\[rq].
+.RS
+.PP
+\f[V]--alpha\f[R], \f[V]--api-key\f[R], \f[V]--best\f[R],
+\f[V]--best-of\f[R], \f[V]--chat\f[R], \f[V]--cont\f[R],
+\f[V]--continue\f[R], \f[V]--edit\f[R], \f[V]--editor\f[R],
+\f[V]--frequency\f[R], \f[V]--frequency-penalty\f[R], \f[V]--help\f[R],
+\f[V]--hist\f[R], \f[V]--image\f[R], \f[V]--instruction\f[R],
+\f[V]--last\f[R], \f[V]--list-model\f[R], \f[V]--list-models\f[R],
+\f[V]--log\f[R], \f[V]--log-prob\f[R], \f[V]--man\f[R], \f[V]--max\f[R],
+\f[V]--max-tokens\f[R], \f[V]--mod\f[R], \f[V]--model\f[R],
+\f[V]--no-colour\f[R], \f[V]--no-config\f[R], \f[V]--presence\f[R],
+\f[V]--presence-penalty\f[R], \f[V]--prob\f[R], \f[V]--raw\f[R],
+\f[V]--restart-seq\f[R], \f[V]--restart-sequence\f[R],
+\f[V]--results\f[R], \f[V]--resume\f[R], \f[V]--start-seq\f[R],
+\f[V]--start-sequence\f[R], \f[V]--stop\f[R], \f[V]--temp\f[R],
+\f[V]--temperature\f[R], \f[V]--top\f[R], \f[V]--top-p\f[R],
+\f[V]--transcribe\f[R], \f[V]--translate\f[R], and \f[V]--verbose\f[R].
+.RE
 .SS OPTIONS
 .TP
 \f[B]-\[at]\f[R] [[\f[I]VAL%\f[R]]\f[I]COLOUR\f[R]]

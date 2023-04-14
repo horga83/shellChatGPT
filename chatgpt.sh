@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.19  april/2023  by mountaineerbr  GPL+3
+# v0.10.20  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -129,7 +129,7 @@ DESCRIPTION
 	text cmpls, chat cmpls, and text/code edits. A text file path
 	may be supplied as the single argument. If the argument to this
 	option starts with a backslash such as \`-S /linux_terminal',
-	start search for an awesome-chatgpt-prompt (by Fatih KA).
+	start search for an awesome-chatgpt-prompts (by Fatih KA).
 
 	Option -e sets the \`text edits' endpoint. That endpoint requires
 	both INSTRUCTION and INPUT prompts. User may choose a model amongst
@@ -168,9 +168,6 @@ DESCRIPTION
 
 	A personal (free) OpenAI API is required, set it with -K. Also,
 	see ENVIRONMENT section.
-
-	Long option support, as \`--chat', \`--temp=0.9', \`--max=1024,128',
-	\`--presence-penalty=0.6', and \`--log=~/log.txt' is experimental.
 
 	For complete model and settings information, refer to OpenAI
 	API docs at <https://platform.openai.com/docs/>.
@@ -431,6 +428,21 @@ REQUIREMENTS
 	JQ, ImageMagick, and Sox/Alsa-tools/FFmpeg are optionally required.
 
 
+LONG OPTIONS
+	Long options can be set with an argument, or multiple times when
+	appropriate. Ex: \`--chat', \`--temp=0.9', \`--max=1024,128',
+	and \`--presence-penalty 0.6'.
+
+	--alpha, --api-key, --best, --best-of, --chat, --cont, --continue,
+	--edit, --editor, --frequency, --frequency-penalty, --help, --hist,
+	--image, --instruction, --last, --list-model, --list-models, --log,
+	--log-prob, --man, --max, --max-tokens, --mod, --model, --no-colour,
+	--no-config, --presence, --presence-penalty, --prob, --raw,
+	--restart-seq, --restart-sequence, --results, --resume, --start-seq,
+	--start-sequence, --stop, --temp, --temperature, --top, --top-p,
+	--transcribe, --translate, and --verbose.
+
+
 OPTIONS
 	-@ [[VAL%]COLOUR]
 		 Set transparent colour of image mask. Def=black.
@@ -486,7 +498,7 @@ OPTIONS
 	-S [INSTRUCTION|FILE]
 		 Set an instruction prompt. It may be a text file.
 	-S /[PROMPT_NAME]
-		 Set/search prompt from awesome-chatgpt-prompt.
+		 Set/search prompt from awesome-chatgpt-prompts.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
 	-v 	 Less verbose. May set multiple times.
@@ -1509,19 +1521,19 @@ function awesomef
 	set -- "${INSTRUCTION##/}"
 	set -- "${1// /-}"
 
-	if [[ ! -s $FILEAWE ]] || [[ $1 = /* ]]
-	then 	curl -\#L "https://raw.githubusercontent.com/f/awesome-chatgpt-prompts/main/prompts.csv" -o "$FILEAWE" \
-		|| { 	[[ -f $FILEAWE ]] && rm -- "$FILEAWE" ;return 1 ;}
-		set -- "${1##/}"
+	if [[ ! -s $FILEAWE ]] || [[ $1 = /* ]]  #second slash
+	then 	set -- "${1##/}"
+		curl -\#L "https://raw.githubusercontent.com/f/awesome-chatgpt-prompts/main/prompts.csv" -o "$FILEAWE" \
+		|| { 	[[ -e $FILEAWE ]] && rm -- "$FILEAWE" ;return 1 ;}
 	fi ;set -- "${1:-#@}" 
 
 	act_keys=$(sed -e '1d; s/,.*//; s/^"//; s/"$//; s/""/\\"/g; s/[][()`*_]//g; s/ /_/g' "$FILEAWE")
-	act=$(grep -n -i -e "${1//[ _-]/[ _-]}" <<<"${act_keys}" | cut -f1 -d:)
-	if ((!${#act}))
+	if ! act=$(grep -n -i -e "${1//[ _-]/[ _-]}" <<<"${act_keys}")
 	then 	select act in ${act_keys}
 		do 	break
 		done ;act="$REPLY"
-	elif [[ ${act} = *$'\n'* ]]
+	elif act="$(cut -f1 -d: <<<"$act")"
+		[[ ${act} = *$'\n'?* ]]
 	then 	while read l;
 		do 	((++n));
 			for a in ${act};
@@ -1532,7 +1544,7 @@ function awesomef
 	fi
 
 	INSTRUCTION="$(sed -n -e 's/^[^,]*,//; s/""/"/g; s/^"//; s/"$//' -e "$((act+1))p" "$FILEAWE")"
-	[[ -n $INSTRUCTION ]]
+	[[ -n $INSTRUCTION ]] || { 	__warmsgf 'Warning:' 'awesome-chatgpt-prompts fail' ;false ;}
 }
 
 
@@ -1541,12 +1553,12 @@ optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:r:R:s:S:t:vVxwWz0123456789@:/,.+-:"
 while getopts "$optstring" opt
 do
 	if [[ $opt = - ]]  #long options
-	then 	for opt in   @:alpha   M:max-tokens   M:max \
+	then 	for opt in   @:alpha  M:max-tokens  M:max \
 			a:presence-penalty      a:presence \
 			A:frequency-penalty     A:frequency \
-			b:best-of   b:best      B:log-prob B:prob \
-			c:chat      C:resume C:continue    C:cont \
-			e:edit      f:no-config h:help     H:hist \
+			b:best-of   b:best      B:log-prob  B:prob \
+			c:chat      C:resume  C:continue  C:cont \
+			e:edit      f:no-config  h:help  h:man  H:hist \
 			i:image     j:raw       k:no-colo?r \
 			K:api-key   l:list-model   l:list-models \
 			L:log       m:model        m:mod \
@@ -1782,7 +1794,7 @@ else               #text/chat completions
 		unset Q_TYPE A_TYPE
 	fi
 
-	#chatbot instruction
+	#model instruction
 	if ((OPTC+OPTRESUME))
 	then 	{ 	((OPTC)) && ((OPTRESUME)) ;} || ((OPTRESUME==1)) || {
 		  break_sessionf
@@ -1790,6 +1802,8 @@ else               #text/chat completions
 		  push_tohistf "$(escapef ":${INSTRUCTION##:}")"
 		  __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
 		} ;unset INSTRUCTION
+	elif [[ -n $INSTRUCTION ]]
+	then 	  __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
 	fi
 
 	#load history (only ksh/bash)

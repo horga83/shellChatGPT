@@ -2,7 +2,7 @@
 author:
 - Jamil Soni N
 date: April 2023
-title: CHATGPT.SH(1) v0.10.19 \| General Commands Manual
+title: CHATGPT.SH(1) v0.10.20 \| General Commands Manual
 ---
 
 ### NAME
@@ -382,6 +382,25 @@ A free OpenAI **API key**.
 
 `JQ`, `ImageMagick`, and `Sox`/`Alsa-tools`/`FFmpeg` are optionally
 required.
+
+### LONG OPTIONS
+
+Long options can be set with an argument, or multiple times when
+appropriate.
+
+Ex: “`--chat`”, “`--temp`=*0.9*”, “`--max`=*1024,128*”, and
+“`--presence-penalty` *0.6*”.
+
+> `--alpha`, `--api-key`, `--best`, `--best-of`, `--chat`, `--cont`,
+> `--continue`, `--edit`, `--editor`, `--frequency`,
+> `--frequency-penalty`, `--help`, `--hist`, `--image`, `--instruction`,
+> `--last`, `--list-model`, `--list-models`, `--log`, `--log-prob`,
+> `--man`, `--max`, `--max-tokens`, `--mod`, `--model`, `--no-colour`,
+> `--no-config`, `--presence`, `--presence-penalty`, `--prob`, `--raw`,
+> `--restart-seq`, `--restart-sequence`, `--results`, `--resume`,
+> `--start-seq`, `--start-sequence`, `--stop`, `--temp`,
+> `--temperature`, `--top`, `--top-p`, `--transcribe`, `--translate`,
+> and `--verbose`.
 
 ### OPTIONS
 
