@@ -2,7 +2,7 @@
 author:
 - Jamil Soni N
 date: April 2023
-title: CHATGPT.SH(1) v0.10.18 \| General Commands Manual
+title: CHATGPT.SH(1) v0.10.19 \| General Commands Manual
 ---
 
 ### NAME
@@ -62,7 +62,9 @@ loaded as text PROMPT (text cmpls, chat cmpls, and text/code edits).
 
 `Option -S` sets an INSTRUCTION prompt (the initial prompt) for text
 cmpls, chat cmpls, and text/code edits. A text file path may be supplied
-as the single argument.
+as the single argument. If the argument to this option starts with a
+backslash such as “`-S` \_/\_linux_terminal”, start search for an
+awesome-chatgpt-prompt (by Fatih KA).
 
 `Option -e` sets the **text edits** endpoint. That endpoint requires
 both INSTRUCTION and INPUT prompts. User may choose a model amongst the
@@ -495,6 +497,9 @@ Set stop sequences, up to 4. Def="*\<\|endoftext\|\>*".
 
 **-S** \[*INSTRUCTION*\|*FILE*\]  
 Set an instruction prompt. It may be a text file.
+
+**-S** */*\[*PROMPT_NAME*\]  
+Set/search prompt from awesome-chatgpt-prompt.
 
 **-t** \[*VAL*\]  
 Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper

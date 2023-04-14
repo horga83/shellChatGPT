@@ -6,6 +6,7 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 
 - GPT chat from the command line
 - Follow up conversations, preview/regenerate responses
+- Integration with [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts)
 - Generate images from text input
 - Generate variations of images
 - Edit images, easily generate an alpha mask
@@ -239,6 +240,7 @@ delete or comment them out with `#` to update context on the run.
 - In chat mode, end a line with a backslash to type in a new line.
 - Add operator forward slash `/` to the end of prompt (as last character) to trigger completions *preview mode*.
 - One can regenerate a response typing in a new prompt a single slash `/`.
+- Set or searhca prompt from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts) with `-S /prompt_name`
 - Hopefully, default colours are colour-blind friendly.
 
 

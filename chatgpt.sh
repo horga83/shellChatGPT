@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.18  april/2023  by mountaineerbr  GPL+3
+# v0.10.19  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -59,7 +59,7 @@ CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatgptsh"
 OUTDIR="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}"
 
 # Load user defaults
-((OPTF)) || { 	[[ -e "${CHATGPTRC:-$CONFFILE}" ]] && . "${CHATGPTRC:-$CONFFILE}" ;}
+((OPTF)) || { 	[[ -f "${CHATGPTRC:-$CONFFILE}" ]] && . "${CHATGPTRC:-$CONFFILE}" ;}
 
 # Set file paths
 FILE="${CACHEDIR%/}/chatgpt.json"
@@ -68,6 +68,7 @@ FILETXT="${CACHEDIR%/}/chatgpt.txt"
 FILEOUT="${OUTDIR%/}/dalle_out.png"
 FILEIN="${CACHEDIR%/}/dalle_in.png"
 FILEINW="${CACHEDIR%/}/whisper_in.mp3"
+FILEAWE="${CACHEDIR%/}/awesome-prompts.csv"
 USRLOG="${OUTDIR%/}/${FILETXT##*/}"
 HISTFILE="${CACHEDIR%/}/history_${KSH_VERSION:+ksh}${BASH_VERSION:+bash}"
 #https://www.zsh.org/mla/users/2013/msg00041.html
@@ -126,7 +127,9 @@ DESCRIPTION
 
 	Option -S sets an INSTRUCTION prompt (the initial prompt) for
 	text cmpls, chat cmpls, and text/code edits. A text file path
-	may be supplied as the single argument.
+	may be supplied as the single argument. If the argument to this
+	option starts with a backslash such as \`-S /linux_terminal',
+	start search for an awesome-chatgpt-prompt (by Fatih KA).
 
 	Option -e sets the \`text edits' endpoint. That endpoint requires
 	both INSTRUCTION and INPUT prompts. User may choose a model amongst
@@ -444,7 +447,7 @@ OPTIONS
 	-cc 	 Chat mode in chat completions, new session.
 	-C 	 Continue from last session (compls/chat). Set twice
 		 to start new session in chat mode (without -c, -cc).
-	-e [INSTRUCT] [INPUT]
+	-e [INSTRUCTION] [INPUT]
 		 Set Edit mode. Model def=text-davinci-edit-001.
 	-f 	 Ignore user config file and environment.
 	-h 	 Print this help page.
@@ -482,6 +485,8 @@ OPTIONS
 	-s [SEQ] Set stop sequences, up to 4. Def=\"<|endoftext|>\".
 	-S [INSTRUCTION|FILE]
 		 Set an instruction prompt. It may be a text file.
+	-S /[PROMPT_NAME]
+		 Set/search prompt from awesome-chatgpt-prompt.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
 	-v 	 Less verbose. May set multiple times.
@@ -1063,7 +1068,7 @@ function unescapef { 	printf "${*//\%/%%}" ;}
 
 function break_sessionf
 {
-	[[ -e "$FILECHAT" ]] || return
+	[[ -f "$FILECHAT" ]] || return
 	[[ BREAK$(tail -n 20 "$FILECHAT") = *[Bb][Rr][Ee][Aa][Kk] ]] \
 	|| tee -a -- "$FILECHAT" >&2 <<<'SESSION BREAK'
 }
@@ -1497,6 +1502,39 @@ function editf
 	prompt_printf
 }
 
+# awesome-chatgpt-prompts / custom prompts
+function awesomef
+{
+	typeset act_keys act a l n
+	set -- "${INSTRUCTION##/}"
+	set -- "${1// /-}"
+
+	if [[ ! -s $FILEAWE ]] || [[ $1 = /* ]]
+	then 	curl -\#L "https://raw.githubusercontent.com/f/awesome-chatgpt-prompts/main/prompts.csv" -o "$FILEAWE" \
+		|| { 	[[ -f $FILEAWE ]] && rm -- "$FILEAWE" ;return 1 ;}
+		set -- "${1##/}"
+	fi ;set -- "${1:-#@}" 
+
+	act_keys=$(sed -e '1d; s/,.*//; s/^"//; s/"$//; s/""/\\"/g; s/[][()`*_]//g; s/ /_/g' "$FILEAWE")
+	act=$(grep -n -i -e "${1//[ _-]/[ _-]}" <<<"${act_keys}" | cut -f1 -d:)
+	if ((!${#act}))
+	then 	select act in ${act_keys}
+		do 	break
+		done ;act="$REPLY"
+	elif [[ ${act} = *$'\n'* ]]
+	then 	while read l;
+		do 	((++n));
+			for a in ${act};
+			do 	((n==a)) && printf '%d) %s\n' "$n" "$l" >&2;
+			done;
+		done <<<"${act_keys}"
+		printf '#? ' >&2 ;read -r act
+	fi
+
+	INSTRUCTION="$(sed -n -e 's/^[^,]*,//; s/""/"/g; s/^"//; s/"$//' -e "$((act+1))p" "$FILEAWE")"
+	[[ -n $INSTRUCTION ]]
+}
+
 
 #parse opts
 optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:r:R:s:S:t:vVxwWz0123456789@:/,.+-:"
@@ -1569,7 +1607,7 @@ do
 		C) 	((++OPTRESUME));;
 		e) 	OPTE=1 EPN=2;;
 		f$OPTF) unset EPN MOD MOD_CHAT MOD_EDIT MOD_AUDIO MODMAX INSTRUCTION CHATINSTR OPTC OPTRESUME OPTHH OPTL OPTMARG OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTN OPTP OPTT OPTV OPTVV OPTW OPTWW OPT_AT_PC OPT_AT Q_TYPE A_TYPE RESTART START STOPS
-			OPTF=1 OPTIND=1 ;. "$0" "$@" ;exit;;
+			OPTF=1 OPTIND=1 OPTARG= ;. "$0" "$@" ;exit;;
 		h) 	while read
 			do 	[[ $REPLY = \#\ v* ]] && break
 			done <"$0"
@@ -1594,7 +1632,7 @@ do
 		R) 	START="$OPTARG";;
 		s) 	((${#STOPS[@]})) && STOPS=("$OPTARG" "${STOPS[@]}") \
 			|| STOPS=("$OPTARG");;
-		S) 	if [[ -e "$OPTARG" ]]
+		S) 	if [[ -f "$OPTARG" ]]
 			then 	INSTRUCTION=$(<"$OPTARG")
 			else 	INSTRUCTION="$OPTARG"
 			fi;;
@@ -1606,7 +1644,7 @@ do
 		W) 	((OPTW)) || OPTW=1 ;((++OPTWW));;
 		z) 	OPTZ=1;;
 		\?) 	exit 1;;
-	esac ;unset OPTARG
+	esac ;OPTARG=
 done ;unset LANGW OK N_LOOP optstring opt
 shift $((OPTIND -1))
 
@@ -1670,6 +1708,9 @@ set_maxtknf "${OPTMM:-$OPTMAX}"
 #set other options
 set_optsf
 
+# awesome/custom prompts
+[[ $INSTRUCTION = /* ]] && awesomef
+
 #load stdin
 (($#)) || [[ -t 0 ]] || set -- "$(</dev/stdin)"
 
@@ -1714,14 +1755,14 @@ then 	[[ $MOD = *embed* ]] || __warmsgf "Warning:" "Not an embedding model -- $M
 elif ((OPTE))      #edits
 then 	__sysmsgf 'Text Edits'
 	[[ $MOD = *edit* ]] || __warmsgf "Warning:" "Not an edits model -- $MOD"
-	[[ -e $1 ]] && set -- "$(<"$1")" "${@:2}"
+	[[ -f $1 ]] && set -- "$(<"$1")" "${@:2}"
 	if (($# == 1)) && ((${#INSTRUCTION}))
 	then 	set -- "$INSTRUCTION" "$@"
 		__sysmsgf 'INSTRUCTION:' "$INSTRUCTION" 
 	fi
 	editf "$@"
 else               #text/chat completions
-	[[ -e $1 ]] && set -- "$(<"$1")" "${@:2}"  #load file as 1st arg
+	[[ -f $1 ]] && set -- "$(<"$1")" "${@:2}"  #load file as 1st arg
 	((OPTW)) && { 	INPUT_ORIG=("$@") ;unset OPTX ;set -- ;}  #whisper input
 	((OPTE)) && function set_typef { : ;}
 	if ((OPTC))
