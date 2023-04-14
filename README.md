@@ -2,6 +2,9 @@
 Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 
 
+![Showing off Chat Completions](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/chat_cpls.gif)
+
+
 ## Features
 
 - GPT chat from the command line
@@ -19,14 +22,12 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 - Should™ work on Linux, FreeBSD, MacOS, and [Termux](#termux-users).
 
 
-![Showing off Chat Completions](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/chat_cpls.gif)
-
-
 ## ✨ Getting Started
 
 ### Installation
 
 Just download the stand-alone `chatgpt.sh` and make it executable or clone this repo.
+
 
 ### Required packages
 
