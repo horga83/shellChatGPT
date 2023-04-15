@@ -196,7 +196,8 @@ Zsh and Bash. If the defaults
 interpreter is not available in your system, run the script
 such as `bash ./chatgpt.sh` (consider adding an alias in your rc file).
 
-There should be equivalency of features under Ksh, Zsh, and Bash.
+There should be equivalency of features under Bash, Ksh and Zsh.
+The reccomended interpreter is Bash, followed by Ksh and then Zsh.
 
 However,
 Zsh cannot read a history file unless started in interactive mode,

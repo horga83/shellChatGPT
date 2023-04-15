@@ -2,7 +2,7 @@
 author:
 - Jamil Soni N
 date: April 2023
-title: CHATGPT.SH(1) v0.10.20 \| General Commands Manual
+title: CHATGPT.SH(1) v0.11 \| General Commands Manual
 ---
 
 ### NAME
@@ -64,7 +64,7 @@ loaded as text PROMPT (text cmpls, chat cmpls, and text/code edits).
 cmpls, chat cmpls, and text/code edits. A text file path may be supplied
 as the single argument. If the argument to this option starts with a
 backslash such as “`-S` \_/\_linux_terminal”, start search for an
-awesome-chatgpt-prompt (by Fatih KA).
+awesome-chatgpt-prompts (by Fatih KA).
 
 `Option -e` sets the **text edits** endpoint. That endpoint requires
 both INSTRUCTION and INPUT prompts. User may choose a model amongst the
@@ -103,10 +103,6 @@ at “*~/.cache/chatgptsh*”.
 
 A personal (free) OpenAI API is required, set it with `-K`. Also, see
 **ENVIRONMENT section**.
-
-Long option support, as “`--chat`”, “`--temp=`*0.9*”,
-“`--max=`*1024,128*”, “`--presence-penalty=`*0.6*”, and
-“`--log=`*~/log.txt*” is experimental.
 
 For complete model and settings information, refer to OpenAI API docs at
 <https://platform.openai.com/docs/>.
@@ -363,8 +359,12 @@ Defaults="*vim*"
 
 ### BUGS
 
-`Ksh2020` lacks functionality compared to `Ksh83u+m`, such as `read`
-with history.
+`Ksh93` mangles multibyte characters when re-editing input prompt and
+truncates input longer than 80 chars. Workaround is to move cursor one
+char and press the up arrow key.
+
+`Ksh2020` lacks functionality compared to `Ksh83u+`, such as `read` with
+history.
 
 With the exception of Davinci models, older models were designed to be
 run as one-shot.
@@ -378,7 +378,7 @@ Garbage in, garbage out. An idiot savant.
 
 A free OpenAI **API key**.
 
-`Ksh93u+`, `Bash` or `Zsh`. `cURL`.
+`Bash`, `Ksh93u+`, or `Zsh`. `cURL`.
 
 `JQ`, `ImageMagick`, and `Sox`/`Alsa-tools`/`FFmpeg` are optionally
 required.
@@ -518,7 +518,7 @@ Set stop sequences, up to 4. Def="*\<\|endoftext\|\>*".
 Set an instruction prompt. It may be a text file.
 
 **-S** */*\[*PROMPT_NAME*\]  
-Set/search prompt from awesome-chatgpt-prompt.
+Set/search prompt from awesome-chatgpt-prompts.
 
 **-t** \[*VAL*\]  
 Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper

@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.10.20 | General Commands Manual
+% CHATGPT.SH(1) v0.11 | General Commands Manual
 % Jamil Soni N
 % April 2023
 
@@ -61,7 +61,7 @@ edits).
 text cmpls, chat cmpls, and text/code edits. A text file path
 may be supplied as the single argument. If the argument to this
 option starts with a backslash such as "`-S` _/_linux_terminal",
-start search for an awesome-chatgpt-prompt (by Fatih KA).
+start search for an awesome-chatgpt-prompts (by Fatih KA).
 
 `Option -e` sets the **text edits** endpoint. That endpoint requires
 both INSTRUCTION and INPUT prompts. User may choose a model amongst
@@ -103,12 +103,8 @@ Script cache is kept at "_~/.cache/chatgptsh_".
 A personal (free) OpenAI API is required, set it with `-K`. Also,
 see **ENVIRONMENT section**.
 
-Long option support, as "`--chat`", "`--temp=`_0.9_", "`--max=`_1024,128_",
-"`--presence-penalty=`_0.6_", and "`--log=`_~/log.txt_" is experimental.
-
 For complete model and settings information, refer to OpenAI
 API docs at <https://platform.openai.com/docs/>.
-
 
 
 ### TEXT / CHAT COMPLETIONS
@@ -388,7 +384,11 @@ _tab_ and _unicode hex_. To preserve these symbols as literals instead
 
 ### BUGS
 
-`Ksh2020` lacks functionality compared to `Ksh83u+m`, such as `read`
+`Ksh93` mangles multibyte characters when re-editing input prompt
+and truncates input longer than 80 chars. Workaround is to move
+cursor one char and press the up arrow key.
+
+`Ksh2020` lacks functionality compared to `Ksh83u+`, such as `read`
 with history.
 
 With the exception of Davinci models, older models were designed
@@ -404,7 +404,7 @@ Garbage in, garbage out. An idiot savant.
 
 A free OpenAI **API key**.
 
-`Ksh93u+`, `Bash` or `Zsh`. `cURL`.
+`Bash`, `Ksh93u+`, or `Zsh`. `cURL`.
 
 `JQ`, `ImageMagick`, and `Sox`/`Alsa-tools`/`FFmpeg` are optionally required.
 
@@ -602,7 +602,7 @@ Ex: "`--chat`", "`--temp`=_0.9_", "`--max`=_1024,128_", and "`--presence-penalty
 
 **-S** _/_[_PROMPT_NAME_]
 
-: Set/search prompt from awesome-chatgpt-prompt.
+: Set/search prompt from awesome-chatgpt-prompts.
 
 
 **-t** \[_VAL_]

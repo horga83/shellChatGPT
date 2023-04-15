@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.10.20  april/2023  by mountaineerbr  GPL+3
+# v0.11  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -408,7 +408,11 @@ ENVIRONMENT
 
 
 BUGS
-	Ksh2020 lacks functionality compared to Ksh83u+m, such as \`read'
+	Ksh93 mangles multibyte characters when re-editing input prompt
+	and truncates input longer than 80 chars. Workaround is to move
+	cursor one char and press the up arrow key.
+
+	Ksh2020 lacks functionality compared to Ksh83u+, such as \`read'
 	with history.
 
 	With the exception of Davinci models, older models were designed
@@ -423,7 +427,7 @@ BUGS
 REQUIREMENTS
 	A free OpenAI API key.
 	
-	Ksh93u+, Bash or Zsh. cURL.
+	Bash, Ksh93u+, or Zsh. cURL.
 
 	JQ, ImageMagick, and Sox/Alsa-tools/FFmpeg are optionally required.
 
@@ -674,6 +678,7 @@ function __openf
 	then 	xdg-open "$1"
 	elif command -v open >/dev/null 2>&1
 	then 	open "$1"
+	else 	false
 	fi
 }
 #https://budts.be/weblog/2011/07/xdf-open-vs-exo-open/
@@ -731,6 +736,7 @@ function list_modelsf
 	curl "https://api.openai.com/v1/models${1:+/}${1}" \
 		-H "Authorization: Bearer $OPENAI_KEY" \
 		-o "$FILE"
+
 	if [[ -n $1 ]]
 	then  	jq . "$FILE" || cat -- "$FILE"
 	else 	jq -r '.data[].id' "$FILE" | sort
@@ -807,6 +813,7 @@ function set_histf
 function push_tohistf
 {
 	typeset string tkn_min tkn
+	[[ -n $1 ]] || return ;((SKIPF)) && return
 	string="$1" ;tkn_min=$(__tiktokenf "$string" "4")
 	((tkn = ${2:-tkn_min}>0 ? ${2:-tkn_min} : tkn_min ))
 	printf '%s\t%d\t"%s"\n' "${3:-$(date -Isec)}" "$tkn" "$string" >> "$FILECHAT"
@@ -1030,7 +1037,6 @@ function edf
 	if ((OPTC+OPTRESUME))
 	then 	check_cmdf "${*#*:}" && return 200
 	fi
-	return 0
 }
 
 #special json chars
@@ -1240,8 +1246,7 @@ function __set_langf
 			((OPTV)) || __sysmsgf 'Language:' "$1" >&2
 		fi
 		return 0
-	fi
-	return 1
+	fi ;return 1
 }
 
 #whisper
@@ -1334,21 +1339,21 @@ function imgvarf
 					printf '%s\n' 'Alpha not needed, transparent image' >&2
 				fi
 			fi
-			__img_convf "$1" $ARGS "${PNG32}${FILEIN}" &&
+			img_convf "$1" $ARGS "${PNG32}${FILEIN}" &&
 				set -- "${FILEIN}" "${@:2}"  #adjusted
 		else 	((OPTV)) ||
 			printf '%s\n' 'No adjustment needed in image file' >&2
 		fi ;unset ARGS PNG32
 						
 		if [[ -e $2 ]]  #edits + mask file
-		then 	size=$(__print_imgsizef "$1") 
+		then 	size=$(print_imgsizef "$1") 
 			if ! __is_pngf "$2" || {
-				[[ $(__print_imgsizef "$2") != "$size" ]] &&
+				[[ $(print_imgsizef "$2") != "$size" ]] &&
 				{ 	((OPTV)) || printf '%s\n' 'Mask size differs' >&2 ;}
 			} || __is_opaquef "$2" || [[ -n ${OPT_AT+true} ]]
 			then 	mask="${FILEIN%.*}_mask.png" PNG32="png32:" ARGS=""
 				__set_alphaf "$2"
-				__img_convf "$2" -scale "$size" $ARGS "${PNG32}${mask}" &&
+				img_convf "$2" -scale "$size" $ARGS "${PNG32}${mask}" &&
 					set  -- "$1" "$mask" "${@:3}"  #adjusted
 			else 	((OPTV)) ||
 				printf '%s\n' 'No adjustment needed in mask file' >&2
@@ -1415,24 +1420,24 @@ function __is_pngf
 	fi ;return 0
 }
 #convert image
-#usage: __img_convf [in_file] [opt..] [out_file]
-function __img_convf
+#usage: img_convf [in_file] [opt..] [out_file]
+function img_convf
 {
 	typeset REPLY
-	((OPTV)) || {
-		[[ $ARGS = *-transparent* ]] &&
+	if ((!OPTV))
+	then 	[[ $ARGS = *-transparent* ]] &&
 		printf "${BWhite}%-12s -- %s${NC}\\n" "Alpha colour" "${OPT_AT:-black}" "Fuzz" "${OPT_AT_PC:-2}%" >&2
 		__sysmsgf 'Edit with ImageMagick?' '[Y/n] ' ''
 		REPLY=$(__read_charf) ;case "$REPLY" in [AaNnQq]|$'\e') 	return 2;; esac
-	}
+	fi
 
 	if magick convert "$1" -background none -gravity center -extent 1:1 "${@:2}"
-	then
-		((OPTV)) || {
-			set -- "${@##png32:}" ;__openf "${@:$#}"
+	then 	if ((!OPTV))
+		then 	set -- "${@##png32:}" ;__openf "${@:$#}"
 			__sysmsgf 'Confirm edit?' '[Y/n] ' ''
 			REPLY=$(__read_charf) ;case "$REPLY" in [AaNnQq]|$'\e') 	return 2;; esac
-		}
+		fi
+	else 	false
 	fi
 }
 #check for image alpha channel
@@ -1456,10 +1461,10 @@ function __is_squaref
 	if (( $(magick identify -format '%[fx:(h != w)]' "$1") ))
 	then 	((OPTV)) || printf '%s\n' 'Image is not square' >&2
 		return 2
-	fi ;return 0
+	fi
 }
 #print image size
-function __print_imgsizef
+function print_imgsizef
 {
 	magick identify -format "%wx%h\n" "$@"
 }
@@ -1517,7 +1522,7 @@ function editf
 # awesome-chatgpt-prompts / custom prompts
 function awesomef
 {
-	typeset act_keys act a l n
+	typeset act_keys act a l n  ;OPTAWE=1
 	set -- "${INSTRUCTION##/}"
 	set -- "${1// /-}"
 
@@ -1544,7 +1549,42 @@ function awesomef
 	fi
 
 	INSTRUCTION="$(sed -n -e 's/^[^,]*,//; s/""/"/g; s/^"//; s/"$//' -e "$((act+1))p" "$FILEAWE")"
+	if [[ $ZSH_VERSION ]]  #edit chosen awesome prompt
+	then 	vared -c -e -h $arg INSTRUCTION
+	else 	kshfix_truncf "$INSTRUCTION"
+		read -r ${BASH_VERSION:+-e} ${BASH_VERSION:+-i "$INSTRUCTION"} ${KSH_VERSION:+-v} INSTRUCTION
+	fi
 	[[ -n $INSTRUCTION ]] || { 	__warmsgf 'Warning:' 'awesome-chatgpt-prompts fail' ;false ;}
+}
+
+# Ksh workaround for input truncation
+# ksh truncates input at 80 chars (LOOKAHEAD)
+function kshfix_truncf
+{
+	[[ -n $KSH_VERSION ]] || return 1
+	typeset input
+	input="$*"
+
+	if [[ -n ${input:80} ]]
+	then 	read -r -s <<<"$input"
+		__warmsgf 'Ksh:' 'Press up arrow for full prompt.'
+	else 	false
+	fi
+}
+
+# Ksh check for multibyte input
+# ksh mangles multibyte input on `read -v`
+function kshfix_mbf
+{
+	[[ -n $KSH_VERSION ]] || return 1
+	typeset input
+	input="$*"
+
+	if (( ${#input} != $(LC_CTYPE=C; c="$*"; printf ${#c}) ))
+	then 	read -r -s <<<"$input"
+		__warmsgf 'Ksh:' 'Move cursor and press up arrow to unmangle prompt.'
+	else 	false
+	fi
 }
 
 
@@ -1585,8 +1625,6 @@ do
 			$name=*)
 				OPTARG="${OPTARG##$name=}"
 				;;
-			#$name[![:punct:]]*) 	OPTARG="${OPTARG##$name}"
-			#	;;
 			[0-9]*)
 				OPTARG="$OPTMM-$OPTARG" opt=M 
 				;;
@@ -1789,7 +1827,7 @@ else               #text/chat completions
 		#chatbot must sound like a human, shouldn't be lobotomised
 		#playGround: presencePenalty:0.6 temp:0.9
 		OPTA="${OPTA:-0.4}" OPTT="${OPTT:-0.6}"
-		STOPS+=("${Q_TYPE%%$SPC2}" "${A_TYPE%%$SPC2}")
+		((EPN==6)) || STOPS+=("${Q_TYPE%%$SPC2}" "${A_TYPE%%$SPC2}")
 	else 	((EPN==6)) || __sysmsgf 'Text Completions'
 		unset Q_TYPE A_TYPE
 	fi
@@ -1822,6 +1860,7 @@ else               #text/chat completions
 	WSKIP=1 ;unset REPLY N_LOOP SKIP EDIT input arg
 	while :
 	do 	((REGEN)) && { 	set -- "${PROMPT_LAST[@]:-$@}" ;unset REGEN ;}
+		((OPTAWE)) || {  #skip if awesome option is set on 1st run
 
 		#text editor prompter
 		if ((OPTX))
@@ -1860,9 +1899,14 @@ else               #text/chat completions
 					fi ;printf "${BPurple}%s${NC}\\n${REPLY:+---\\n}" "${REPLY:-"(EMPTY)"}" >&2
 				else
 					while if [[ -n $ZSH_VERSION ]]
-						then 	((EDIT)) || unset REPLY ;((OPTK)) || arg='-p%B%F{14}' #cyan=14
+						then 	((OPTK)) || arg='-p%B%F{14}' #cyan=14
+							((EDIT)) || unset REPLY
 							vared -c -e -h $arg REPLY
-						else 	read -r ${BASH_VERSION:+-e} \
+						else 	if ((EDIT))
+							then 	kshfix_mbf "$REPLY" ||
+								kshfix_truncf "$REPLY"
+							fi
+							read -r ${BASH_VERSION:+-e} \
 							${EDIT:+${BASH_VERSION:+-i "$REPLY"} ${KSH_VERSION:+-v}} REPLY
 						fi
 					do 	case "$REPLY" in
@@ -1919,8 +1963,10 @@ else               #text/chat completions
 		then 	__warmsgf "Err:" "PROMPT is empty!"
 			__read_charf -t 1 ;set -- ; continue
 		fi  ;set -- "${*##$SPC1}" #!#
+		
+		}  #end awesome option skips
 
-		if ((OPTC+OPTRESUME))
+		if ((OPTC+OPTRESUME)) && [[ -n $* ]]
 		then 	((RETRY==1)) ||
 			if [[ -n $KSH_VERSION ]]
 			then 	read -r -s <<<"${*//$'\n'/\\n}"
@@ -2005,7 +2051,7 @@ ${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q
 			else 	ans="${START}${ans}"
 			fi
 			((OPTB>1)) && tkn[1]=$(__tiktokenf "$(unescapef "$ans" "4")") #tkn sum will compensate later
-			push_tohistf "$(escapef "${REC_OUT:-$*}")" "$((tkn[0]-OLD_TOTAL))" "${tkn[2]}"
+			SKIPF=$OPTAWE push_tohistf "$(escapef "${REC_OUT:-$*}")" "$((tkn[0]-OLD_TOTAL))" "${tkn[2]}"
 			push_tohistf "$ans" "${tkn[1]}" "${tkn[2]}"
 			((OLD_TOTAL=tkn[0]+tkn[1]))
 			SET_TYPE="$user_type"
@@ -2014,7 +2060,7 @@ ${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q
 		((OPTLOG)) && usr_logf "$(unescapef "$ESC\\n${ans##$SPC1}")"
 
 		((++N_LOOP)) ;set --
-		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP RETRY ESC OK QQ Q user_type optv_save role tkn arg ans glob s n
+		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP SKIPF EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP OPTAWE RETRY ESC OK QQ Q user_type optv_save role tkn arg ans glob s n
 		((OPTC+OPTRESUME)) || break
 	done ;unset OLD_TOTAL SLEEP N_LOOP SPC1 SPC2 TYPE_GLOB
 fi
