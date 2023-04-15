@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.11  april/2023  by mountaineerbr  GPL+3
+# v0.11.1  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -942,7 +942,9 @@ function check_cmdf
 			fix_dotf OPTT  ;__cmdmsgf 'Temperature' "$OPTT"
 			;;
 		-v|ver|verbose)
-			((OPTV)) && unset OPTV || OPTV=1
+			((OPTV)) && ((++OPTV)) || unset OPTV
+			((OPTV_AUTO)) && ((++OPTV_AUTO))
+			((OPTV_AUTO>2)) && unset OPTV OPTV_AUTO
 			;;
 		-V|blk|block)
 			((OPTVV)) && unset OPTVV || OPTVV=1
@@ -1898,9 +1900,9 @@ else               #text/chat completions
 					else 	unset OPTW
 					fi ;printf "${BPurple}%s${NC}\\n${REPLY:+---\\n}" "${REPLY:-"(EMPTY)"}" >&2
 				else
-					while if [[ -n $ZSH_VERSION ]]
+					while ((EDIT)) || unset REPLY
+						if [[ -n $ZSH_VERSION ]]
 						then 	((OPTK)) || arg='-p%B%F{14}' #cyan=14
-							((EDIT)) || unset REPLY
 							vared -c -e -h $arg REPLY
 						else 	if ((EDIT))
 							then 	kshfix_mbf "$REPLY" ||
