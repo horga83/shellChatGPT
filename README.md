@@ -54,7 +54,7 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 ## Environment
 
 - Set `$OPENAI_API_KEY` with your OpenAI API key.
-- Set `$CHATGPTRC` with path to the configuration file. Defaults = `~/.chatgptsh.conf`.
+- Optionally, set `$CHATGPTRC` with path to the configuration file. Defaults = `~/.chatgptsh.conf`.
 
 
 ## Examples
@@ -117,12 +117,13 @@ Generate image variation:
 
     chatgpt.sh -i path/to/image.png path/to/mask.png "A pink flamingo."
 
-Outpaint - edit image, make a mask from the black colour:
+
+#### Outpaint - make a mask from the black colour:
 
 ![Showing off Image Edits - Outpaint](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/img_edits.gif)
 
 
-Inpaint - add a bat in the night sky:
+#### Inpaint - add a bat in the night sky:
 
 ![Showing off Image Edits - Inpaint](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/img_edits2.gif)
 
@@ -166,11 +167,10 @@ Chat in Portuguese with voice in and voice out (pipe output to voice synthesiser
 
 ### Code Completions (Codex)
 
-Codex models are discontinued. Use davinci models or gpt-3.5.
+Codex models are discontinued. Use davinci models or gpt-3.5+.
 
-Start with a commented out
-code or instruction for the model, or ask it in comments
-to optimise the following code, for example.
+Start with a commented out code or instruction for the model,
+or ask it in comments to optimise the following code, for example.
 
 
 ## Prompts
@@ -196,12 +196,17 @@ interpreter is not available in your system, run the script
 such as `bash ./chatgpt.sh` (consider adding an alias in your rc file).
 
 There should be equivalency of features under Bash, Ksh and Zsh.
-The reccomended interpreter is Bash, followed by Ksh and then Zsh.
 
-However,
+The _reccomended interpreter_ is _Bash_, followed by Ksh and then Zsh.
+Although it should be noted that I test the script under Ksh and Zsh,
+and it is almost never tested under Bash, but so far, Bash seems to be
+a little more polised than the other shells AFAIK,
+specially with interactive features.
+
 Zsh cannot read a history file unless started in interactive mode,
 so only commands of the running session are available for retrieval in
-new prompts (with an up-arrow key stroke).
+new prompts (with the up-arrow key).
+
 
 <!--
 ## Arch Linux Users
