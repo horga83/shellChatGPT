@@ -1,5 +1,5 @@
 % CHATGPT.SH(1) v0.11.3 | General Commands Manual
-% Jamil Soni N
+% mountaineerbr
 % April 2023
 
 
