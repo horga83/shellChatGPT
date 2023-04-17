@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.11.2  april/2023  by mountaineerbr  GPL+3
+# v0.11.3  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -788,7 +788,7 @@ function set_histf
 			if ((EPN==6))  #turbo models
 			then 	user_type="$SET_TYPE" SET_TYPE= ;set_typef "$string"
 
-				case "${SET_TYPE:-${string:-%#}}" in
+				case "${SET_TYPE:-${string}}" in
 					:*) 	role=system
 						;;
 					"${A_TYPE:-%#}"*|"${START:-%#}"*)
