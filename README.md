@@ -33,8 +33,7 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 
 - Free [OpenAI GPTChat key](https://platform.openai.com/account/api-keys)
 - [Ksh93u+](https://github.com/ksh93/ksh), Bash or Zsh
-- cURL
-- JQ (optional)
+- cURL, and JQ
 - Imagemagick (optional)
 - Base64 (optional)
 - Sox/Arecord/FFmpeg (optional)

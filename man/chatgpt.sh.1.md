@@ -404,9 +404,9 @@ Garbage in, garbage out. An idiot savant.
 
 A free OpenAI **API key**.
 
-`Bash`, `Ksh93u+`, or `Zsh`. `cURL`.
+`Bash`, `Ksh93u+`, or `Zsh`. `cURL`, and `JQ`.
 
-`JQ`, `ImageMagick`, and `Sox`/`Alsa-tools`/`FFmpeg` are optionally required.
+`ImageMagick`, and `Sox`/`Alsa-tools`/`FFmpeg` are optionally required.
 
 
 ### LONG OPTIONS
