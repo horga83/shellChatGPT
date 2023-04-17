@@ -84,7 +84,7 @@ Text/chat completion, use visual editor instead of shell `read` or `vared` (reus
 
     chatgpt.sh -cx "Alice was visiting Bob when John arrived  and"
 
-### Awesome
+### Awesome Prompts
 
 Set a prompt from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts):
 
