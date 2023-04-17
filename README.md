@@ -91,9 +91,8 @@ Set a prompt from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt
     chatgpt.sh -cc -S /linux_terminal
 
 
-_TIP:_ When using Ksh, press the up arrow key once to edit the _full prompt_.
-
-_OBS:_ See note on [shell interpreters](#shell-interpreters).
+_TIP:_ When using Ksh, press the up arrow key once to edit the _full prompt_
+(see note on [shell interpreters](#shell-interpreters)).
 
 
 ### Text Edits
