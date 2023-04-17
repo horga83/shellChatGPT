@@ -84,6 +84,17 @@ Text/chat completion, use visual editor instead of shell `read` or `vared` (reus
 
     chatgpt.sh -cx "Alice was visiting Bob when John arrived  and"
 
+### Awesome
+
+Set a prompt from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts):
+
+    chatgpt.sh -cc -S /linux_terminal
+
+
+_TIP:_ When using Ksh, press the up arrow key once to edit the _full prompt_.
+
+_OBS:_ See note on [shell interpreters](#shell-interpreters).
+
 
 ### Text Edits
 
@@ -203,6 +214,12 @@ and it is almost never tested under Bash, but so far, Bash seems to be
 a little more polised than the other shells AFAIK,
 specially with interactive features.
 
+Ksh truncates input at 80 chars when re-editing a prompt. A workaround
+with this script is to press the up-arrow key once to edit the full prompt.
+
+Ksh will mangle multibyte characters when re-editing input. A workaround
+is to move the cursor and press the up-arrow key once to unmangle the input text.
+
 Zsh cannot read a history file unless started in interactive mode,
 so only commands of the running session are available for retrieval in
 new prompts (with the up-arrow key).
@@ -246,7 +263,7 @@ delete or comment them out with `#` to update context on the run.
 - In chat mode, end a line with a backslash to type in a new line.
 - Add operator forward slash `/` to the end of prompt (as last character) to trigger completions *preview mode*.
 - One can regenerate a response typing in a new prompt a single slash `/`.
-- Set or searhca prompt from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts) with `-S /prompt_name`
+- Set or search prompts from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts) with `-S /prompt_name`
 - Hopefully, default colours are colour-blind friendly.
 
 
