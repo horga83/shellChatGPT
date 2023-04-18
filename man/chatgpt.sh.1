@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.11.4" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "April 2023" "v0.11.5" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -279,11 +279,39 @@ T}@T{
 Set top_p.
 T}
 T{
+\f[V]-r\f[R]
+T}@T{
+\f[V]!restart\f[R]
+T}@T{
+Set restart sequence.
+T}
+T{
+\f[V]-R\f[R]
+T}@T{
+\f[V]!start\f[R]
+T}@T{
+Set start sequence.
+T}
+T{
+\f[V]-s\f[R]
+T}@T{
+\f[V]!stop\f[R]
+T}@T{
+Set stop sequences.
+T}
+T{
 \f[V]-t\f[R]
 T}@T{
 \f[V]!temp\f[R]
 T}@T{
 Set temperature.
+T}
+T{
+\f[V]-u\f[R]
+T}@T{
+\f[V]!clip\f[R]
+T}@T{
+Copy responses to clipboard.
 T}
 T{
 \f[V]-v\f[R]
@@ -563,12 +591,13 @@ Ex: \[lq]\f[V]--chat\f[R]\[rq],
 .RS
 .PP
 \f[V]--alpha\f[R], \f[V]--api-key\f[R], \f[V]--best\f[R],
-\f[V]--best-of\f[R], \f[V]--chat\f[R], \f[V]--cont\f[R],
-\f[V]--continue\f[R], \f[V]--edit\f[R], \f[V]--editor\f[R],
-\f[V]--frequency\f[R], \f[V]--frequency-penalty\f[R], \f[V]--help\f[R],
-\f[V]--hist\f[R], \f[V]--image\f[R], \f[V]--instruction\f[R],
-\f[V]--last\f[R], \f[V]--list-model\f[R], \f[V]--list-models\f[R],
-\f[V]--log\f[R], \f[V]--log-prob\f[R], \f[V]--man\f[R], \f[V]--max\f[R],
+\f[V]--best-of\f[R], \f[V]--chat\f[R], \f[V]--clipboard\f[R],
+\f[V]--clip\f[R], \f[V]--cont\f[R], \f[V]--continue\f[R],
+\f[V]--edit\f[R], \f[V]--editor\f[R], \f[V]--frequency\f[R],
+\f[V]--frequency-penalty\f[R], \f[V]--help\f[R], \f[V]--hist\f[R],
+\f[V]--image\f[R], \f[V]--instruction\f[R], \f[V]--last\f[R],
+\f[V]--list-model\f[R], \f[V]--list-models\f[R], \f[V]--log\f[R],
+\f[V]--log-prob\f[R], \f[V]--man\f[R], \f[V]--max\f[R],
 \f[V]--max-tokens\f[R], \f[V]--mod\f[R], \f[V]--model\f[R],
 \f[V]--no-colour\f[R], \f[V]--no-config\f[R], \f[V]--presence\f[R],
 \f[V]--presence-penalty\f[R], \f[V]--prob\f[R], \f[V]--raw\f[R],
@@ -626,7 +655,7 @@ Continue from last session (compls/chat).
 Set twice to start new session in chat mode (without -c, -cc).
 .RE
 .TP
-\f[B]-e\f[R] [\f[I]INSTRUCT\f[R]] [\f[I]INPUT\f[R]]
+\f[B]-e\f[R] [\f[I]INSTRUCTION\f[R]] [\f[I]INPUT\f[R]]
 Set Edit mode.
 Model def=\f[I]text-davinci-edit-001\f[R].
 .TP
@@ -781,6 +810,9 @@ Set/search prompt from awesome-chatgpt-prompts.
 Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper 0.0
 - 1.0).
 Def=\f[I]0\f[R].
+.TP
+\f[B]-u\f[R]
+Copy response to clipboard.
 .TP
 \f[B]-v\f[R]
 Less verbose.

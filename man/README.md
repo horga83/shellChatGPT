@@ -2,7 +2,7 @@
 author:
 - mountaineerbr
 date: April 2023
-title: CHATGPT.SH(1) v0.11.4 \| General Commands Manual
+title: CHATGPT.SH(1) v0.11.5 \| General Commands Manual
 ---
 
 ### NAME
@@ -154,22 +154,26 @@ sets it as a **SYSTEM** message.
 While in chat mode, the following commands can be typed in the new
 prompt to set a new parameter:
 
-|        |          |                                  |
-|-------:|:---------|:---------------------------------|
-| `!NUM` | `!max`   | Set response / model max tokens. |
-|   `-a` | `!pre`   | Set presence pensalty.           |
-|   `-A` | `!freq`  | Set frequency penalty.           |
-|   `-c` | `!new`   | Start new session.               |
-|   `-H` | `!hist`  | Edit history in editor.          |
-|   `-L` | `!log`   | Save to log file.                |
-|   `-m` | `!mod`   | Set model (by index or name).    |
-|   `-p` | `!top`   | Set top_p.                       |
-|   `-t` | `!temp`  | Set temperature.                 |
-|   `-v` | `!ver`   | Set/unset verbose.               |
-|   `-x` | `!ed`    | Set/unset text editor interface. |
-|   `-w` | `!rec`   | Start audio record chat.         |
-|   `!r` | `!regen` | Renegerate last response.        |
-|   `!q` | `!quit`  | Exit.                            |
+|        |            |                                  |
+|-------:|:-----------|:---------------------------------|
+| `!NUM` | `!max`     | Set response / model max tokens. |
+|   `-a` | `!pre`     | Set presence pensalty.           |
+|   `-A` | `!freq`    | Set frequency penalty.           |
+|   `-c` | `!new`     | Start new session.               |
+|   `-H` | `!hist`    | Edit history in editor.          |
+|   `-L` | `!log`     | Save to log file.                |
+|   `-m` | `!mod`     | Set model (by index or name).    |
+|   `-p` | `!top`     | Set top_p.                       |
+|   `-r` | `!restart` | Set restart sequence.            |
+|   `-R` | `!start`   | Set start sequence.              |
+|   `-s` | `!stop`    | Set stop sequences.              |
+|   `-t` | `!temp`    | Set temperature.                 |
+|   `-u` | `!clip`    | Copy responses to clipboard.     |
+|   `-v` | `!ver`     | Set/unset verbose.               |
+|   `-x` | `!ed`      | Set/unset text editor interface. |
+|   `-w` | `!rec`     | Start audio record chat.         |
+|   `!r` | `!regen`   | Renegerate last response.        |
+|   `!q` | `!quit`    | Exit.                            |
 
 Examples: “`!temp` *0.7*”, “`!mod`*1*”, and “`-p` *0.2*”. Note that the
 command operator may be either “`!`”, or “`/`”.
@@ -390,14 +394,14 @@ appropriate.
 Ex: “`--chat`”, “`--temp`=*0.9*”, “`--max`=*1024,128*”, and
 “`--presence-penalty` *0.6*”.
 
-> `--alpha`, `--api-key`, `--best`, `--best-of`, `--chat`, `--cont`,
-> `--continue`, `--edit`, `--editor`, `--frequency`,
-> `--frequency-penalty`, `--help`, `--hist`, `--image`, `--instruction`,
-> `--last`, `--list-model`, `--list-models`, `--log`, `--log-prob`,
-> `--man`, `--max`, `--max-tokens`, `--mod`, `--model`, `--no-colour`,
-> `--no-config`, `--presence`, `--presence-penalty`, `--prob`, `--raw`,
-> `--restart-seq`, `--restart-sequence`, `--results`, `--resume`,
-> `--start-seq`, `--start-sequence`, `--stop`, `--temp`,
+> `--alpha`, `--api-key`, `--best`, `--best-of`, `--chat`,
+> `--clipboard`, `--clip`, `--cont`, `--continue`, `--edit`, `--editor`,
+> `--frequency`, `--frequency-penalty`, `--help`, `--hist`, `--image`,
+> `--instruction`, `--last`, `--list-model`, `--list-models`, `--log`,
+> `--log-prob`, `--man`, `--max`, `--max-tokens`, `--mod`, `--model`,
+> `--no-colour`, `--no-config`, `--presence`, `--presence-penalty`,
+> `--prob`, `--raw`, `--restart-seq`, `--restart-sequence`, `--results`,
+> `--resume`, `--start-seq`, `--start-sequence`, `--stop`, `--temp`,
 > `--temperature`, `--top`, `--top-p`, `--transcribe`, `--translate`,
 > and `--verbose`.
 
@@ -438,7 +442,7 @@ Continue from last session (compls/chat).
 
 Set twice to start new session in chat mode (without -c, -cc).
 
-**-e** \[*INSTRUCT*\] \[*INPUT*\]  
+**-e** \[*INSTRUCTION*\] \[*INPUT*\]  
 Set Edit mode. Model def=*text-davinci-edit-001*.
 
 **-f**  
@@ -522,6 +526,9 @@ Set/search prompt from awesome-chatgpt-prompts.
 **-t** \[*VAL*\]  
 Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper
 0.0 - 1.0). Def=*0*.
+
+**-u**  
+Copy response to clipboard.
 
 **-v**  
 Less verbose.

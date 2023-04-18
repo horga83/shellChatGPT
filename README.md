@@ -203,7 +203,7 @@ to even know that it should answer the questions.
 The script can be run with either [Ksh93u+](https://github.com/ksh93/ksh) (~~_not_ Ksh2020~~),
 Zsh and Bash. If the defaults
 interpreter is not available in your system, run the script
-such as `bash ./chatgpt.sh` (consider adding an alias in your rc file).
+such as `bash ./chatgpt.sh` (consider adding an alias in your shell rc file).
 
 There should be equivalency of features under Bash, Ksh and Zsh.
 
@@ -263,6 +263,7 @@ delete or comment them out with `#` to update context on the run.
 - Add operator forward slash `/` to the end of prompt (as last character) to trigger completions *preview mode*.
 - One can regenerate a response typing in a new prompt a single slash `/`.
 - Set or search prompts from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts) with `-S /prompt_name`
+- Set clipboard with the latest response with `option -u`.
 - Hopefully, default colours are colour-blind friendly.
 
 

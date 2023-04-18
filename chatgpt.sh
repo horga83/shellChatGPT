@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.11.4  april/2023  by mountaineerbr  GPL+3
+# v0.11.5  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -223,7 +223,11 @@ TEXT / CHAT COMPLETIONS
 	       -L      !log       Save to log file.
 	       -m      !mod       Set model (by index or name).
 	       -p      !top       Set top_p.
+	       -r      !restart   Set restart sequence.
+	       -R      !start     Set start sequence.
+	       -s      !stop      Set stop sequences.
 	       -t      !temp      Set temperature.
+	       -u      !clip      Copy responses to clipboard.
 	       -v      !ver       Set/unset verbose.
 	       -x      !ed        Set/unset text editor interface.
 	       -w      !rec       Start audio record chat.
@@ -437,12 +441,13 @@ LONG OPTIONS
 	appropriate. Ex: \`--chat', \`--temp=0.9', \`--max=1024,128',
 	and \`--presence-penalty 0.6'.
 
-	--alpha, --api-key, --best, --best-of, --chat, --cont, --continue,
-	--edit, --editor, --frequency, --frequency-penalty, --help, --hist,
-	--image, --instruction, --last, --list-model, --list-models, --log,
-	--log-prob, --man, --max, --max-tokens, --mod, --model, --no-colour,
-	--no-config, --presence, --presence-penalty, --prob, --raw,
-	--restart-seq, --restart-sequence, --results, --resume, --start-seq,
+	--alpha, --api-key, --best, --best-of, --chat, --clipboard,
+	--clip, --cont, --continue, --edit, --editor, --frequency,
+	--frequency-penalty, --help, --hist, --image, --instruction,
+	--last, --list-model, --list-models, --log, --log-prob, --man,
+	--max, --max-tokens, --mod, --model, --no-colour, --no-config,
+	--presence, --presence-penalty, --prob, --raw, --restart-seq,
+	--restart-sequence, --results, --resume, --start-seq,
 	--start-sequence, --stop, --temp, --temperature, --top, --top-p,
 	--transcribe, --translate, and --verbose.
 
@@ -505,6 +510,7 @@ OPTIONS
 		 Set/search prompt from awesome-chatgpt-prompts.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
+	-u 	 Copy response to clipboard.
 	-v 	 Less verbose. May set multiple times.
 	-V 	 Pretty-print request. Set twice to dump raw request.
 	-x 	 Edit prompt in text editor.
@@ -901,12 +907,12 @@ function check_cmdf
 			set_maxtknf $OPTMM
 			__cmdmsgf 'Response max tkns' "$OPTMAX"
 			;;
-		-a*|pre*|presence*)
+		-a*|presence*|pre*)
 			set -- "${*//[!0-9.]}"
 			OPTA="${*:-$OPTA}"
 			fix_dotf OPTA  ;__cmdmsgf 'Presence penalty' "$OPTA"
 			;;
-		-A*|freq*|frequency*)
+		-A*|frequency*|freq*)
 			set -- "${*//[!0-9.]}"
 			OPTAA="${*:-$OPTAA}"
 			fix_dotf OPTAA ;__cmdmsgf 'Frequency penalty' "$OPTAA"
@@ -914,7 +920,7 @@ function check_cmdf
 		-c|br|break|session)
 			break_sessionf
 			;;
-		-[Hh]|hist|history)
+		-[Hh]|history|hist)
 			__edf "$FILECHAT"
 			;;
 		-L*|log*)
@@ -923,8 +929,8 @@ function check_cmdf
 			USRLOG="${*:-${USRLOG:-$HOME/chatgpt.log}}"
 			__cmdmsgf $'\nLog file' "\`\`$USRLOG''"
 			;;
-		-m*|mod*|model*)
-			set -- "${*##model}" ;set -- "${*##mod}" ;set -- "${*##-m}"
+		-m*|model*|mod*)
+			set -- "${*##@(-m|model|mod)}"
 			if [[ $* = *[a-zA-Z]* ]]
 			then 	MOD="${*//[$IFS]}"  #by name
 			else 	MOD="${MODELS[${*//[!0-9]}]}" #by index
@@ -936,30 +942,46 @@ function check_cmdf
 			OPTP="${*:-$OPTP}"
 			fix_dotf OPTP  ;__cmdmsgf 'Top P' "$OPTP"
 			;;
-		-t*|temp*|temperature*)
+		-r*|restart*)
+			set -- "${*##@(-r|restart)$SPC2}"
+			RESTART="$*"
+			;;
+		-R*|start*)
+			set -- "${*##@(-R|start)$SPC2}"
+			START="$*"
+			;;
+		-s*|stop*)
+			set -- "${*##@(-s|stop)$SPC2}"
+			STOPS=("${*}" "${STOPS[@]}")
+			;;
+		-t*|temperature*|temp*)
 			set -- "${*//[!0-9.]}"
 			OPTT="${*:-$OPTT}"
 			fix_dotf OPTT  ;__cmdmsgf 'Temperature' "$OPTT"
 			;;
-		-v|ver|verbose)
+		-u|--clipboard|--clip)
+			((OPTCLIP)) && unset OPTCLIP || OPTCLIP=1
+			set_clipcmdf
+			;;
+		-v|verbose|ver)
 			((OPTV)) && ((++OPTV)) || unset OPTV
 			((OPTV_AUTO)) && ((++OPTV_AUTO))
 			((OPTV_AUTO>2)) && unset OPTV OPTV_AUTO
 			;;
-		-V|blk|block)
+		-V|block|blk)
 			((OPTVV)) && unset OPTVV || OPTVV=1
 			;;
 		-VV|[/!]blk|[/!]block)  #debug
 			OPTVV=2
 			;;
-		-x|ed|editor)
+		-x|editor|ed|vim|vi)
 			((OPTX)) && unset OPTX || OPTX=1
 			;;
 		-[wW]*|audio*|rec*)
 			OPTW=1 ;[[ $* = -W* ]] && OPTW=2
 			set -- "${*##@(-[wW][wW]|-[wW]|audio|rec)$SPC2}"
 
-			var="$*"
+			var="${*##*([$IFS])}"
 			[[ $var = [a-z][a-z][$IFS]*[[:graph:]]* ]] \
 			&& set -- "${var:0:2}" "${var:3}" ;unset var
 
@@ -968,7 +990,7 @@ function check_cmdf
 		q|quit|exit|bye)
 			exit
 			;;
-		r|regen*|regenerate|''|[$IFS])  #regenerate last response
+		r|regenerate|regen|[$IFS]|'')  #regenerate last response
 			REGEN=1 SKIP=1 EDIT=1 ;sed -i -e '$d' -- "$FILECHAT"
 			sed -i -e '$d' -- "$FILECHAT"
 			;;
@@ -1122,7 +1144,9 @@ function usr_logf
 {
 	[[ -d $USRLOG ]] && USRLOG="$USRLOG/${FILETXT##*/}"
 	[[ "$USRLOG" = '~'* ]] && USRLOG="${HOME}${USRLOG##\~}"
-	set -- "$(date -R 2>/dev/null||date)" "${@//$'\n'/$'\n\n'}"
+	set -- "${@//$'\n'/$'\n\n'}"
+	set -- "${@//$'\n\n\n'*($'\n')/$'\n\n'}"
+	set -- "$(date -R 2>/dev/null||date)" "$@"
 	if [[ "$USRLOG" = - ]]
 	then 	printf '%s\n\n' "$@"
 	else 	printf '%s\n\n' "$@" > "$USRLOG"
@@ -1590,9 +1614,23 @@ function kshfix_mbf
 	fi
 }
 
+# Set the clipboard command
+function set_clipcmdf
+{
+	if command -v termux-clipboard-set
+	then 	CLIP_CMD='termux-clipboard-set'
+	elif command -v pbcopy
+	then 	CLIP_CMD='pbcopy'
+	elif command -v xsel
+	then 	CLIP_CMD='xsel -b'
+	elif command -v xclip
+	then 	CLIP_CMD='xclip -selection clipboard'
+	fi >/dev/null 2>&1
+}
+
 
 #parse opts
-optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:r:R:s:S:t:vVxwWz0123456789@:/,.+-:"
+optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:r:R:s:S:t:uvVxwWz0123456789@:/,.+-:"
 while getopts "$optstring" opt
 do
 	if [[ $opt = - ]]  #long options
@@ -1609,8 +1647,8 @@ do
 			r:restart-sequence         r:restart-seq \
 			R:start-sequence           R:start-seq \
 			s:stop      S:instruction  t:temperature \
-			t:temp      v:verbose      x:editor \
-			w:transcribe  W:translate  z:last
+			t:temp      u:clipboard  u:clip  v:verbose \
+			x:editor  w:transcribe  W:translate  z:last
 			#opt:cmd_name
 		do
 			name="${opt##*:}"  name="${name/[_-]/[_-]}"
@@ -1690,6 +1728,7 @@ do
 			else 	INSTRUCTION="$OPTARG"
 			fi;;
 		t) 	OPTT="$OPTARG";;
+		u) 	OPTCLIP=1;;
 		v) 	((++OPTV));;
 		V) 	((++OPTVV));;  #debug
 		x) 	OPTX=1;;
@@ -1720,6 +1759,7 @@ OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key requ
 ((OPTE+OPTI)) && unset OPTC
 ((OPTC)) || unset Q_TYPE A_TYPE
 
+((OPTCLIP)) && set_clipcmdf
 if ((OPTI+OPTII))
 then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
 	if set_sizef "${OPTS:-$1}"
@@ -2031,7 +2071,13 @@ ${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q
 		elif ((RETRY)) ;then 	((OPTK)) || JQCOL2='def byellow: yellow;'
 		fi
 		#response prompt
-		prompt_printf ;[[ -t 1 ]] || OPTV=1 prompt_printf >&2
+		prompt_printf
+		if ((OPTCLIP)) || [[ ! -t 1 ]]
+		then 	out=$(JQCOL2='def byellow:"";def reset:""' OPTV=1 prompt_printf)
+			((OPTCLIP)) && ${CLIP_CMD:-false} <<<"$out" &
+			[[ ! -t 1 ]] && printf "%s\\n" "$out" >&2
+			unset out
+		fi
 		((OPTC+OPTRESUME)) && printf '\n' >&2
 		
 		((RETRY==1)) && { 	SKIP=1 EDIT=1 ;set -- ;continue ;}
@@ -2063,7 +2109,7 @@ ${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q
 		((OPTLOG)) && usr_logf "$(unescapef "$ESC\\n${ans##$SPC1}")"
 
 		((++N_LOOP)) ;set --
-		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP SKIPF EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP OPTAWE RETRY ESC OK QQ Q user_type optv_save role tkn arg ans glob s n
+		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP SKIPF EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP OPTAWE RETRY ESC OK QQ Q user_type optv_save role tkn arg ans glob out s n
 		((OPTC+OPTRESUME)) || break
 	done ;unset OLD_TOTAL SLEEP N_LOOP SPC1 SPC2 TYPE_GLOB
 fi

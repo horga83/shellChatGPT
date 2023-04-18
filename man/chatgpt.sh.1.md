@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.11.4 | General Commands Manual
+% CHATGPT.SH(1) v0.11.5 | General Commands Manual
 % mountaineerbr
 % April 2023
 
@@ -164,7 +164,11 @@ to set a new parameter:
       `-L`    `!log`      Save to log file.
       `-m`    `!mod`      Set model (by index or name).
       `-p`    `!top`      Set top_p.
+      `-r`    `!restart`  Set restart sequence.
+      `-R`    `!start`    Set start sequence.
+      `-s`    `!stop`     Set stop sequences.
       `-t`    `!temp`     Set temperature.
+      `-u`    `!clip`     Copy responses to clipboard.
       `-v`    `!ver`      Set/unset verbose.
       `-x`    `!ed`       Set/unset text editor interface.
       `-w`    `!rec`      Start audio record chat.
@@ -416,12 +420,13 @@ appropriate.
 
 Ex: "`--chat`", "`--temp`=_0.9_", "`--max`=_1024,128_", and "`--presence-penalty` _0.6_".
 
-> `--alpha`, `--api-key`, `--best`, `--best-of`, `--chat`, `--cont`, `--continue`,
-> `--edit`, `--editor`, `--frequency`, `--frequency-penalty`, `--help`, `--hist`,
-> `--image`, `--instruction`, `--last`, `--list-model`, `--list-models`, `--log`,
-> `--log-prob`, `--man`, `--max`, `--max-tokens`, `--mod`, `--model`, `--no-colour`,
-> `--no-config`, `--presence`, `--presence-penalty`, `--prob`, `--raw`,
-> `--restart-seq`, `--restart-sequence`, `--results`, `--resume`, `--start-seq`,
+> `--alpha`, `--api-key`, `--best`, `--best-of`, `--chat`, `--clipboard`,
+> `--clip`, `--cont`, `--continue`, `--edit`, `--editor`, `--frequency`,
+> `--frequency-penalty`, `--help`, `--hist`, `--image`, `--instruction`,
+> `--last`, `--list-model`, `--list-models`, `--log`, `--log-prob`, `--man`,
+> `--max`, `--max-tokens`, `--mod`, `--model`, `--no-colour`, `--no-config`,
+> `--presence`, `--presence-penalty`, `--prob`, `--raw`, `--restart-seq`,
+> `--restart-sequence`, `--results`, `--resume`, `--start-seq`,
 > `--start-sequence`, `--stop`, `--temp`, `--temperature`, `--top`, `--top-p`,
 > `--transcribe`, `--translate`, and `--verbose`.
 
@@ -482,7 +487,7 @@ Ex: "`--chat`", "`--temp`=_0.9_", "`--max`=_1024,128_", and "`--presence-penalty
       Set twice to start new session in chat mode (without -c, -cc).
 
 
-**-e** \[_INSTRUCT_] \[_INPUT_]
+**-e** \[_INSTRUCTION_] \[_INPUT_]
 
 : Set Edit mode. Model def=_text-davinci-edit-001_.
 
@@ -608,6 +613,11 @@ Ex: "`--chat`", "`--temp`=_0.9_", "`--max`=_1024,128_", and "`--presence-penalty
 **-t** \[_VAL_]
 
 : Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper 0.0 - 1.0). Def=_0_.
+
+
+**-u**
+
+: Copy response to clipboard.
 
 
 **-v**
