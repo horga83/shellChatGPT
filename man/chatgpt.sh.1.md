@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.11.5 | General Commands Manual
+% CHATGPT.SH(1) v0.11.6 | General Commands Manual
 % mountaineerbr
 % April 2023
 
@@ -406,9 +406,7 @@ Garbage in, garbage out. An idiot savant.
 
 ### REQUIREMENTS
 
-A free OpenAI **API key**.
-
-`Bash`, `Ksh93u+`, or `Zsh`. `cURL`, and `JQ`.
+A free OpenAI **API key**. `Bash`, `Ksh93u+`, or `Zsh`. `cURL`, and `JQ`.
 
 `ImageMagick`, and `Sox`/`Alsa-tools`/`FFmpeg` are optionally required.
 

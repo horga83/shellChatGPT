@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.11.5  april/2023  by mountaineerbr  GPL+3
+# v0.11.6  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -1065,6 +1065,8 @@ function edf
 
 #special json chars
 JSON_CHARS=(\" / b f n r t u)  #\\ uHEX
+#unescape / escape text to json format
+function unescapef { 	printf "${*//\%/%%}" ;}
 function escapef
 {
 	typeset var b c
@@ -1089,24 +1091,6 @@ function escapef
 
 	printf '%s\n' "$var"
 }
-
-function unescapef { 	printf "${*//\%/%%}" ;}
-#function unescapef
-#{ 	typeset var b c
-#	var="$*" b='@#';
-# 	for c in "${JSON_CHARS[@]}"
-#	do 	var="${var//"\\\\$c"/$b$c}"
-#	done;
-#	var="${var//"\\t"/$'\t'}"
-#	var="${var//"\\n"/$'\n'}"
-#	var="${var//\\[bfrv]}"
-# 	var="${var//"\\\""/\"}"
-# 	var="${var//"\\\\"/\\}";
-# 	for c in "${JSON_CHARS[@]}"
-#	do 	var="${var//"$b$c"/\\$c}"
-#	done;
-#	printf '%s\n' "$var"
-#}
 
 function break_sessionf
 {
@@ -1144,9 +1128,10 @@ function usr_logf
 {
 	[[ -d $USRLOG ]] && USRLOG="$USRLOG/${FILETXT##*/}"
 	[[ "$USRLOG" = '~'* ]] && USRLOG="${HOME}${USRLOG##\~}"
-	set -- "${@//$'\n'/$'\n\n'}"
-	set -- "${@//$'\n\n\n'*($'\n')/$'\n\n'}"
-	set -- "$(date -R 2>/dev/null||date)" "$@"
+	set -- "${*//$NL$NL/$NL}"
+	set -- "${*//$NL$NL/$NL}"
+	set -- "${*//$NL/$NL$NL}"
+	set -- "$(date -R 2>/dev/null||date)" "$*"
 	if [[ "$USRLOG" = - ]]
 	then 	printf '%s\n\n' "$@"
 	else 	printf '%s\n\n' "$@" > "$USRLOG"
@@ -1753,6 +1738,7 @@ White='\e[0;37m'   BWhite='\e[1;37m'   On_White='\e[47m'  \
 Alert=$BWhite$On_Red  NC='\e[m'  JQCOL='def red: "\u001b[31m"; def bgreen: "\u001b[1;32m";
 def purple: "\u001b[0;35m"; def bpurple: "\u001b[1;35m"; def bwhite: "\u001b[1;37m";
 def yellow: "\u001b[33m"; def byellow: "\u001b[1;33m"; def reset: "\u001b[0m";'
+NL=$'\n'
 
 OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
 ((OPTL+OPTZ)) && unset OPTX
@@ -2012,10 +1998,10 @@ else               #text/chat completions
 		if ((OPTC+OPTRESUME)) && [[ -n $* ]]
 		then 	((RETRY==1)) ||
 			if [[ -n $KSH_VERSION ]]
-			then 	read -r -s <<<"${*//$'\n'/\\n}"
+			then 	read -r -s <<<"${*//$NL/\\n}"
 			elif [[ -n $BASH_VERSION ]]
-			then 	history -s -- "${*//$'\n'/\\n}" ;history -a
-			else 	print -s -- "${*//$'\n'/\\n}"  #zsh
+			then 	history -s -- "${*//$NL/\\n}" ;history -a
+			else 	print -s -- "${*//$NL/\\n}"  #zsh
 			fi
 
 			if [[ $* = :* ]]

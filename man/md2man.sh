@@ -6,6 +6,8 @@ set -f
 
 pandoc --standalone --to man "${1}" -o "${1%%?(.1)?(.md)}".1
 
+pandoc --standalone --to html "${1}" -o "${1%%?(.1)?(.md)}".html
+
 pandoc --standalone --to gfm "${1}" -o README.md
 
 #https://eddieantonio.ca/blog/2015/12/18/authoring-manpages-in-markdown-with-pandoc/
