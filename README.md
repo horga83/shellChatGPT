@@ -200,7 +200,7 @@ to even know that it should answer the questions.
 
 ## Shell Interpreters
 
-The script can be run with either [Ksh93u+](https://github.com/ksh93/ksh) (~~_not_ Ksh2020~~),
+The script can be run with either [Ksh93u+](https://github.com/ksh93/ksh) (~~_avoid_ Ksh2020~~),
 Zsh and Bash. If the defaults
 interpreter is not available in your system, run the script
 such as `bash ./chatgpt.sh` (consider adding an alias in your shell rc file).
@@ -210,7 +210,7 @@ There should be equivalency of features under Bash, Ksh and Zsh.
 The _reccomended interpreter_ is _Bash_, followed by Ksh and then Zsh.
 Although it should be noted that I test the script under Ksh and Zsh,
 and it is almost never tested under Bash, but so far, Bash seems to be
-a little more polised than the other shells AFAIK,
+a little more polised than the other shells [AFAIK](https://github.com/mountaineerbr/shellChatGPT/discussions/13),
 specially with interactive features.
 
 Ksh truncates input at 80 chars when re-editing a prompt. A workaround
@@ -222,6 +222,9 @@ is to move the cursor and press the up-arrow key once to unmangle the input text
 Zsh cannot read a history file unless started in interactive mode,
 so only commands of the running session are available for retrieval in
 new prompts (with the up-arrow key).
+
+See [BUGS](https://github.com/mountaineerbr/shellChatGPT/tree/main/man#bugs)
+in the man page.
 
 
 <!--
@@ -263,7 +266,7 @@ delete or comment them out with `#` to update context on the run.
 - Add operator forward slash `/` to the end of prompt (as last character) to trigger completions *preview mode*.
 - One can regenerate a response typing in a new prompt a single slash `/`.
 - Set or search prompts from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts) with `-S /prompt_name`
-- Set clipboard with the latest response with `option -u`.
+- Set clipboard with the latest response with `option -o`.
 - Hopefully, default colours are colour-blind friendly.
 
 

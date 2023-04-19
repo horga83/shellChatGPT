@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.11.8  april/2023  by mountaineerbr  GPL+3
+# v0.11.9  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -228,7 +228,7 @@ TEXT / CHAT COMPLETIONS
 	       -R      !start        Set start sequence.
 	       -s      !stop         Set stop sequences.
 	       -t      !temp         Set temperature.
-	       -u      !clip         Copy responses to clipboard.
+	       -o      !clip         Copy responses to clipboard.
 	       -v      !ver          Set/unset verbose.
 	       -x      !ed           Set/unset text editor interface.
 	       -w      !rec          Start audio record chat.
@@ -511,7 +511,7 @@ OPTIONS
 		 Set/search prompt from awesome-chatgpt-prompts.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
-	-u 	 Copy response to clipboard.
+	-o 	 Copy response to clipboard.
 	-v 	 Less verbose. May set multiple times.
 	-V 	 Pretty-print request. Set twice to dump raw request.
 	-x 	 Edit prompt in text editor.
@@ -961,7 +961,7 @@ function check_cmdf
 			OPTT="${*:-$OPTT}"
 			fix_dotf OPTT  ;__cmdmsgf 'Temperature' "$OPTT"
 			;;
-		-u|clipboard|clip)
+		-[uo]|clipboard|clip)
 			((OPTCLIP)) && unset OPTCLIP || OPTCLIP=1
 			set_clipcmdf ;
 			__cmdmsgf 'Clipboard' $( ((OPTCLIP)) && echo ON || echo OFF)
@@ -1623,7 +1623,7 @@ function set_clipcmdf
 
 
 #parse opts
-optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:r:R:s:S:t:uvVxwWz0123456789@:/,.+-:"
+optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:r:R:s:S:t:ouvVxwWz0123456789@:/,.+-:"
 while getopts "$optstring" opt
 do
 	if [[ $opt = - ]]  #long options
@@ -1640,7 +1640,7 @@ do
 			r:restart-sequence         r:restart-seq \
 			R:start-sequence           R:start-seq \
 			s:stop      S:instruction  t:temperature \
-			t:temp      u:clipboard  u:clip  v:verbose \
+			t:temp      o:clipboard  o:clip  v:verbose \
 			x:editor  w:transcribe  W:translate  z:last
 			#opt:cmd_name
 		do
@@ -1711,6 +1711,7 @@ do
 		n) 	OPTN="$OPTARG" ;;
 		k) 	OPTK=1;;
 		K) 	OPENAI_KEY="$OPTARG";;
+		o|u) 	OPTCLIP=1;;
 		p) 	OPTP="$OPTARG";;
 		r) 	RESTART="$OPTARG";;
 		R) 	START="$OPTARG";;
@@ -1721,7 +1722,6 @@ do
 			else 	INSTRUCTION="$OPTARG"
 			fi;;
 		t) 	OPTT="$OPTARG";;
-		u) 	OPTCLIP=1;;
 		v) 	((++OPTV));;
 		V) 	((++OPTVV));;  #debug
 		x) 	OPTX=1;;
