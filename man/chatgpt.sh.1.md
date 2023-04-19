@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.11.9 | General Commands Manual
+% CHATGPT.SH(1) v0.11.10 | General Commands Manual
 % mountaineerbr
 % April 2023
 
@@ -25,10 +25,10 @@
 
 ### DESCRIPTION
 
-All positional arguments are read as a single **PROMPT**. If the
-chosen model requires an **INSTRUCTION** and **INPUT prompts**, the
-first positional argument is taken as INSTRUCTION and the following
-ones as INPUT or PROMPT.
+Positional arguments are read as a single **PROMPT**. If the
+chosen model requires an **INSTRUCTION** and **INPUT prompts** (such as
+edits models), the first positional argument is taken as INSTRUCTION and
+the following ones as INPUT or PROMPT.
 
 Set `option -c` to start the chat mode via the **text completions**
 and record the conversation. This option accepts various
@@ -49,8 +49,8 @@ by _INDEX_ with `option -ll`).
 Set _maximum response tokens_ with `option` "`-`NUM" or "`-M` NUM". This
 defaults to 256 tokens in chat and single-turn modes.
 
-_Maximum model tokens_ can be set with a second _NUM_ such as
-"`-`_NUM,NUM_" or "`-M` NUM-NUM", otherwise it is set automatically
+_Model capacity_ (max model tokens) can be set with a second _NUM_ such
+as "`-`_NUM,NUM_" or "`-M` NUM-NUM", otherwise it is set automatically
 to the capacity of known models, or to _2048_ tokens as fallback.
 
 If a plain text file path is set as first positional argument,
@@ -153,11 +153,12 @@ it works as the **INSTRUCTION**. In chat cmpls, setting a prompt with
 
 ##### 2.4 Chat Commands
 
-While in chat mode, the following commands can be typed in the new prompt
-to set a new parameter:
+While in chat mode, the following commands can be typed in the
+new prompt to set a new parameter. Note that the command operator
+may be either "`!`", or "`/`".
 
-  --------    ----------    ----------------------------------
-    `!NUM`    `!max`        Set response / model max tokens.
+  --------    ----------    --------------------------------------
+    `!NUM`    `!max`        Set response tokens / model capacity.
       `-a`    `!pre`        Set presence pensalty.
       `-A`    `!freq`       Set frequency penalty.
       `-c`    `!new`        Start new session.
@@ -175,10 +176,9 @@ to set a new parameter:
       `-w`    `!rec`        Start audio record chat.
       `!r`    `!regen`      Renegerate last response.
       `!q`    `!quit`       Exit.
-  --------    ----------    ----------------------------------
+  --------    ----------    --------------------------------------
 
-Examples: "`!temp` _0.7_", "`!mod`_1_", and "`-p` _0.2_".
-Note that the command operator may be either "`!`", or "`/`".
+| E.g.: "`!temp` _0.7_", "`!mod`_1_", and "`-p` _0.2_".
 
 To change the chat context at run time, the history file must be
 edited with "`!hist`". Delete history entries or comment them out with "`#`".
@@ -394,7 +394,11 @@ and truncates input longer than 80 chars. Workaround is to move
 cursor one char and press the up arrow key.
 
 `Ksh2020` lacks functionality compared to `Ksh83u+`, such as `read`
-with history.
+with history, so avoid it.
+
+Changing models in the same session may generate token count errors
+because the token count recorded in history file entries may differ
+significantly from model to model (encoding).
 
 With the exception of Davinci models, older models were designed
 to be run as one-shot.
@@ -414,20 +418,20 @@ A free OpenAI **API key**. `Bash`, `Ksh93u+`, or `Zsh`. `cURL`, and `JQ`.
 
 ### LONG OPTIONS
 	
-Long options can be set with an argument, or multiple times when
-appropriate.
-
-Ex: "`--chat`", "`--temp`=_0.9_", "`--max`=_1024,128_", and "`--presence-penalty` _0.6_".
+The following options can be set with an argument, or multiple
+times when appropriate.
 
 > `--alpha`, `--api-key`, `--best`, `--best-of`, `--chat`, `--clipboard`,
 > `--clip`, `--cont`, `--continue`, `--edit`, `--editor`, `--frequency`,
 > `--frequency-penalty`, `--help`, `--hist`, `--image`, `--instruction`,
-> `--last`, `--list-model`, `--list-models`, `--log`, `--log-prob`, `--man`,
-> `--max`, `--max-tokens`, `--mod`, `--model`, `--no-colour`, `--no-config`,
+> `--last`, `--list-model`, `--list-models`, `--log`, `--log-prob`, `--max`,
+> `--max-tokens`, `--mod`, `--model`, `--no-colour`, `--no-config`,
 > `--presence`, `--presence-penalty`, `--prob`, `--raw`, `--restart-seq`,
 > `--restart-sequence`, `--results`, `--resume`, `--start-seq`,
 > `--start-sequence`, `--stop`, `--temp`, `--temperature`, `--top`, `--top-p`,
 > `--transcribe`, `--translate`, and `--verbose`.
+
+| E.g.: "`--chat`", "`--temp`=_0.9_", "`--max`=_1024,128_", and "`--presence-penalty` _0.6_".
 
 
 ### OPTIONS
@@ -446,7 +450,7 @@ Ex: "`--chat`", "`--temp`=_0.9_", "`--max`=_1024,128_", and "`--presence-penalty
 
 :     Set maximum number of `response tokens`. Def=_256_.
 
-      Maximum `model tokens` can be set with a second number. Def=_auto-256_.
+      `Model capacity` can be set with a second number. Def=_auto-256_.
 
 
 **-a** \[_VAL_]

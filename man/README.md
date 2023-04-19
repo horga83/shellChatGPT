@@ -29,10 +29,10 @@ title: CHATGPT.SH(1) v0.11.9 \| General Commands Manual
 
 ### DESCRIPTION
 
-All positional arguments are read as a single **PROMPT**. If the chosen
-model requires an **INSTRUCTION** and **INPUT prompts**, the first
-positional argument is taken as INSTRUCTION and the following ones as
-INPUT or PROMPT.
+Positional arguments are read as a single **PROMPT**. If the chosen
+model requires an **INSTRUCTION** and **INPUT prompts** (such as edits
+models), the first positional argument is taken as INSTRUCTION and the
+following ones as INPUT or PROMPT.
 
 Set `option -c` to start the chat mode via the **text completions** and
 record the conversation. This option accepts various models, defaults to
@@ -153,7 +153,8 @@ sets it as a **SYSTEM** message.
 ##### 2.4 Chat Commands
 
 While in chat mode, the following commands can be typed in the new
-prompt to set a new parameter:
+prompt to set a new parameter. Note that the command operator may be
+either “`!`”, or “`/`”.
 
 |        |            |                                  |
 |-------:|:-----------|:---------------------------------|
@@ -176,8 +177,7 @@ prompt to set a new parameter:
 |   `!r` | `!regen`   | Renegerate last response.        |
 |   `!q` | `!quit`    | Exit.                            |
 
-Examples: “`!temp` *0.7*”, “`!mod`*1*”, and “`-p` *0.2*”. Note that the
-command operator may be either “`!`”, or “`/`”.
+E.g.: “`!temp` *0.7*”, “`!mod`*1*”, and “`-p` *0.2*”.
 
 To change the chat context at run time, the history file must be edited
 with “`!hist`”. Delete history entries or comment them out with “`#`”.
@@ -388,11 +388,8 @@ A free OpenAI **API key**. `Bash`, `Ksh93u+`, or `Zsh`. `cURL`, and
 
 ### LONG OPTIONS
 
-Long options can be set with an argument, or multiple times when
-appropriate.
-
-Ex: “`--chat`”, “`--temp`=*0.9*”, “`--max`=*1024,128*”, and
-“`--presence-penalty` *0.6*”.
+The following options can be set with an argument, or multiple times
+when appropriate.
 
 > `--alpha`, `--api-key`, `--best`, `--best-of`, `--chat`,
 > `--clipboard`, `--clip`, `--cont`, `--continue`, `--edit`, `--editor`,
@@ -404,6 +401,9 @@ Ex: “`--chat`”, “`--temp`=*0.9*”, “`--max`=*1024,128*”, and
 > `--resume`, `--start-seq`, `--start-sequence`, `--stop`, `--temp`,
 > `--temperature`, `--top`, `--top-p`, `--transcribe`, `--translate`,
 > and `--verbose`.
+
+E.g.: “`--chat`”, “`--temp`=*0.9*”, “`--max`=*1024,128*”, and
+“`--presence-penalty` *0.6*”.
 
 ### OPTIONS
 

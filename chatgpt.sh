@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.11.9  april/2023  by mountaineerbr  GPL+3
+# v0.11.10  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -2091,14 +2091,15 @@ ${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q
 			then 	A_TYPE="${SET_TYPE:-${START:-$A_TYPE}}"
 			elif ((OPTC))
 			then 	ans="${START:-$A_TYPE} ${ans##$SPC1}"
-			else 	ans="${START}${ans}"
+			else 	ans="${START:-$A_TYPE} ${ans}"
 			fi
 			((OPTB>1)) && tkn[1]=$(__tiktokenf "$(unescapef "$ans" "4")") #tkn sum will compensate later
 			SKIPF=$OPTAWE push_tohistf "$(escapef "${REC_OUT:-$*}")" "$((tkn[0]-OLD_TOTAL))" "${tkn[2]}"
 			push_tohistf "$ans" "${tkn[1]}" "${tkn[2]}"
 			((OLD_TOTAL=tkn[0]+tkn[1]))
 			SET_TYPE="$user_type"
-		else 	BAD_RESPONSE=1 SKIP=1 EDIT=1 ;set -- ;continue
+		elif ((OPTC+OPTRESUME))
+		then 	BAD_RESPONSE=1 SKIP=1 EDIT=1 ;set -- ;continue
 		fi
 		SLEEP="${tkn[1]}"
 		((OPTLOG)) && usr_logf "$(unescapef "$ESC\\n${ans##$SPC1}")"

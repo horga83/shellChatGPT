@@ -201,11 +201,11 @@ Wrapper</div>
    <strong>chatgpt.sh</strong> <code>-l</code>
 [<em>MODEL_NAME</em>]</div>
 <h3 id="description">DESCRIPTION</h3>
-<p>All positional arguments are read as a single
-<strong>PROMPT</strong>. If the chosen model requires an
-<strong>INSTRUCTION</strong> and <strong>INPUT prompts</strong>, the
-first positional argument is taken as INSTRUCTION and the following ones
-as INPUT or PROMPT.</p>
+<p>Positional arguments are read as a single <strong>PROMPT</strong>. If
+the chosen model requires an <strong>INSTRUCTION</strong> and
+<strong>INPUT prompts</strong> (such as edits models), the first
+positional argument is taken as INSTRUCTION and the following ones as
+INPUT or PROMPT.</p>
 <p>Set <code>option -c</code> to start the chat mode via the
 <strong>text completions</strong> and record the conversation. This
 option accepts various models, defaults to <em>text-davinci-003</em> if
@@ -311,7 +311,8 @@ prompt with “<code>:</code>” always sets it as a <strong>SYSTEM</strong>
 message.</p>
 <h5 id="chat-commands">2.4 Chat Commands</h5>
 <p>While in chat mode, the following commands can be typed in the new
-prompt to set a new parameter:</p>
+prompt to set a new parameter. Note that the command operator may be
+either “<code>!</code>”, or “<code>/</code>”.</p>
 <table>
 <tbody>
 <tr class="odd">
@@ -406,10 +407,8 @@ prompt to set a new parameter:</p>
 </tr>
 </tbody>
 </table>
-<p>Examples: “<code>!temp</code> <em>0.7</em>”,
-“<code>!mod</code><em>1</em>”, and “<code>-p</code> <em>0.2</em>”. Note
-that the command operator may be either “<code>!</code>”, or
-“<code>/</code>”.</p>
+<div class="line-block">E.g.: “<code>!temp</code> <em>0.7</em>”,
+“<code>!mod</code><em>1</em>”, and “<code>-p</code> <em>0.2</em>”.</div>
 <p>To change the chat context at run time, the history file must be
 edited with “<code>!hist</code>”. Delete history entries or comment them
 out with “<code>#</code>”.</p>
@@ -599,11 +598,8 @@ should answer questions.</p>
 <code>Sox</code>/<code>Alsa-tools</code>/<code>FFmpeg</code> are
 optionally required.</p>
 <h3 id="long-options">LONG OPTIONS</h3>
-<p>Long options can be set with an argument, or multiple times when
-appropriate.</p>
-<p>Ex: “<code>--chat</code>”, “<code>--temp</code>=<em>0.9</em>”,
-“<code>--max</code>=<em>1024,128</em>”, and
-“<code>--presence-penalty</code> <em>0.6</em>”.</p>
+<p>The following options can be set with an argument, or multiple times
+when appropriate.</p>
 <blockquote>
 <p><code>--alpha</code>, <code>--api-key</code>, <code>--best</code>,
 <code>--best-of</code>, <code>--chat</code>, <code>--clipboard</code>,
@@ -625,6 +621,10 @@ appropriate.</p>
 <code>--transcribe</code>, <code>--translate</code>, and
 <code>--verbose</code>.</p>
 </blockquote>
+<div class="line-block">E.g.: “<code>--chat</code>”,
+“<code>--temp</code>=<em>0.9</em>”,
+“<code>--max</code>=<em>1024,128</em>”, and
+“<code>--presence-penalty</code> <em>0.6</em>”.</div>
 <h3 id="options">OPTIONS</h3>
 <dl>
 <dt><strong>-@</strong> [[<em>VAL%</em>]<em>COLOUR</em>]</dt>

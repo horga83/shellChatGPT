@@ -14,11 +14,11 @@ pandoc --standalone --to gfm "${1}" -o README.md
 #https://jeromebelleman.gitlab.io/posts/publishing/manpages/
 
 
-  exit
-## Compared md with script help (word by word)
-pandoc --standalone --to plain "${1}" -o plain.txt
-chars="[\]<>_\'\"\`\“\”\’"
-a=$(chatgpt.sh -fh)  b=$(sed 's/\xc2\xa0//g' plain.txt)
-vimdiff <(printf '%s\n' ${a//[$chars]})  <(printf '%s\n' ${b//[$chars]})
-rm -- plain.txt
+##  exit
+### Compared md with script help (word by word)
+##pandoc --standalone --to plain "${1}" -o plain.txt
+##chars="[\]<>_\*\'\"\`\“\”\’"
+##a=$(chatgpt.sh -fh)  b=$(sed 's/\xc2\xa0//g' plain.txt)
+##vimdiff <(printf '%s\n' ${a//[$chars]})  <(printf '%s\n' ${b//[$chars]})
+##rm -- plain.txt
 

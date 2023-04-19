@@ -77,10 +77,10 @@
 \ \ \ \f[B]chatgpt.sh\f[R] \f[V]-l\f[R] [\f[I]MODEL_NAME\f[R]]
 .SS DESCRIPTION
 .PP
-All positional arguments are read as a single \f[B]PROMPT\f[R].
+Positional arguments are read as a single \f[B]PROMPT\f[R].
 If the chosen model requires an \f[B]INSTRUCTION\f[R] and \f[B]INPUT
-prompts\f[R], the first positional argument is taken as INSTRUCTION and
-the following ones as INPUT or PROMPT.
+prompts\f[R] (such as edits models), the first positional argument is
+taken as INSTRUCTION and the following ones as INPUT or PROMPT.
 .PP
 Set \f[V]option -c\f[R] to start the chat mode via the \f[B]text
 completions\f[R] and record the conversation.
@@ -219,7 +219,9 @@ it as a \f[B]SYSTEM\f[R] message.
 .SS 2.4 Chat Commands
 .PP
 While in chat mode, the following commands can be typed in the new
-prompt to set a new parameter:
+prompt to set a new parameter.
+Note that the command operator may be either \[lq]\f[V]!\f[R]\[rq], or
+\[lq]\f[V]/\f[R]\[rq].
 .PP
 .TS
 tab(@);
@@ -352,11 +354,9 @@ Exit.
 T}
 .TE
 .PP
-Examples: \[lq]\f[V]!temp\f[R] \f[I]0.7\f[R]\[rq],
+E.g.: \[lq]\f[V]!temp\f[R] \f[I]0.7\f[R]\[rq],
 \[lq]\f[V]!mod\f[R]\f[I]1\f[R]\[rq], and \[lq]\f[V]-p\f[R]
 \f[I]0.2\f[R]\[rq].
-Note that the command operator may be either \[lq]\f[V]!\f[R]\[rq], or
-\[lq]\f[V]/\f[R]\[rq].
 .PP
 To change the chat context at run time, the history file must be edited
 with \[lq]\f[V]!hist\f[R]\[rq].
@@ -582,13 +582,8 @@ A free OpenAI \f[B]API key\f[R].
 required.
 .SS LONG OPTIONS
 .PP
-Long options can be set with an argument, or multiple times when
-appropriate.
-.PP
-Ex: \[lq]\f[V]--chat\f[R]\[rq],
-\[lq]\f[V]--temp\f[R]=\f[I]0.9\f[R]\[rq],
-\[lq]\f[V]--max\f[R]=\f[I]1024,128\f[R]\[rq], and
-\[lq]\f[V]--presence-penalty\f[R] \f[I]0.6\f[R]\[rq].
+The following options can be set with an argument, or multiple times
+when appropriate.
 .RS
 .PP
 \f[V]--alpha\f[R], \f[V]--api-key\f[R], \f[V]--best\f[R],
@@ -608,6 +603,11 @@ Ex: \[lq]\f[V]--chat\f[R]\[rq],
 \f[V]--temperature\f[R], \f[V]--top\f[R], \f[V]--top-p\f[R],
 \f[V]--transcribe\f[R], \f[V]--translate\f[R], and \f[V]--verbose\f[R].
 .RE
+.PP
+E.g.: \[lq]\f[V]--chat\f[R]\[rq],
+\[lq]\f[V]--temp\f[R]=\f[I]0.9\f[R]\[rq],
+\[lq]\f[V]--max\f[R]=\f[I]1024,128\f[R]\[rq], and
+\[lq]\f[V]--presence-penalty\f[R] \f[I]0.6\f[R]\[rq].
 .SS OPTIONS
 .TP
 \f[B]-\[at]\f[R] [[\f[I]VAL%\f[R]]\f[I]COLOUR\f[R]]
