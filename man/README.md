@@ -169,7 +169,7 @@ prompt to set a new parameter:
 |   `-R` | `!start`   | Set start sequence.              |
 |   `-s` | `!stop`    | Set stop sequences.              |
 |   `-t` | `!temp`    | Set temperature.                 |
-|   `-u` | `!clip`    | Copy responses to clipboard.     |
+|   `-o` | `!clip`    | Copy responses to clipboard.     |
 |   `-v` | `!ver`     | Set/unset verbose.               |
 |   `-x` | `!ed`      | Set/unset text editor interface. |
 |   `-w` | `!rec`     | Start audio record chat.         |
@@ -527,7 +527,7 @@ Set/search prompt from awesome-chatgpt-prompts.
 Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper
 0.0 - 1.0). Def=*0*.
 
-**-u**  
+**-o**  
 Copy response to clipboard.
 
 **-v**  

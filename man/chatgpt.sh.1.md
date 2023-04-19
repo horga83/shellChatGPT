@@ -169,7 +169,7 @@ to set a new parameter:
       `-R`    `!start`      Set start sequence.
       `-s`    `!stop`       Set stop sequences.
       `-t`    `!temp`       Set temperature.
-      `-u`    `!clip`       Copy responses to clipboard.
+      `-o`    `!clip`       Copy responses to clipboard.
       `-v`    `!ver`        Set/unset verbose.
       `-x`    `!ed`         Set/unset text editor interface.
       `-w`    `!rec`        Start audio record chat.
@@ -614,7 +614,7 @@ Ex: "`--chat`", "`--temp`=_0.9_", "`--max`=_1024,128_", and "`--presence-penalty
 : Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper 0.0 - 1.0). Def=_0_.
 
 
-**-u**
+**-o**
 
 : Copy response to clipboard.
 
