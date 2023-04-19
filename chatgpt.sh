@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.11.6  april/2023  by mountaineerbr  GPL+3
+# v0.11.7  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -902,9 +902,8 @@ function check_cmdf
 	set -- "${*##*([$IFS:\/!])}"
 	case "$*" in
 		-[0-9]*|[0-9]*|max*)
-			set -- "${*%.*}" ;set -- "${*//[!0-9+-]}"
-			OPTMM="${*:-$OPTMM}"
-			set_maxtknf $OPTMM
+			set -- "${*%.*}" ;set -- "${*//[!0-9,+-]}"
+			OPTMM="${*:-$OPTMM}" ;set_maxtknf $OPTMM
 			__cmdmsgf 'Response max tkns' "$OPTMAX"
 			;;
 		-a*|presence*|pre*)
@@ -940,33 +939,36 @@ function check_cmdf
 		-p*|top*)
 			set -- "${*//[!0-9.]}"
 			OPTP="${*:-$OPTP}"
-			fix_dotf OPTP  ;__cmdmsgf 'Top P' "$OPTP"
+			fix_dotf OPTP ;__cmdmsgf 'Top P' "$OPTP"
 			;;
 		-r*|restart*)
 			set -- "${*##@(-r|restart)$SPC2}"
-			RESTART="$*"
+			RESTART="$*" ;__cmdmsgf 'Restart Sequence' "$RESTART"
 			;;
 		-R*|start*)
 			set -- "${*##@(-R|start)$SPC2}"
-			START="$*"
+			START="$*" ;__cmdmsgf 'Start Sequence' "$START"
 			;;
 		-s*|stop*)
 			set -- "${*##@(-s|stop)$SPC2}"
 			STOPS=("${*}" "${STOPS[@]}")
+			__cmdmsgf 'Stop Sequences' "${STOPS[*]}"
 			;;
 		-t*|temperature*|temp*)
 			set -- "${*//[!0-9.]}"
 			OPTT="${*:-$OPTT}"
 			fix_dotf OPTT  ;__cmdmsgf 'Temperature' "$OPTT"
 			;;
-		-u|--clipboard|--clip)
+		-u|clipboard|clip)
 			((OPTCLIP)) && unset OPTCLIP || OPTCLIP=1
-			set_clipcmdf
+			set_clipcmdf ;
+			__cmdmsgf 'Clipboard' $( ((OPTCLIP)) && echo ON || echo OFF)
 			;;
 		-v|verbose|ver)
 			((OPTV)) && ((++OPTV)) || unset OPTV
 			((OPTV_AUTO)) && ((++OPTV_AUTO))
 			((OPTV_AUTO>2)) && unset OPTV OPTV_AUTO
+			__cmdmsgf 'Verbose' $( ((OPTV)) && echo ON || echo OFF)
 			;;
 		-V|block|blk)
 			((OPTVV)) && unset OPTVV || OPTVV=1
@@ -991,8 +993,12 @@ function check_cmdf
 			exit
 			;;
 		r|regenerate|regen|[$IFS]|'')  #regenerate last response
-			REGEN=1 SKIP=1 EDIT=1 ;sed -i -e '$d' -- "$FILECHAT"
-			sed -i -e '$d' -- "$FILECHAT"
+			REGEN=1 SKIP=1 EDIT=1
+			if ((!BAD_RESPONSE)) && [[ -f "$FILECHAT" ]] &&
+			[[ "$(tail -n 2 "$FILECHAT")"$'\n' != *[Bb][Rr][Ee][Aa][Kk]$'\n'* ]]
+			then 	sed -i -e '$d' -- "$FILECHAT"
+				sed -i -e '$d' -- "$FILECHAT"
+			fi
 			;;
 		*) 	return 1
 			;;
@@ -1095,7 +1101,7 @@ function escapef
 function break_sessionf
 {
 	[[ -f "$FILECHAT" ]] || return
-	[[ BREAK$(tail -n 20 "$FILECHAT") = *[Bb][Rr][Ee][Aa][Kk] ]] \
+	[[ BREAK"$(tail -n 20 "$FILECHAT")" = *[Bb][Rr][Ee][Aa][Kk] ]] \
 	|| tee -a -- "$FILECHAT" >&2 <<<'SESSION BREAK'
 }
 
@@ -2090,12 +2096,13 @@ ${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q
 			push_tohistf "$ans" "${tkn[1]}" "${tkn[2]}"
 			((OLD_TOTAL=tkn[0]+tkn[1]))
 			SET_TYPE="$user_type"
+		else 	BAD_RESPONSE=1 SKIP=1 EDIT=1 ;set -- ;continue
 		fi
 		SLEEP="${tkn[1]}"
 		((OPTLOG)) && usr_logf "$(unescapef "$ESC\\n${ans##$SPC1}")"
 
 		((++N_LOOP)) ;set --
-		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP SKIPF EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP OPTAWE RETRY ESC OK QQ Q user_type optv_save role tkn arg ans glob out s n
+		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP SKIPF EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC OK QQ Q user_type optv_save role tkn arg ans glob out s n
 		((OPTC+OPTRESUME)) || break
 	done ;unset OLD_TOTAL SLEEP N_LOOP SPC1 SPC2 TYPE_GLOB
 fi
