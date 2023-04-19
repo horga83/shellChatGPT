@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.11.7 | General Commands Manual
+% CHATGPT.SH(1) v0.11.8 | General Commands Manual
 % mountaineerbr
 % April 2023
 
@@ -122,7 +122,8 @@ see <https://platform.openai.com/examples>.
 To enable **multiline input**, type in a backslash "_\\_" as the last
 character of the input line and press ENTER (backslash will be
 removed from input). Once enabled, press ENTER twice to confirm
-the multiline prompt.
+the multiline prompt. Useful to paste from clipboard, but empty
+lines will confirm the prompt up to that point.
 
 
 #### 2. Chat Mode
@@ -155,26 +156,26 @@ it works as the **INSTRUCTION**. In chat cmpls, setting a prompt with
 While in chat mode, the following commands can be typed in the new prompt
 to set a new parameter:
 
-----------    --------    ----------------------------------
-    `!NUM`    `!max`      Set response / model max tokens.
-      `-a`    `!pre`      Set presence pensalty.
-      `-A`    `!freq`     Set frequency penalty.
-      `-c`    `!new`      Start new session.
-      `-H`    `!hist`     Edit history in editor.
-      `-L`    `!log`      Save to log file.
-      `-m`    `!mod`      Set model (by index or name).
-      `-p`    `!top`      Set top_p.
-      `-r`    `!restart`  Set restart sequence.
-      `-R`    `!start`    Set start sequence.
-      `-s`    `!stop`     Set stop sequences.
-      `-t`    `!temp`     Set temperature.
-      `-u`    `!clip`     Copy responses to clipboard.
-      `-v`    `!ver`      Set/unset verbose.
-      `-x`    `!ed`       Set/unset text editor interface.
-      `-w`    `!rec`      Start audio record chat.
-      `!r`    `!regen`    Renegerate last response.
-      `!q`    `!quit`     Exit.
-----------    --------    ----------------------------------
+  --------    ----------    ----------------------------------
+    `!NUM`    `!max`        Set response / model max tokens.
+      `-a`    `!pre`        Set presence pensalty.
+      `-A`    `!freq`       Set frequency penalty.
+      `-c`    `!new`        Start new session.
+      `-H`    `!hist`       Edit history in editor.
+      `-L`    `!log`        Save to log file.
+      `-m`    `!mod`        Set model (by index or name).
+      `-p`    `!top`        Set top_p.
+      `-r`    `!restart`    Set restart sequence.
+      `-R`    `!start`      Set start sequence.
+      `-s`    `!stop`       Set stop sequences.
+      `-t`    `!temp`       Set temperature.
+      `-u`    `!clip`       Copy responses to clipboard.
+      `-v`    `!ver`        Set/unset verbose.
+      `-x`    `!ed`         Set/unset text editor interface.
+      `-w`    `!rec`        Start audio record chat.
+      `!r`    `!regen`      Renegerate last response.
+      `!q`    `!quit`       Exit.
+  --------    ----------    ----------------------------------
 
 Examples: "`!temp` _0.7_", "`!mod`_1_", and "`-p` _0.2_".
 Note that the command operator may be either "`!`", or "`/`".
@@ -560,7 +561,7 @@ Ex: "`--chat`", "`--temp`=_0.9_", "`--max`=_1024,128_", and "`--presence-penalty
 
 : Set model by _INDEX_:
 
-  ----  ---------------               -----
+  ----  ----------------------------  ------------------------------
         **COMPLETIONS**               **EDITS**
         _0_.  text-davinci-003          _8_.  text-davinci-edit-001
         _1_.  text-curie-001            _9_.  code-davinci-edit-001
@@ -571,7 +572,7 @@ Ex: "`--chat`", "`--temp`=_0.9_", "`--max`=_1024,128_", and "`--presence-penalty
         **MODERATION**                  _13_. gpt-4-32k
         _6_.  text-moderation-latest
         _7_.  text-moderation-stable
-  ----  --------------------------    -----
+  ----  ----------------------------  ------------------------------
 
 
 **-n** \[_NUM_]

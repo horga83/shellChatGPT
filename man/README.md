@@ -2,7 +2,7 @@
 author:
 - mountaineerbr
 date: April 2023
-title: CHATGPT.SH(1) v0.11.7 \| General Commands Manual
+title: CHATGPT.SH(1) v0.11.8 \| General Commands Manual
 ---
 
 ### NAME
@@ -122,7 +122,8 @@ Language model **SKILLS** can activated, with specific prompts, see
 To enable **multiline input**, type in a backslash “*\\*” as the last
 character of the input line and press ENTER (backslash will be removed
 from input). Once enabled, press ENTER twice to confirm the multiline
-prompt.
+prompt. Useful to paste from clipboard, but empty lines will confirm the
+prompt up to that point.
 
 #### 2. Chat Mode
 
@@ -489,7 +490,7 @@ Set model by *NAME*.
 Set model by *INDEX*:
 
 |     |                             |                            |
-|-----|-----------------------------|----------------------------|
+|-----|:----------------------------|:---------------------------|
 |     | **COMPLETIONS**             | **EDITS**                  |
 |     | *0*. text-davinci-003       | *8*. text-davinci-edit-001 |
 |     | *1*. text-curie-001         | *9*. code-davinci-edit-001 |

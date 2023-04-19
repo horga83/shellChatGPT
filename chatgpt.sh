@@ -1,6 +1,6 @@
 #!/usr/bin/env ksh
 # chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.11.7  april/2023  by mountaineerbr  GPL+3
+# v0.11.8  april/2023  by mountaineerbr  GPL+3
 [[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
 [[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
 [[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
@@ -186,7 +186,8 @@ TEXT / CHAT COMPLETIONS
 	To enable multiline input, type in a backslash \`\\' as the last
 	character of the input line and press ENTER (backslash will be
 	removed from input). Once enabled, press ENTER twice to confirm
-	the multiline prompt.
+	the multiline prompt. Useful to paste from clipboard, but empty
+	lines will confirm the prompt up to that point.
 
 
 	2. Chat Mode
@@ -214,26 +215,26 @@ TEXT / CHAT COMPLETIONS
 	While in chat mode, the following commands can be typed in the
 	new prompt to set a new parameter:
 
-	    ------    --------    ----------------------------------
-	     !NUM      !max       Set response / model max tokens.
-	       -a      !pre       Set presence pensalty.
-	       -A      !freq      Set frequency penalty.
-	       -c      !new       Start new session.
-	       -H      !hist      Edit history in editor.
-	       -L      !log       Save to log file.
-	       -m      !mod       Set model (by index or name).
-	       -p      !top       Set top_p.
-	       -r      !restart   Set restart sequence.
-	       -R      !start     Set start sequence.
-	       -s      !stop      Set stop sequences.
-	       -t      !temp      Set temperature.
-	       -u      !clip      Copy responses to clipboard.
-	       -v      !ver       Set/unset verbose.
-	       -x      !ed        Set/unset text editor interface.
-	       -w      !rec       Start audio record chat.
-	       !r      !regen     Renegerate last response.
-	       !q      !quit      Exit.
-	    ------    --------    ----------------------------------
+	    ------    ----------    ----------------------------------
+	     !NUM      !max          Set response / model max tokens.
+	       -a      !pre          Set presence pensalty.
+	       -A      !freq         Set frequency penalty.
+	       -c      !new          Start new session.
+	       -H      !hist         Edit history in editor.
+	       -L      !log          Save to log file.
+	       -m      !mod          Set model (by index or name).
+	       -p      !top          Set top_p.
+	       -r      !restart      Set restart sequence.
+	       -R      !start        Set start sequence.
+	       -s      !stop         Set stop sequences.
+	       -t      !temp         Set temperature.
+	       -u      !clip         Copy responses to clipboard.
+	       -v      !ver          Set/unset verbose.
+	       -x      !ed           Set/unset text editor interface.
+	       -w      !rec          Start audio record chat.
+	       !r      !regen        Renegerate last response.
+	       !q      !quit         Exit.
+	    ------    ----------    ----------------------------------
 	
 	Examples: \`!temp 0.7', \`!mod1', and \`-p 0.2'.
 	Note that the command operator may be either \`!', or \`/'.
@@ -249,8 +250,8 @@ TEXT / CHAT COMPLETIONS
 	Regenerate it again or press ENTER to accept it.
 
 	After a response has been written to the history file, regenerate
-	it with command \`!regen' or type in a single forward slash in the
-	new empty prompt.
+	it with command \`!regen' or type in a single forward slash in
+	the new empty prompt.
 
 
 	3. Prompt Engineering and Design
@@ -889,10 +890,12 @@ function set_maxtknf
 	if [[ $* = *[0-9][!0-9][0-9]* ]]
 	then 	OPTMAX="${*##${*%[!0-9]*}}" MODMAX="${*%%"$OPTMAX"}"
 		OPTMAX="${OPTMAX##[!0-9]}"
-	else 	OPTMAX="${*##[!0-9]}"
+	elif [[ -n ${*//[!0-9]} ]]
+	then 	OPTMAX="${*//[!0-9]}"
 	fi
-	((OPTMAX>MODMAX)) && \
-	buff="$MODMAX" MODMAX="$OPTMAX" OPTMAX="$buff" 
+	if ((OPTMAX>MODMAX))
+	then 	buff="$MODMAX" MODMAX="$OPTMAX" OPTMAX="$buff" 
+	fi
 }
 
 #check if input is a command
@@ -902,9 +905,8 @@ function check_cmdf
 	set -- "${*##*([$IFS:\/!])}"
 	case "$*" in
 		-[0-9]*|[0-9]*|max*)
-			set -- "${*%.*}" ;set -- "${*//[!0-9,+-]}"
-			OPTMM="${*:-$OPTMM}" ;set_maxtknf $OPTMM
-			__cmdmsgf 'Response max tkns' "$OPTMAX"
+			set -- "${*%.*}" ;OPTMM="${*:-$OPTMM}"
+			set_maxtknf $OPTMM ;__cmdmsgf 'Max model / response' "$MODMAX / $OPTMAX tkns"
 			;;
 		-a*|presence*|pre*)
 			set -- "${*//[!0-9.]}"
