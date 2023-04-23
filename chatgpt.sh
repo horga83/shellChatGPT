@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.3  april/2023  by mountaineerbr  GPL+3
+# v0.12.4  april/2023  by mountaineerbr  GPL+3
 shopt -s extglob
 set -o pipefail
 
@@ -533,7 +533,7 @@ function set_histf
 		then 	((max_prev+=token))
 			((N_LOOP)) || ((OLD_TOTAL+=token))
 			H_TIME="${time}" MAX_PREV="${max_prev}"
-			string="${string##[\"]}" string="${string%%[\"]}" #string="${string##$SPC0}"
+			string="${string##[\"]}" string="${string%%[\"]}" string="${string##\\n}"
 			stringc="${string##@("${q_type}"|"${a_type}"|":")}"
 
 			unset role rest
