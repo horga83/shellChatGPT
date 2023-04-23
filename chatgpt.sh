@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.1  april/2023  by mountaineerbr  GPL+3
+# v0.12.2  april/2023  by mountaineerbr  GPL+3
 shopt -s extglob
 set -o pipefail
 
@@ -79,7 +79,7 @@ APIURL="https://api.openai.com/v1"
 
 # Globs
 SPC="*([$IFS])"
-SPC0="*(\\\\[ntrvf])?(\ )"
+SPC0="*(\\\\[ntrvf]|\ )"
 SPC1="*(\\\\[ntrvf]|[$IFS])"
 
 HELP="Name
@@ -534,7 +534,7 @@ function set_histf
 			((N_LOOP)) || ((OLD_TOTAL+=token))
 			H_TIME="${time}" MAX_PREV="${max_prev}"
 			string="${string##[\"]}" string="${string%%[\"]}" string="${string##$SPC0}"
-			stringc="${string##@("${q_type:-%#}"|"${a_type:-%#}"|":")}"
+			stringc="${string##@("${q_type}"|"${a_type}"|":")}"
 
 			unset role rest
 			case "${string}" in
