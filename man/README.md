@@ -2,7 +2,7 @@
 author:
 - mountaineerbr
 date: April 2023
-title: CHATGPT.SH(1) v0.12 \| General Commands Manual
+title: CHATGPT.SH(1) v0.12.1 \| General Commands Manual
 ---
 
 ### NAME
@@ -470,7 +470,7 @@ Edit history file with text editor or pipe to stdout.
 **-HH**  
 Pretty print last history session to stdout.
 
-With `-C` and `-rR`, prints with the specified restart and start
+With `-cC`, or `-rR`, prints with the specified restart and start
 sequences.
 
 **-i** \[*PROMPT*\]  

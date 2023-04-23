@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.12 | General Commands Manual
+% CHATGPT.SH(1) v0.12.1 | General Commands Manual
 % mountaineerbr
 % April 2023
 
@@ -526,7 +526,7 @@ times when appropriate.
 
 :     Pretty print last history session to stdout.
 
-      With `-C` and `-rR`, prints with the specified restart and start sequences.
+      With `-cC`, or `-rR`, prints with the specified restart and start sequences.
 
 
 **-i** \[_PROMPT_]

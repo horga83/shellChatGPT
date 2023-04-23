@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12  april/2023  by mountaineerbr  GPL+3
+# v0.12.1  april/2023  by mountaineerbr  GPL+3
 shopt -s extglob
 set -o pipefail
 
@@ -212,7 +212,7 @@ Options
 	-h 	 Print this help page.
 	-H 	 Edit history file with text editor or pipe to stdout.
 	-HH 	 Pretty print last history session to stdout.
-      		 With -C and -rR, prints the specified seqs.
+      		 With -cC, or -rR, prints the specified seqs.
 	-i [PROMPT]
 		 Generate images given a prompt.
 	-i [PNG]
@@ -512,10 +512,11 @@ function token_prevf
 #set up context from history file ($HIST and $HIST_C)
 function set_histf
 {
-	typeset time token string max_prev q_type a_type role rest
+	typeset time token string max_prev q_type a_type role rest A_APPEND
 	[[ -s "$FILECHAT" ]] || return
 	unset HIST HIST_C
 	(($#)) && OPTV=1 token_prevf "$*"
+	{ 	((OPTC>1)) || ((EPN==6)) ;} && A_APPEND=" "
 	q_type="${Q_TYPE##$SPC0}" a_type="${A_TYPE##$SPC0}"
 	
 	while IFS=$'\t' read -r time token string
@@ -543,7 +544,7 @@ function set_histf
 				"${a_type:-%#}"*|"${START:-%#}"*)
 					role=assistant
 					if ((OPTC)) || [[ -n "${START}" ]]
-					then 	rest="${START:-$A_TYPE}"
+					then 	rest="${START:-$A_TYPE}${A_APPEND}"
 					fi
 					;;
 				*) #q_type, RESTART
@@ -1548,7 +1549,8 @@ command -v jq >/dev/null 2>&1 || function jq { 	false ;}
 
 if ((OPTHH))  #edit history/pretty print last session
 then 	if ((OPTHH>1))
-	then 	((!OPTRESUME)) && OPTC=1
+	then 	{ 	((OPTC)) || ((EPN==6)) ;} && OPTC=2
+		((OPTRESUME)) || { 	((OPTC)) || OPTC=1 ;}
 		MODMAX=65536 set_histf
 		usr_logf "$(unescapef "$HIST")"
 	elif [[ -t 1 ]]
