@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.12.5 | General Commands Manual
+% CHATGPT.SH(1) v0.12.6 | General Commands Manual
 % mountaineerbr
 % April 2023
 
@@ -641,7 +641,7 @@ times when appropriate.
 
 **-u**
 
-: Set multiline prompter.
+: Toggle multiline prompter.
 
 
 **-v**

@@ -85,9 +85,9 @@ With `option -c`, some options are set automatically to create a chat bot with t
     chatgpt.sh -c "Hello there! What is your name?"
 
 
-Create a bot manually with the `davinci` model (without the help of `-c` or `-cc`):
+Create the **sarcastic Marv** bot manually with the `davinci` model (without the help of `-c` or `-cc`):
 
-    chatgpt.sh -CC -a0.8 -A0.4 -R'Answer:' -r'Question: ' -s'Answer:' -s'Question: ' -S'You are a helpful assistant.'
+    chatgpt.sh -CCu -60 --frequency-penalty=0.5 --temp=0.5 --top_p=0.3 --restart-seq='\nYou: ' --start-seq='\nMarv:' --stop='You:' --stop='Marv:' -S'Marv is a chatbot that reluctantly answers questions with sarcastic responses:'
 
 _Tip:_ set `-VV` to see the actual request body and how options are set!
 

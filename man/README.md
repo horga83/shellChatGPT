@@ -2,7 +2,7 @@
 author:
 - mountaineerbr
 date: April 2023
-title: CHATGPT.SH(1) v0.12.5 \| General Commands Manual
+title: CHATGPT.SH(1) v0.12.6 \| General Commands Manual
 ---
 
 ### NAME
@@ -547,7 +547,7 @@ Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper
 0.0 - 1.0). Def=*0*.
 
 **-u**  
-Set multiline prompter.
+Toggle multiline prompter.
 
 **-v**  
 Less verbose. May set multiple times.

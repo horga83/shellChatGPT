@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.5  april/2023  by mountaineerbr  GPL+3
+# v0.12.6  april/2023  by mountaineerbr  GPL+3
 shopt -s extglob
 set -o pipefail
 
@@ -251,7 +251,7 @@ Options
 		 Set/search prompt from awesome-chatgpt-prompts.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
-	-u 	 Set multiline prompter.
+	-u 	 Toggle multiline prompter.
 	-v 	 Less verbose. May set multiple times.
 	-V 	 Pretty-print request. Set twice to dump raw request.
 	-x 	 Edit prompt in text editor.
@@ -513,7 +513,7 @@ function token_prevf
 #set up context from history file ($HIST and $HIST_C)
 function set_histf
 {
-	typeset time token string max_prev q_type a_type role rest A_APPEND
+	typeset time token string max_prev q_type a_type role not_sys rest A_APPEND
 	[[ -s "$FILECHAT" ]] || return
 	unset HIST HIST_C
 	(($#)) && OPTV=1 token_prevf "$*"
@@ -537,19 +537,19 @@ function set_histf
 			string="${string##[\"]}" string="${string%%[\"]}" string="${string##\\n}"
 			stringc="${string##@("${q_type}"|"${a_type}"|":")}"
 
-			unset role rest
+			unset role rest not_sys
 			case "${string}" in
 				:*) 	role=system
 					rest=
 					;;
 				"${a_type:-%#}"*|"${START:-%#}"*)
-					role=assistant
+					role=assistant  not_sys=1
 					if ((OPTC)) || [[ -n "${START}" ]]
 					then 	rest="${START:-${A_TYPE}${A_APPEND}}"
 					fi
 					;;
 				*) #q_type, RESTART
-					role=user
+					role=user  not_sys=1
 					if ((OPTC)) || [[ -n "${RESTART}" ]]
 					then 	rest="${RESTART:-$Q_TYPE}"
 					fi
@@ -562,7 +562,7 @@ function set_histf
 		fi
 	done < <(tac -- "$FILECHAT")
 	if [[ "$role" = system ]]  #1st sys/instruction msg extra newline 
-	then 	HIST="${HIST##"$stringc"}" HIST="${HIST##\\n}" HIST="${stringc}\\n\\n${HIST}"
+	then 	HIST="${HIST##"$stringc"}" HIST="${HIST##\\n}" HIST="${stringc}${not_sys:+\\n}\\n${HIST}"
 	fi ;HIST="${HIST##$SPC0}"
 }
 #https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
@@ -707,7 +707,7 @@ function check_cmdf
 			__cmdmsgf 'Clipboard' $( ((OPTCLIP)) && echo ON || echo OFF)
 			;;
 		-u|multiline|multi)
-			((++OPTMULTI)) ;((OPTMULTI%=2))
+			((++OPTMULTI)) ;((OPTMULTI%=2)) ;MULTI="$OPTMULTI"
 			__cmdmsgf 'Multiline' $( ((OPTMULTI)) && echo ON || echo OFF)
 			;;
 		-v|verbose|ver)
@@ -840,17 +840,17 @@ function escapef
 	var="$*" b='@#'
 
 	#special chars
- 	for c in "${JSON_CHARS[@]}" " "
+ 	for c in "${JSON_CHARS[@]}"  ##" "
 	do 	var="${var//"\\\\$c"/$b$b$c}"
 		var="${var//"\\$c"/$b$c}"
 	done
- 		var="${var//"\\"/\\\\}"  #slash proper
+ 		var="${var//"\\"/\\\\}"  #backslash
 	for c in "${JSON_CHARS[@]}"
 	do 	var="${var//"$b$b$c"/\\\\$c}"
 		var="${var//"$b$c"/\\$c}"
 	done
-		var="${var//"$b$b "/\\\\ }"  #space
-		var="${var//"$b "/ }"
+	##	var="${var//"$b$b "/\\\\ }"  #space
+	##	var="${var//"$b "/ }"
 
 	var="${var//[$'\t']/\\t}"    #tabs
 	var="${var//[$'\n']/\\n}"    #new line
@@ -1454,7 +1454,7 @@ do
 			else 	INSTRUCTION="$OPTARG"
 			fi;;
 		t) 	OPTT="$OPTARG";;
-		u) 	OPTMULTI=1;;
+		u) 	((++OPTMULTI)); ((OPTMULTI%=2));;
 		v) 	((++OPTV));;
 		V) 	((++OPTVV));;  #debug
 		x) 	OPTX=1;;
@@ -1594,13 +1594,14 @@ else               #text/chat completions
 	then 	__sysmsgf 'Chat Completions'
 		#chatbot must sound like a human, shouldn't be lobotomised
 		#presencePenalty:0.6 temp:0.9 maxTkns:150 :The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.
-		#frequencyPenalty:0.5 temp:0.5 top_p:03 maxTkns:60 :Marv is a chatbot that reluctantly answers questions with sarcastic responses:
+		#frequencyPenalty:0.5 temp:0.5 top_p:0.3 maxTkns:60 :Marv is a chatbot that reluctantly answers questions with sarcastic responses:
 		OPTA="${OPTA:-0.4}" OPTT="${OPTT:-0.6}"  #!#
 		((EPN==6)) || STOPS+=("${Q_TYPE//$SPC0}" "${A_TYPE//$SPC0}")
 	else 	((EPN==6)) || __sysmsgf 'Text Completions'
 	fi
 	if ((OPTCMPL))
-	then 	OPTMULTI=1 ;OPTV= __cmdmsgf 'Multiline' 'ON'
+	then 	((++OPTMULTI)); ((OPTMULTI%=2)) &&
+		OPTV= __cmdmsgf 'Multiline' 'ON'
 	fi
 	((EPN!=6)) || unset RESTART START
 
@@ -1672,11 +1673,11 @@ else               #text/chat completions
 					fi ;printf "${BPurple}%s${NC}\\n" "${REPLY:-"(EMPTY)"}" >&2
 				else
 					if ((OPTCMPL)) && ((N_LOOP)) && [[ -z "${RESTART}${REPLY}" ]]
-					then 	REPLY="\\ " EDIT=1 CMPLOK=1
+					then 	REPLY=" " EDIT=1 CMPLOK=1
 					fi ;unset ex
 					while ((EDIT)) || unset REPLY  #!#
-						((OPTMULTI+MULTI)) && printf "> \\r" >&2
-						read -r -e ${REPLY:+-i "$REPLY"} REPLY
+						((OPTMULTI+MULTI)) && [[ -z "$RESTART" ]] && printf ">\\r" >&2
+						IFS=$'\n' read -r -e ${REPLY:+-i "$REPLY"} REPLY
 					do 	unset EDIT
 						case "$REPLY" in
 							*\\) 	MULTI=1 ex=1
@@ -1774,7 +1775,8 @@ else               #text/chat completions
 			then 	rest="${RESTART:-$Q_TYPE}"
 			else 	unset rest
 			fi
-			ESC="$(escapef "${INSTRUCTION}")${INSTRUCTION:+\\n\\n}${HIST}$(escapef "${rest}${*}")"
+			ESC="${HIST}$(escapef "${rest}${*}")"
+			ESC="$(escapef "${INSTRUCTION}")${INSTRUCTION:+\\n\\n}${ESC##\\n}"
 			
 			if ((EPN==6))
 			then 	#chat cmpls
