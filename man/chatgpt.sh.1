@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.11.9" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "April 2023" "v0.12" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -77,24 +77,28 @@
 \ \ \ \f[B]chatgpt.sh\f[R] \f[V]-l\f[R] [\f[I]MODEL_NAME\f[R]]
 .SS DESCRIPTION
 .PP
-Positional arguments are read as a single \f[B]PROMPT\f[R].
-If the chosen model requires an \f[B]INSTRUCTION\f[R] and \f[B]INPUT
-prompts\f[R] (such as edits models), the first positional argument is
-taken as INSTRUCTION and the following ones as INPUT or PROMPT.
+Complete INPUT text when run without any options (single-turn, pure text
+completions).
 .PP
-Set \f[V]option -c\f[R] to start the chat mode via the \f[B]text
-completions\f[R] and record the conversation.
+Positional arguments are read as a single \f[B]PROMPT\f[R].
+Model \f[B]INSTRUCTION\f[R] is usually optional, however if it is
+mandatory for a chosen model (such as edits models), then the first
+positional argument is read as \f[B]INSTRUCTION\f[R] and the following
+ones as \f[B]INPUT\f[R] or \f[B]PROMPT\f[R].
+.PP
+Set \f[V]option -c\f[R] to start the chat mode via \f[B]text
+completions\f[R] and record conversation.
 This option accepts various models, defaults to
 \f[I]text-davinci-003\f[R] if none set.
 .PP
 Set \f[V]option -cc\f[R] to start the chat mode via \f[B]native chat
-completions\f[R] and use the turbo models.
+completions\f[R] and use turbo models.
 While in chat mode, some options are automatically set to un-lobotomise
 the bot.
 .PP
-Set \f[V]-C\f[R] to \f[B]resume\f[R] from last history session.
-Setting \f[V]-CC\f[R] starts a \f[B]new session\f[R] in the history file
-(without \f[V]-c\f[R] or \f[V]-cc\f[R]).
+Set \f[V]option -C\f[R] to \f[B]resume\f[R] from last history session.
+Setting only \f[V]-CC\f[R] starts a \f[B]new session\f[R] in \f[B]pure
+text completions\f[R], and use restart and start sequences, if defined.
 .PP
 Set model with \[lq]\f[V]-m\f[R] [\f[I]NAME\f[R]]\[rq] (full model
 name).
@@ -108,10 +112,10 @@ Set \f[I]maximum response tokens\f[R] with \f[V]option\f[R]
 \[lq]\f[V]-\f[R]NUM\[rq] or \[lq]\f[V]-M\f[R] NUM\[rq].
 This defaults to 256 tokens in chat and single-turn modes.
 .PP
-\f[I]Maximum model tokens\f[R] can be set with a second \f[I]NUM\f[R]
-such as \[lq]\f[V]-\f[R]\f[I]NUM,NUM\f[R]\[rq] or \[lq]\f[V]-M\f[R]
-NUM-NUM\[rq], otherwise it is set automatically to the capacity of known
-models, or to \f[I]2048\f[R] tokens as fallback.
+\f[I]Model capacity\f[R] (max model tokens) can be set with a second
+\f[I]NUM\f[R] such as \[lq]\f[V]-\f[R]\f[I]NUM,NUM\f[R]\[rq] or
+\[lq]\f[V]-M\f[R] NUM-NUM\[rq], otherwise it is set automatically to the
+capacity of known models, or to \f[I]2048\f[R] tokens as fallback.
 .PP
 If a plain text file path is set as first positional argument, it is
 loaded as text PROMPT (text cmpls, chat cmpls, and text/code edits).
@@ -183,15 +187,19 @@ For example, given a partial input, the language model will try
 completing it until probable \[lq]\f[V]<|endoftext|>\f[R]\[rq], or other
 stop sequences (stops may be set with \f[V]-s\f[R]).
 .PP
-Language model \f[B]SKILLS\f[R] can activated, with specific prompts,
-see <https://platform.openai.com/examples>.
+\f[B]Restart\f[R] and \f[B]start sequences\f[R] may be optionally set
+and are always preceded by a new line.
 .PP
 To enable \f[B]multiline input\f[R], type in a backslash
 \[lq]\f[I]\[rs]\f[R]\[rq] as the last character of the input line and
-press ENTER (backslash will be removed from input).
+press ENTER (backslash will be removed from input), or set
+\f[V]option -u\f[R].
 Once enabled, press ENTER twice to confirm the multiline prompt.
 Useful to paste from clipboard, but empty lines will confirm the prompt
 up to that point.
+.PP
+Language model \f[B]SKILLS\f[R] can activated, with specific prompts,
+see <https://platform.openai.com/examples>.
 .SS 2. Chat Mode
 .SS 2.1 Text Completions Chat
 .PP
@@ -204,23 +212,21 @@ Set the double \f[V]option -cc\f[R] to start chat completions mode.
 Turbo models are also the best option for many non-chat use cases.
 .SS 2.3 Q & A Format
 .PP
-The defaults chat format is \[lq]\f[V]Q & A\f[R]\[rq].
-So, the \f[B]restart text\f[R] \[lq]\f[I]Q:\ \f[R]\[rq] and the
-\f[B]start text\f[R] \[lq]\f[I]A:\f[R]\[rq] must be injected for the
-chat bot to work well with text cmpls.
+The defaults chat format is \[lq]\f[B]Q & A\f[R]\[rq].
+The \f[B]restart sequence\f[R] \[lq]\[rs]n_Q:\ \f[I]\[rq] and the
+\f[BI]start text\f[I] \[rq]\[rs]n_A:\f[R]\[rq] are injected for the chat
+bot to work well with text cmpls.
 .PP
-Typing only a colon \[lq]\f[I]:\f[R]\[rq] at the start of the prompt
-causes it to be appended after a newline to the last prompt (answer) in
-text cmpls.
-If this trick is used with the initial prompt in text cmpls, it works as
-the \f[B]INSTRUCTION\f[R].
-In chat cmpls, setting a prompt with \[lq]\f[V]:\f[R]\[rq] always sets
-it as a \f[B]SYSTEM\f[R] message.
+In native chat completions, setting a prompt with \[lq]\f[I]:\f[R]\[rq]
+as the initial character sets the prompt as a \f[B]SYSTEM\f[R] message.
+In text completions, however, typing a colon \[lq]\f[I]:\f[R]\[rq] at
+the start of the prompt causes the text following it to be appended
+immediately to the last (response) prompt text.
 .SS 2.4 Chat Commands
 .PP
 While in chat mode, the following commands can be typed in the new
 prompt to set a new parameter.
-Note that the command operator may be either \[lq]\f[V]!\f[R]\[rq], or
+The command operator may be either \[lq]\f[V]!\f[R]\[rq], or
 \[lq]\f[V]/\f[R]\[rq].
 .PP
 .TS
@@ -231,7 +237,7 @@ T{
 T}@T{
 \f[V]!max\f[R]
 T}@T{
-Set response / model max tokens.
+Set response tokens / model capacity.
 T}
 T{
 \f[V]-a\f[R]
@@ -276,6 +282,13 @@ T}@T{
 Set model (by index or name).
 T}
 T{
+\f[V]-o\f[R]
+T}@T{
+\f[V]!clip\f[R]
+T}@T{
+Copy responses to clipboard.
+T}
+T{
 \f[V]-p\f[R]
 T}@T{
 \f[V]!top\f[R]
@@ -311,25 +324,25 @@ T}@T{
 Set temperature.
 T}
 T{
-\f[V]-o\f[R]
+\f[V]-u\f[R]
 T}@T{
-\f[V]!clip\f[R]
+\f[V]!multi\f[R]
 T}@T{
-Copy responses to clipboard.
+Toggle multiline prompter.
 T}
 T{
 \f[V]-v\f[R]
 T}@T{
 \f[V]!ver\f[R]
 T}@T{
-Set/unset verbose.
+Toggle verbose.
 T}
 T{
 \f[V]-x\f[R]
 T}@T{
 \f[V]!ed\f[R]
 T}@T{
-Set/unset text editor interface.
+Toggle text editor interface.
 T}
 T{
 \f[V]-w\f[R]
@@ -372,9 +385,9 @@ After a response has been written to the history file,
 in a single forward slash in the new empty prompt.
 .SS 3. Prompt Engineering and Design
 .PP
-Unless the chat \f[V]options -c\f[R] or \f[V]-cc\f[R] are set,
-\f[B]NO\f[R] INSTRUCTION is given to the language model (as would,
-otherwise, be the initial prompt).
+Unless the chat \f[V]options -cc\f[R] are set, \f[B]NO\f[R] INSTRUCTION
+is given to the language model (as would, otherwise, be the initial
+prompt).
 .PP
 On chat mode, if no INSTRUCTION is set, a short one is given, and some
 options set, such as increasing temp and presence penalty, in order to
@@ -556,12 +569,9 @@ Defaults=\[dq]\f[I]vim\f[R]\[dq]
 .RE
 .SS BUGS
 .PP
-\f[V]Ksh93\f[R] mangles multibyte characters when re-editing input
-prompt and truncates input longer than 80 chars.
-Workaround is to move cursor one char and press the up arrow key.
-.PP
-\f[V]Ksh2020\f[R] lacks functionality compared to \f[V]Ksh83u+\f[R],
-such as \f[V]read\f[R] with history.
+Changing models in the same session may generate token count errors
+because the token count recorded in history file entries may differ
+significantly from model to model (encoding).
 .PP
 With the exception of Davinci models, older models were designed to be
 run as one-shot.
@@ -574,8 +584,7 @@ An idiot savant.
 .SS REQUIREMENTS
 .PP
 A free OpenAI \f[B]API key\f[R].
-\f[V]Bash\f[R], \f[V]Ksh93u+\f[R], or \f[V]Zsh\f[R].
-\f[V]cURL\f[R], and \f[V]JQ\f[R].
+\f[V]Bash\f[R], \f[V]cURL\f[R], and \f[V]JQ\f[R].
 .PP
 \f[V]ImageMagick\f[R], and
 \f[V]Sox\f[R]/\f[V]Alsa-tools\f[R]/\f[V]FFmpeg\f[R] are optionally
@@ -593,15 +602,16 @@ when appropriate.
 \f[V]--frequency-penalty\f[R], \f[V]--help\f[R], \f[V]--hist\f[R],
 \f[V]--image\f[R], \f[V]--instruction\f[R], \f[V]--last\f[R],
 \f[V]--list-model\f[R], \f[V]--list-models\f[R], \f[V]--log\f[R],
-\f[V]--log-prob\f[R], \f[V]--man\f[R], \f[V]--max\f[R],
-\f[V]--max-tokens\f[R], \f[V]--mod\f[R], \f[V]--model\f[R],
-\f[V]--no-colour\f[R], \f[V]--no-config\f[R], \f[V]--presence\f[R],
+\f[V]--log-prob\f[R], \f[V]--max\f[R], \f[V]--max-tokens\f[R],
+\f[V]--mod\f[R], \f[V]--model\f[R], \f[V]--no-colour\f[R],
+\f[V]--no-config\f[R], \f[V]--presence\f[R],
 \f[V]--presence-penalty\f[R], \f[V]--prob\f[R], \f[V]--raw\f[R],
 \f[V]--restart-seq\f[R], \f[V]--restart-sequence\f[R],
 \f[V]--results\f[R], \f[V]--resume\f[R], \f[V]--start-seq\f[R],
 \f[V]--start-sequence\f[R], \f[V]--stop\f[R], \f[V]--temp\f[R],
 \f[V]--temperature\f[R], \f[V]--top\f[R], \f[V]--top-p\f[R],
-\f[V]--transcribe\f[R], \f[V]--translate\f[R], and \f[V]--verbose\f[R].
+\f[V]--transcribe\f[R], \f[V]--translate\f[R], \f[V]--multi\f[R],
+\f[V]--multiline\f[R], and \f[V]--verbose\f[R].
 .RE
 .PP
 E.g.: \[lq]\f[V]--chat\f[R]\[rq],
@@ -626,7 +636,7 @@ Set maximum number of \f[V]response tokens\f[R].
 Def=\f[I]256\f[R].
 .RS
 .PP
-Maximum \f[V]model tokens\f[R] can be set with a second number.
+\f[V]Model capacity\f[R] can be set with a second number.
 Def=\f[I]auto-256\f[R].
 .RE
 .TP
@@ -637,7 +647,7 @@ Set presence penalty (cmpls/chat, -2.0 - 2.0).
 Set frequency penalty (cmpls/chat, -2.0 - 2.0).
 .TP
 \f[B]-b\f[R] [\f[I]VAL\f[R]]
-Set best of, must be greater than \f[V]opt -n\f[R] (cmpls).
+Set best of, must be greater than \f[V]option -n\f[R] (cmpls).
 Def=\f[I]1\f[R].
 .TP
 \f[B]-B\f[R]
@@ -651,10 +661,9 @@ Chat mode in chat completions, new session.
 .TP
 \f[B]-C\f[R]
 Continue from last session (compls/chat).
-.RS
-.PP
-Set twice to start new session in chat mode (without -c, -cc).
-.RE
+.TP
+\f[B]-CC\f[R]
+Start new session of pure text compls (without -cc).
 .TP
 \f[B]-e\f[R] [\f[I]INSTRUCTION\f[R]] [\f[I]INPUT\f[R]]
 Set Edit mode.
@@ -671,6 +680,11 @@ Edit history file with text editor or pipe to stdout.
 .TP
 \f[B]-HH\f[R]
 Pretty print last history session to stdout.
+.RS
+.PP
+With \f[V]-C\f[R] and \f[V]-rR\f[R], prints with the specified restart
+and start sequences.
+.RE
 .TP
 \f[B]-i\f[R] [\f[I]PROMPT\f[R]]
 Generate images given a prompt.
@@ -787,14 +801,17 @@ T}
 Set number of results.
 Def=\f[I]1\f[R].
 .TP
+\f[B]-o\f[R]
+Copy response to clipboard.
+.TP
 \f[B]-p\f[R] [\f[I]VAL\f[R]]
 Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
 .TP
 \f[B]-r\f[R] [\f[I]SEQ\f[R]]
-Set restart sequence string.
+Set restart sequence string (cmpls).
 .TP
 \f[B]-R\f[R] [\f[I]SEQ\f[R]]
-Set start sequence string.
+Set start sequence string (cmpls).
 .TP
 \f[B]-s\f[R] [\f[I]SEQ\f[R]]
 Set stop sequences, up to 4.
@@ -812,15 +829,12 @@ Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper 0.0
 - 1.0).
 Def=\f[I]0\f[R].
 .TP
-\f[B]-o\f[R]
-Copy response to clipboard.
+\f[B]-u\f[R]
+Set multiline prompter.
 .TP
 \f[B]-v\f[R]
 Less verbose.
-.RS
-.PP
 May set multiple times.
-.RE
 .TP
 \f[B]-V\f[R]
 Pretty-print request.

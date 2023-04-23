@@ -2,7 +2,7 @@
 author:
 - mountaineerbr
 date: April 2023
-title: CHATGPT.SH(1) v0.11.9 \| General Commands Manual
+title: CHATGPT.SH(1) v0.12 \| General Commands Manual
 ---
 
 ### NAME
@@ -29,21 +29,26 @@ title: CHATGPT.SH(1) v0.11.9 \| General Commands Manual
 
 ### DESCRIPTION
 
-Positional arguments are read as a single **PROMPT**. If the chosen
-model requires an **INSTRUCTION** and **INPUT prompts** (such as edits
-models), the first positional argument is taken as INSTRUCTION and the
-following ones as INPUT or PROMPT.
+Complete INPUT text when run without any options (single-turn, pure text
+completions).
 
-Set `option -c` to start the chat mode via the **text completions** and
-record the conversation. This option accepts various models, defaults to
+Positional arguments are read as a single **PROMPT**. Model
+**INSTRUCTION** is usually optional, however if it is mandatory for a
+chosen model (such as edits models), then the first positional argument
+is read as **INSTRUCTION** and the following ones as **INPUT** or
+**PROMPT**.
+
+Set `option -c` to start the chat mode via **text completions** and
+record conversation. This option accepts various models, defaults to
 *text-davinci-003* if none set.
 
 Set `option -cc` to start the chat mode via **native chat completions**
-and use the turbo models. While in chat mode, some options are
-automatically set to un-lobotomise the bot.
+and use turbo models. While in chat mode, some options are automatically
+set to un-lobotomise the bot.
 
-Set `-C` to **resume** from last history session. Setting `-CC` starts a
-**new session** in the history file (without `-c` or `-cc`).
+Set `option -C` to **resume** from last history session. Setting only
+`-CC` starts a **new session** in **pure text completions**, and use
+restart and start sequences, if defined.
 
 Set model with “`-m` \[*NAME*\]” (full model name). Some models have an
 equivalent *INDEX* as short-hand, so “`-m`*text-davinci-003*” and
@@ -53,9 +58,9 @@ by *INDEX* with `option -ll`).
 Set *maximum response tokens* with `option` “`-`NUM” or “`-M` NUM”. This
 defaults to 256 tokens in chat and single-turn modes.
 
-*Maximum model tokens* can be set with a second *NUM* such as
-“`-`*NUM,NUM*” or “`-M` NUM-NUM”, otherwise it is set automatically to
-the capacity of known models, or to *2048* tokens as fallback.
+*Model capacity* (max model tokens) can be set with a second *NUM* such
+as “`-`*NUM,NUM*” or “`-M` NUM-NUM”, otherwise it is set automatically
+to the capacity of known models, or to *2048* tokens as fallback.
 
 If a plain text file path is set as first positional argument, it is
 loaded as text PROMPT (text cmpls, chat cmpls, and text/code edits).
@@ -116,14 +121,17 @@ For example, given a partial input, the language model will try
 completing it until probable “`<|endoftext|>`”, or other stop sequences
 (stops may be set with `-s`).
 
-Language model **SKILLS** can activated, with specific prompts, see
-<https://platform.openai.com/examples>.
+**Restart** and **start sequences** may be optionally set and are always
+preceded by a new line.
 
 To enable **multiline input**, type in a backslash “*\\*” as the last
 character of the input line and press ENTER (backslash will be removed
-from input). Once enabled, press ENTER twice to confirm the multiline
-prompt. Useful to paste from clipboard, but empty lines will confirm the
-prompt up to that point.
+from input), or set `option -u`. Once enabled, press ENTER twice to
+confirm the multiline prompt. Useful to paste from clipboard, but empty
+lines will confirm the prompt up to that point.
+
+Language model **SKILLS** can activated, with specific prompts, see
+<https://platform.openai.com/examples>.
 
 #### 2. Chat Mode
 
@@ -140,42 +148,43 @@ are also the best option for many non-chat use cases.
 
 ##### 2.3 Q & A Format
 
-The defaults chat format is “`Q & A`”. So, the **restart text** “*Q: *”
-and the **start text** “*A:*” must be injected for the chat bot to work
-well with text cmpls.
+The defaults chat format is “**Q & A**”. The **restart sequence**
+“\n_Q: *” and the **start text** ”\n_A:*” are injected for the chat bot
+to work well with text cmpls.
 
-Typing only a colon “*:*” at the start of the prompt causes it to be
-appended after a newline to the last prompt (answer) in text cmpls. If
-this trick is used with the initial prompt in text cmpls, it works as
-the **INSTRUCTION**. In chat cmpls, setting a prompt with “`:`” always
-sets it as a **SYSTEM** message.
+In native chat completions, setting a prompt with “*:*” as the initial
+character sets the prompt as a **SYSTEM** message. In text completions,
+however, typing a colon “*:*” at the start of the prompt causes the text
+following it to be appended immediately to the last (response) prompt
+text.
 
 ##### 2.4 Chat Commands
 
 While in chat mode, the following commands can be typed in the new
-prompt to set a new parameter. Note that the command operator may be
-either “`!`”, or “`/`”.
+prompt to set a new parameter. The command operator may be either “`!`”,
+or “`/`”.
 
-|        |            |                                  |
-|-------:|:-----------|:---------------------------------|
-| `!NUM` | `!max`     | Set response / model max tokens. |
-|   `-a` | `!pre`     | Set presence pensalty.           |
-|   `-A` | `!freq`    | Set frequency penalty.           |
-|   `-c` | `!new`     | Start new session.               |
-|   `-H` | `!hist`    | Edit history in editor.          |
-|   `-L` | `!log`     | Save to log file.                |
-|   `-m` | `!mod`     | Set model (by index or name).    |
-|   `-p` | `!top`     | Set top_p.                       |
-|   `-r` | `!restart` | Set restart sequence.            |
-|   `-R` | `!start`   | Set start sequence.              |
-|   `-s` | `!stop`    | Set stop sequences.              |
-|   `-t` | `!temp`    | Set temperature.                 |
-|   `-o` | `!clip`    | Copy responses to clipboard.     |
-|   `-v` | `!ver`     | Set/unset verbose.               |
-|   `-x` | `!ed`      | Set/unset text editor interface. |
-|   `-w` | `!rec`     | Start audio record chat.         |
-|   `!r` | `!regen`   | Renegerate last response.        |
-|   `!q` | `!quit`    | Exit.                            |
+|        |            |                                       |
+|-------:|:-----------|:--------------------------------------|
+| `!NUM` | `!max`     | Set response tokens / model capacity. |
+|   `-a` | `!pre`     | Set presence pensalty.                |
+|   `-A` | `!freq`    | Set frequency penalty.                |
+|   `-c` | `!new`     | Start new session.                    |
+|   `-H` | `!hist`    | Edit history in editor.               |
+|   `-L` | `!log`     | Save to log file.                     |
+|   `-m` | `!mod`     | Set model (by index or name).         |
+|   `-o` | `!clip`    | Copy responses to clipboard.          |
+|   `-p` | `!top`     | Set top_p.                            |
+|   `-r` | `!restart` | Set restart sequence.                 |
+|   `-R` | `!start`   | Set start sequence.                   |
+|   `-s` | `!stop`    | Set stop sequences.                   |
+|   `-t` | `!temp`    | Set temperature.                      |
+|   `-u` | `!multi`   | Toggle multiline prompter.            |
+|   `-v` | `!ver`     | Toggle verbose.                       |
+|   `-x` | `!ed`      | Toggle text editor interface.         |
+|   `-w` | `!rec`     | Start audio record chat.              |
+|   `!r` | `!regen`   | Renegerate last response.             |
+|   `!q` | `!quit`    | Exit.                                 |
 
 E.g.: “`!temp` *0.7*”, “`!mod`*1*”, and “`-p` *0.2*”.
 
@@ -194,9 +203,8 @@ empty prompt.
 
 #### 3. Prompt Engineering and Design
 
-Unless the chat `options -c` or `-cc` are set, **NO** INSTRUCTION is
-given to the language model (as would, otherwise, be the initial
-prompt).
+Unless the chat `options -cc` are set, **NO** INSTRUCTION is given to
+the language model (as would, otherwise, be the initial prompt).
 
 On chat mode, if no INSTRUCTION is set, a short one is given, and some
 options set, such as increasing temp and presence penalty, in order to
@@ -364,12 +372,9 @@ Defaults="*vim*"
 
 ### BUGS
 
-`Ksh93` mangles multibyte characters when re-editing input prompt and
-truncates input longer than 80 chars. Workaround is to move cursor one
-char and press the up arrow key.
-
-`Ksh2020` lacks functionality compared to `Ksh83u+`, such as `read` with
-history.
+Changing models in the same session may generate token count errors
+because the token count recorded in history file entries may differ
+significantly from model to model (encoding).
 
 With the exception of Davinci models, older models were designed to be
 run as one-shot.
@@ -379,10 +384,17 @@ should answer questions.
 
 Garbage in, garbage out. An idiot savant.
 
+<!--
+`Ksh93` mangles multibyte characters when re-editing input prompt
+and truncates input longer than 80 chars. Workaround is to move
+cursor one char and press the up arrow key.
+&#10;`Ksh2020` lacks functionality compared to `Ksh83u+`, such as `read`
+with history, so avoid it.
+-->
+
 ### REQUIREMENTS
 
-A free OpenAI **API key**. `Bash`, `Ksh93u+`, or `Zsh`. `cURL`, and
-`JQ`.
+A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 
 `ImageMagick`, and `Sox`/`Alsa-tools`/`FFmpeg` are optionally required.
 
@@ -395,12 +407,12 @@ when appropriate.
 > `--clipboard`, `--clip`, `--cont`, `--continue`, `--edit`, `--editor`,
 > `--frequency`, `--frequency-penalty`, `--help`, `--hist`, `--image`,
 > `--instruction`, `--last`, `--list-model`, `--list-models`, `--log`,
-> `--log-prob`, `--man`, `--max`, `--max-tokens`, `--mod`, `--model`,
+> `--log-prob`, `--max`, `--max-tokens`, `--mod`, `--model`,
 > `--no-colour`, `--no-config`, `--presence`, `--presence-penalty`,
 > `--prob`, `--raw`, `--restart-seq`, `--restart-sequence`, `--results`,
 > `--resume`, `--start-seq`, `--start-sequence`, `--stop`, `--temp`,
 > `--temperature`, `--top`, `--top-p`, `--transcribe`, `--translate`,
-> and `--verbose`.
+> `--multi`, `--multiline`, and `--verbose`.
 
 E.g.: “`--chat`”, “`--temp`=*0.9*”, “`--max`=*1024,128*”, and
 “`--presence-penalty` *0.6*”.
@@ -417,7 +429,7 @@ Fuzz intensity can be set with \[VAL%\]. Def=*0%*.
 **-M** \[*NUM*\[*-NUM*\]\]  
 Set maximum number of `response tokens`. Def=*256*.
 
-Maximum `model tokens` can be set with a second number. Def=*auto-256*.
+`Model capacity` can be set with a second number. Def=*auto-256*.
 
 **-a** \[*VAL*\]  
 Set presence penalty (cmpls/chat, -2.0 - 2.0).
@@ -426,7 +438,7 @@ Set presence penalty (cmpls/chat, -2.0 - 2.0).
 Set frequency penalty (cmpls/chat, -2.0 - 2.0).
 
 **-b** \[*VAL*\]  
-Set best of, must be greater than `opt -n` (cmpls). Def=*1*.
+Set best of, must be greater than `option -n` (cmpls). Def=*1*.
 
 **-B**  
 Print log probabilities to stderr (cmpls, 0 - 5).
@@ -440,7 +452,8 @@ Chat mode in chat completions, new session.
 **-C**  
 Continue from last session (compls/chat).
 
-Set twice to start new session in chat mode (without -c, -cc).
+**-CC**  
+Start new session of pure text compls (without -cc).
 
 **-e** \[*INSTRUCTION*\] \[*INPUT*\]  
 Set Edit mode. Model def=*text-davinci-edit-001*.
@@ -456,6 +469,9 @@ Edit history file with text editor or pipe to stdout.
 
 **-HH**  
 Pretty print last history session to stdout.
+
+With `-C` and `-rR`, prints with the specified restart and start
+sequences.
 
 **-i** \[*PROMPT*\]  
 Generate images given a prompt.
@@ -505,14 +521,17 @@ Set model by *INDEX*:
 **-n** \[*NUM*\]  
 Set number of results. Def=*1*.
 
+**-o**  
+Copy response to clipboard.
+
 **-p** \[*VAL*\]  
 Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
 
 **-r** \[*SEQ*\]  
-Set restart sequence string.
+Set restart sequence string (cmpls).
 
 **-R** \[*SEQ*\]  
-Set start sequence string.
+Set start sequence string (cmpls).
 
 **-s** \[*SEQ*\]  
 Set stop sequences, up to 4. Def="*\<\|endoftext\|\>*".
@@ -527,13 +546,11 @@ Set/search prompt from awesome-chatgpt-prompts.
 Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper
 0.0 - 1.0). Def=*0*.
 
-**-o**  
-Copy response to clipboard.
+**-u**  
+Set multiline prompter.
 
 **-v**  
-Less verbose.
-
-May set multiple times.
+Less verbose. May set multiple times.
 
 **-V**  
 Pretty-print request.

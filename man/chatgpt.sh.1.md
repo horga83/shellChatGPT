@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.11.10 | General Commands Manual
+% CHATGPT.SH(1) v0.12 | General Commands Manual
 % mountaineerbr
 % April 2023
 
@@ -25,21 +25,25 @@
 
 ### DESCRIPTION
 
-Positional arguments are read as a single **PROMPT**. If the
-chosen model requires an **INSTRUCTION** and **INPUT prompts** (such as
-edits models), the first positional argument is taken as INSTRUCTION and
-the following ones as INPUT or PROMPT.
+Complete INPUT text when run without any options (single-turn,
+pure text completions).
 
-Set `option -c` to start the chat mode via the **text completions**
-and record the conversation. This option accepts various
+Positional arguments are read as a single **PROMPT**. Model **INSTRUCTION**
+is usually optional, however if it is mandatory for a chosen model
+(such as edits models), then the first positional argument is read as
+**INSTRUCTION** and the following ones as **INPUT** or **PROMPT**.
+
+Set `option -c` to start the chat mode via **text completions**
+and record conversation. This option accepts various
 models, defaults to _text-davinci-003_ if none set.
 
 Set `option -cc` to start the chat mode via **native chat completions**
-and use the turbo models. While in chat mode, some options are
+and use turbo models. While in chat mode, some options are
 automatically set to un-lobotomise the bot.
 
-Set `-C` to **resume** from last history session. Setting `-CC` starts a
-**new session** in the history file (without `-c` or `-cc`).
+Set `option -C` to **resume** from last history session. Setting only
+`-CC` starts a **new session** in **pure text completions**, and use
+restart and start sequences, if defined.
 
 Set model with "`-m` \[_NAME_]" (full model name). Some models have an
 equivalent _INDEX_ as short-hand, so "`-m`_text-davinci-003_" and
@@ -116,14 +120,18 @@ completions. For example, given a partial input, the language
 model will try completing it until probable "`<|endoftext|>`",
 or other stop sequences (stops may be set with `-s`).
 
-Language model **SKILLS** can activated, with specific prompts,
-see <https://platform.openai.com/examples>.
+**Restart** and **start sequences** may be optionally set and are
+always preceded by a new line.
 
 To enable **multiline input**, type in a backslash "_\\_" as the last
 character of the input line and press ENTER (backslash will be
-removed from input). Once enabled, press ENTER twice to confirm
-the multiline prompt. Useful to paste from clipboard, but empty
-lines will confirm the prompt up to that point.
+removed from input), or set `option -u`.
+Once enabled, press ENTER twice to confirm the multiline prompt.
+Useful to paste from clipboard, but empty lines will confirm
+the prompt up to that point.
+
+Language model **SKILLS** can activated, with specific prompts,
+see <https://platform.openai.com/examples>.
 
 
 #### 2. Chat Mode
@@ -141,20 +149,21 @@ models are also the best option for many non-chat use cases.
 
 ##### 2.3 Q & A Format
 
-The defaults chat format is "`Q & A`". So, the **restart text**
-"_Q:\ _" and the **start text** "_A:_" must be injected
+The defaults chat format is "**Q & A**". The **restart sequence**
+"\\n_Q:\ _" and the **start text** "\\n_A:_" are injected
 for the chat bot to work well with text cmpls.
 
-Typing only a colon "_:_" at the start of the prompt causes it to
-be appended after a newline to the last prompt (answer) in text
-cmpls. If this trick is used with the initial prompt in text cmpls,
-it works as the **INSTRUCTION**. In chat cmpls, setting a prompt with
-"`:`" always sets it as a **SYSTEM** message.
+In native chat completions, setting a prompt with "_:_" as the initial
+character sets the prompt as a **SYSTEM** message. In text completions,
+however, typing a colon "_:_" at the start of the prompt
+causes the text following it to be appended immediately to the last
+(response) prompt text.
+
 
 ##### 2.4 Chat Commands
 
 While in chat mode, the following commands can be typed in the
-new prompt to set a new parameter. Note that the command operator
+new prompt to set a new parameter. The command operator
 may be either "`!`", or "`/`".
 
   --------    ----------    --------------------------------------
@@ -165,14 +174,15 @@ may be either "`!`", or "`/`".
       `-H`    `!hist`       Edit history in editor.
       `-L`    `!log`        Save to log file.
       `-m`    `!mod`        Set model (by index or name).
+      `-o`    `!clip`       Copy responses to clipboard.
       `-p`    `!top`        Set top_p.
       `-r`    `!restart`    Set restart sequence.
       `-R`    `!start`      Set start sequence.
       `-s`    `!stop`       Set stop sequences.
       `-t`    `!temp`       Set temperature.
-      `-o`    `!clip`       Copy responses to clipboard.
-      `-v`    `!ver`        Set/unset verbose.
-      `-x`    `!ed`         Set/unset text editor interface.
+      `-u`    `!multi`      Toggle multiline prompter.
+      `-v`    `!ver`        Toggle verbose.
+      `-x`    `!ed`         Toggle text editor interface.
       `-w`    `!rec`        Start audio record chat.
       `!r`    `!regen`      Renegerate last response.
       `!q`    `!quit`       Exit.
@@ -197,7 +207,7 @@ new empty prompt.
 
 #### 3. Prompt Engineering and Design
 
-Unless the chat `options -c` or `-cc` are set, __NO__ INSTRUCTION is
+Unless the chat `options -cc` are set, __NO__ INSTRUCTION is
 given to the language model (as would, otherwise, be the initial
 prompt).
 
@@ -389,13 +399,6 @@ _tab_ and _unicode hex_. To preserve these symbols as literals instead
 
 ### BUGS
 
-`Ksh93` mangles multibyte characters when re-editing input prompt
-and truncates input longer than 80 chars. Workaround is to move
-cursor one char and press the up arrow key.
-
-`Ksh2020` lacks functionality compared to `Ksh83u+`, such as `read`
-with history, so avoid it.
-
 Changing models in the same session may generate token count errors
 because the token count recorded in history file entries may differ
 significantly from model to model (encoding).
@@ -408,10 +411,19 @@ it should answer questions.
 
 Garbage in, garbage out. An idiot savant.
 
+<!--
+`Ksh93` mangles multibyte characters when re-editing input prompt
+and truncates input longer than 80 chars. Workaround is to move
+cursor one char and press the up arrow key.
+
+`Ksh2020` lacks functionality compared to `Ksh83u+`, such as `read`
+with history, so avoid it.
+-->
+
 
 ### REQUIREMENTS
 
-A free OpenAI **API key**. `Bash`, `Ksh93u+`, or `Zsh`. `cURL`, and `JQ`.
+A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 
 `ImageMagick`, and `Sox`/`Alsa-tools`/`FFmpeg` are optionally required.
 
@@ -429,7 +441,7 @@ times when appropriate.
 > `--presence`, `--presence-penalty`, `--prob`, `--raw`, `--restart-seq`,
 > `--restart-sequence`, `--results`, `--resume`, `--start-seq`,
 > `--start-sequence`, `--stop`, `--temp`, `--temperature`, `--top`, `--top-p`,
-> `--transcribe`, `--translate`, and `--verbose`.
+> `--transcribe`, `--translate`, `--multi`, `--multiline`, and `--verbose`.
 
 | E.g.: "`--chat`", "`--temp`=_0.9_", "`--max`=_1024,128_", and "`--presence-penalty` _0.6_".
 
@@ -465,7 +477,7 @@ times when appropriate.
 
 **-b** \[_VAL_]
 
-: Set best of, must be greater than `opt -n` (cmpls). Def=_1_.
+: Set best of, must be greater than `option -n` (cmpls). Def=_1_.
 
 
 **-B**
@@ -486,8 +498,10 @@ times when appropriate.
 **-C**
 
 :     Continue from last session (compls/chat).
+ 
+**-CC**
 
-      Set twice to start new session in chat mode (without -c, -cc).
+: Start new session of pure text compls (without -cc).
 
 
 **-e** \[_INSTRUCTION_] \[_INPUT_]
@@ -510,7 +524,9 @@ times when appropriate.
 
 **-HH**
 
-: Pretty print last history session to stdout.
+:     Pretty print last history session to stdout.
+
+      With `-C` and `-rR`, prints with the specified restart and start sequences.
 
 
 **-i** \[_PROMPT_]
@@ -584,6 +600,11 @@ times when appropriate.
 : Set number of results. Def=_1_.
 
 
+**-o**
+
+: Copy response to clipboard.
+
+
 **-p** \[_VAL_]
 
 : Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
@@ -591,12 +612,12 @@ times when appropriate.
 
 **-r** \[_SEQ_]
 
-: Set restart sequence string.
+: Set restart sequence string (cmpls).
 
 
 **-R** \[_SEQ_]
 
-: Set start sequence string.
+: Set start sequence string (cmpls).
 
 
 **-s** \[_SEQ_]
@@ -618,16 +639,14 @@ times when appropriate.
 : Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper 0.0 - 1.0). Def=_0_.
 
 
-**-o**
+**-u**
 
-: Copy response to clipboard.
+: Set multiline prompter.
 
 
 **-v**
 
-:     Less verbose.
-     
-      May set multiple times.
+:     Less verbose. May set multiple times.
 
 
 **-V**

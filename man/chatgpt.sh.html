@@ -5,7 +5,7 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="mountaineerbr" />
-  <title>CHATGPT.SH(1) v0.11.9 | General Commands Manual</title>
+  <title>CHATGPT.SH(1) v0.12 | General Commands Manual</title>
   <style>
     html {
       color: #1a1a1a;
@@ -167,7 +167,7 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">CHATGPT.SH(1) v0.11.9 | General Commands Manual</h1>
+<h1 class="title">CHATGPT.SH(1) v0.12 | General Commands Manual</h1>
 <p class="author">mountaineerbr</p>
 <p class="date">April 2023</p>
 </header>
@@ -201,21 +201,23 @@ Wrapper</div>
    <strong>chatgpt.sh</strong> <code>-l</code>
 [<em>MODEL_NAME</em>]</div>
 <h3 id="description">DESCRIPTION</h3>
-<p>Positional arguments are read as a single <strong>PROMPT</strong>. If
-the chosen model requires an <strong>INSTRUCTION</strong> and
-<strong>INPUT prompts</strong> (such as edits models), the first
-positional argument is taken as INSTRUCTION and the following ones as
-INPUT or PROMPT.</p>
-<p>Set <code>option -c</code> to start the chat mode via the
-<strong>text completions</strong> and record the conversation. This
-option accepts various models, defaults to <em>text-davinci-003</em> if
-none set.</p>
+<p>Complete INPUT text when run without any options (single-turn, pure
+text completions).</p>
+<p>Positional arguments are read as a single <strong>PROMPT</strong>.
+Model <strong>INSTRUCTION</strong> is usually optional, however if it is
+mandatory for a chosen model (such as edits models), then the first
+positional argument is read as <strong>INSTRUCTION</strong> and the
+following ones as <strong>INPUT</strong> or <strong>PROMPT</strong>.</p>
+<p>Set <code>option -c</code> to start the chat mode via <strong>text
+completions</strong> and record conversation. This option accepts
+various models, defaults to <em>text-davinci-003</em> if none set.</p>
 <p>Set <code>option -cc</code> to start the chat mode via <strong>native
-chat completions</strong> and use the turbo models. While in chat mode,
-some options are automatically set to un-lobotomise the bot.</p>
-<p>Set <code>-C</code> to <strong>resume</strong> from last history
-session. Setting <code>-CC</code> starts a <strong>new session</strong>
-in the history file (without <code>-c</code> or <code>-cc</code>).</p>
+chat completions</strong> and use turbo models. While in chat mode, some
+options are automatically set to un-lobotomise the bot.</p>
+<p>Set <code>option -C</code> to <strong>resume</strong> from last
+history session. Setting only <code>-CC</code> starts a <strong>new
+session</strong> in <strong>pure text completions</strong>, and use
+restart and start sequences, if defined.</p>
 <p>Set model with “<code>-m</code> [<em>NAME</em>]” (full model name).
 Some models have an equivalent <em>INDEX</em> as short-hand, so
 “<code>-m</code><em>text-davinci-003</em>” and
@@ -225,10 +227,10 @@ Some models have an equivalent <em>INDEX</em> as short-hand, so
 <p>Set <em>maximum response tokens</em> with <code>option</code>
 “<code>-</code>NUM” or “<code>-M</code> NUM”. This defaults to 256
 tokens in chat and single-turn modes.</p>
-<p><em>Maximum model tokens</em> can be set with a second <em>NUM</em>
-such as “<code>-</code><em>NUM,NUM</em>” or “<code>-M</code> NUM-NUM”,
-otherwise it is set automatically to the capacity of known models, or to
-<em>2048</em> tokens as fallback.</p>
+<p><em>Model capacity</em> (max model tokens) can be set with a second
+<em>NUM</em> such as “<code>-</code><em>NUM,NUM</em>” or
+“<code>-M</code> NUM-NUM”, otherwise it is set automatically to the
+capacity of known models, or to <em>2048</em> tokens as fallback.</p>
 <p>If a plain text file path is set as first positional argument, it is
 loaded as text PROMPT (text cmpls, chat cmpls, and text/code edits).</p>
 <p><code>Option -S</code> sets an INSTRUCTION prompt (the initial
@@ -281,14 +283,17 @@ class="uri">https://platform.openai.com/docs/</a>.</p>
 completions. For example, given a partial input, the language model will
 try completing it until probable “<code>&lt;|endoftext|&gt;</code>”, or
 other stop sequences (stops may be set with <code>-s</code>).</p>
+<p><strong>Restart</strong> and <strong>start sequences</strong> may be
+optionally set and are always preceded by a new line.</p>
+<p>To enable <strong>multiline input</strong>, type in a backslash
+“<em>\</em>” as the last character of the input line and press ENTER
+(backslash will be removed from input), or set <code>option -u</code>.
+Once enabled, press ENTER twice to confirm the multiline prompt. Useful
+to paste from clipboard, but empty lines will confirm the prompt up to
+that point.</p>
 <p>Language model <strong>SKILLS</strong> can activated, with specific
 prompts, see <a href="https://platform.openai.com/examples"
 class="uri">https://platform.openai.com/examples</a>.</p>
-<p>To enable <strong>multiline input</strong>, type in a backslash
-“<em>\</em>” as the last character of the input line and press ENTER
-(backslash will be removed from input). Once enabled, press ENTER twice
-to confirm the multiline prompt. Useful to paste from clipboard, but
-empty lines will confirm the prompt up to that point.</p>
 <h4 id="chat-mode">2. Chat Mode</h4>
 <h5 id="text-completions-chat">2.1 Text Completions Chat</h5>
 <p>Set <code>option -c</code> to start chat mode of text completions. It
@@ -299,26 +304,25 @@ with a variety of models.</p>
 mode. Turbo models are also the best option for many non-chat use
 cases.</p>
 <h5 id="q-a-format">2.3 Q &amp; A Format</h5>
-<p>The defaults chat format is “<code>Q &amp; A</code>”. So, the
-<strong>restart text</strong> “<em>Q: </em>” and the <strong>start
-text</strong> “<em>A:</em>” must be injected for the chat bot to work
-well with text cmpls.</p>
-<p>Typing only a colon “<em>:</em>” at the start of the prompt causes it
-to be appended after a newline to the last prompt (answer) in text
-cmpls. If this trick is used with the initial prompt in text cmpls, it
-works as the <strong>INSTRUCTION</strong>. In chat cmpls, setting a
-prompt with “<code>:</code>” always sets it as a <strong>SYSTEM</strong>
-message.</p>
+<p>The defaults chat format is “<strong>Q &amp; A</strong>”. The
+<strong>restart sequence</strong> “\n_Q: <em>” and the <strong>start
+text</strong> ”\n_A:</em>” are injected for the chat bot to work well
+with text cmpls.</p>
+<p>In native chat completions, setting a prompt with “<em>:</em>” as the
+initial character sets the prompt as a <strong>SYSTEM</strong> message.
+In text completions, however, typing a colon “<em>:</em>” at the start
+of the prompt causes the text following it to be appended immediately to
+the last (response) prompt text.</p>
 <h5 id="chat-commands">2.4 Chat Commands</h5>
 <p>While in chat mode, the following commands can be typed in the new
-prompt to set a new parameter. Note that the command operator may be
-either “<code>!</code>”, or “<code>/</code>”.</p>
+prompt to set a new parameter. The command operator may be either
+“<code>!</code>”, or “<code>/</code>”.</p>
 <table>
 <tbody>
 <tr class="odd">
 <td style="text-align: right;"><code>!NUM</code></td>
 <td style="text-align: left;"><code>!max</code></td>
-<td style="text-align: left;">Set response / model max tokens.</td>
+<td style="text-align: left;">Set response tokens / model capacity.</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;"><code>-a</code></td>
@@ -351,56 +355,61 @@ either “<code>!</code>”, or “<code>/</code>”.</p>
 <td style="text-align: left;">Set model (by index or name).</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;"><code>-p</code></td>
-<td style="text-align: left;"><code>!top</code></td>
-<td style="text-align: left;">Set top_p.</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;"><code>-r</code></td>
-<td style="text-align: left;"><code>!restart</code></td>
-<td style="text-align: left;">Set restart sequence.</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;"><code>-R</code></td>
-<td style="text-align: left;"><code>!start</code></td>
-<td style="text-align: left;">Set start sequence.</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;"><code>-s</code></td>
-<td style="text-align: left;"><code>!stop</code></td>
-<td style="text-align: left;">Set stop sequences.</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;"><code>-t</code></td>
-<td style="text-align: left;"><code>!temp</code></td>
-<td style="text-align: left;">Set temperature.</td>
-</tr>
-<tr class="odd">
 <td style="text-align: right;"><code>-o</code></td>
 <td style="text-align: left;"><code>!clip</code></td>
 <td style="text-align: left;">Copy responses to clipboard.</td>
 </tr>
+<tr class="odd">
+<td style="text-align: right;"><code>-p</code></td>
+<td style="text-align: left;"><code>!top</code></td>
+<td style="text-align: left;">Set top_p.</td>
+</tr>
 <tr class="even">
-<td style="text-align: right;"><code>-v</code></td>
-<td style="text-align: left;"><code>!ver</code></td>
-<td style="text-align: left;">Set/unset verbose.</td>
+<td style="text-align: right;"><code>-r</code></td>
+<td style="text-align: left;"><code>!restart</code></td>
+<td style="text-align: left;">Set restart sequence.</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;"><code>-x</code></td>
-<td style="text-align: left;"><code>!ed</code></td>
-<td style="text-align: left;">Set/unset text editor interface.</td>
+<td style="text-align: right;"><code>-R</code></td>
+<td style="text-align: left;"><code>!start</code></td>
+<td style="text-align: left;">Set start sequence.</td>
 </tr>
 <tr class="even">
+<td style="text-align: right;"><code>-s</code></td>
+<td style="text-align: left;"><code>!stop</code></td>
+<td style="text-align: left;">Set stop sequences.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>-t</code></td>
+<td style="text-align: left;"><code>!temp</code></td>
+<td style="text-align: left;">Set temperature.</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>-u</code></td>
+<td style="text-align: left;"><code>!multi</code></td>
+<td style="text-align: left;">Toggle multiline prompter.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>-v</code></td>
+<td style="text-align: left;"><code>!ver</code></td>
+<td style="text-align: left;">Toggle verbose.</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>-x</code></td>
+<td style="text-align: left;"><code>!ed</code></td>
+<td style="text-align: left;">Toggle text editor interface.</td>
+</tr>
+<tr class="odd">
 <td style="text-align: right;"><code>-w</code></td>
 <td style="text-align: left;"><code>!rec</code></td>
 <td style="text-align: left;">Start audio record chat.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: right;"><code>!r</code></td>
 <td style="text-align: left;"><code>!regen</code></td>
 <td style="text-align: left;">Renegerate last response.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: right;"><code>!q</code></td>
 <td style="text-align: left;"><code>!quit</code></td>
 <td style="text-align: left;">Exit.</td>
@@ -422,9 +431,9 @@ Regenerate it again or press ENTER to accept it.</p>
 type in a single forward slash in the new empty prompt.</p>
 <h4 id="prompt-engineering-and-design">3. Prompt Engineering and
 Design</h4>
-<p>Unless the chat <code>options -c</code> or <code>-cc</code> are set,
-<strong>NO</strong> INSTRUCTION is given to the language model (as
-would, otherwise, be the initial prompt).</p>
+<p>Unless the chat <code>options -cc</code> are set, <strong>NO</strong>
+INSTRUCTION is given to the language model (as would, otherwise, be the
+initial prompt).</p>
 <p>On chat mode, if no INSTRUCTION is set, a short one is given, and
 some options set, such as increasing temp and presence penalty, in order
 to un-lobotomise the bot. With cheap and fast models of text cmpls, such
@@ -580,20 +589,25 @@ g. <strong>Latex syntax</strong>), type in an extra backslash such as
 </dd>
 </dl>
 <h3 id="bugs">BUGS</h3>
-<p><code>Ksh93</code> mangles multibyte characters when re-editing input
-prompt and truncates input longer than 80 chars. Workaround is to move
-cursor one char and press the up arrow key.</p>
-<p><code>Ksh2020</code> lacks functionality compared to
-<code>Ksh83u+</code>, such as <code>read</code> with history.</p>
+<p>Changing models in the same session may generate token count errors
+because the token count recorded in history file entries may differ
+significantly from model to model (encoding).</p>
 <p>With the exception of Davinci models, older models were designed to
 be run as one-shot.</p>
 <p>Instruction prompts are required for the model to even know that it
 should answer questions.</p>
 <p>Garbage in, garbage out. An idiot savant.</p>
+<!--
+`Ksh93` mangles multibyte characters when re-editing input prompt
+and truncates input longer than 80 chars. Workaround is to move
+cursor one char and press the up arrow key.
+
+`Ksh2020` lacks functionality compared to `Ksh83u+`, such as `read`
+with history, so avoid it.
+-->
 <h3 id="requirements">REQUIREMENTS</h3>
 <p>A free OpenAI <strong>API key</strong>. <code>Bash</code>,
-<code>Ksh93u+</code>, or <code>Zsh</code>. <code>cURL</code>, and
-<code>JQ</code>.</p>
+<code>cURL</code>, and <code>JQ</code>.</p>
 <p><code>ImageMagick</code>, and
 <code>Sox</code>/<code>Alsa-tools</code>/<code>FFmpeg</code> are
 optionally required.</p>
@@ -609,8 +623,8 @@ when appropriate.</p>
 <code>--hist</code>, <code>--image</code>, <code>--instruction</code>,
 <code>--last</code>, <code>--list-model</code>,
 <code>--list-models</code>, <code>--log</code>, <code>--log-prob</code>,
-<code>--man</code>, <code>--max</code>, <code>--max-tokens</code>,
-<code>--mod</code>, <code>--model</code>, <code>--no-colour</code>,
+<code>--max</code>, <code>--max-tokens</code>, <code>--mod</code>,
+<code>--model</code>, <code>--no-colour</code>,
 <code>--no-config</code>, <code>--presence</code>,
 <code>--presence-penalty</code>, <code>--prob</code>,
 <code>--raw</code>, <code>--restart-seq</code>,
@@ -618,7 +632,8 @@ when appropriate.</p>
 <code>--resume</code>, <code>--start-seq</code>,
 <code>--start-sequence</code>, <code>--stop</code>, <code>--temp</code>,
 <code>--temperature</code>, <code>--top</code>, <code>--top-p</code>,
-<code>--transcribe</code>, <code>--translate</code>, and
+<code>--transcribe</code>, <code>--translate</code>,
+<code>--multi</code>, <code>--multiline</code>, and
 <code>--verbose</code>.</p>
 </blockquote>
 <div class="line-block">E.g.: “<code>--chat</code>”,
@@ -639,7 +654,7 @@ when appropriate.</p>
 <dd>
 <p>Set maximum number of <code>response tokens</code>.
 Def=<em>256</em>.</p>
-<p>Maximum <code>model tokens</code> can be set with a second number.
+<p><code>Model capacity</code> can be set with a second number.
 Def=<em>auto-256</em>.</p>
 </dd>
 <dt><strong>-a</strong> [<em>VAL</em>]</dt>
@@ -652,7 +667,7 @@ Def=<em>auto-256</em>.</p>
 </dd>
 <dt><strong>-b</strong> [<em>VAL</em>]</dt>
 <dd>
-<p>Set best of, must be greater than <code>opt -n</code> (cmpls).
+<p>Set best of, must be greater than <code>option -n</code> (cmpls).
 Def=<em>1</em>.</p>
 </dd>
 <dt><strong>-B</strong></dt>
@@ -670,7 +685,10 @@ Def=<em>1</em>.</p>
 <dt><strong>-C</strong></dt>
 <dd>
 <p>Continue from last session (compls/chat).</p>
-<p>Set twice to start new session in chat mode (without -c, -cc).</p>
+</dd>
+<dt><strong>-CC</strong></dt>
+<dd>
+<p>Start new session of pure text compls (without -cc).</p>
 </dd>
 <dt><strong>-e</strong> [<em>INSTRUCTION</em>] [<em>INPUT</em>]</dt>
 <dd>
@@ -691,6 +709,8 @@ Def=<em>1</em>.</p>
 <dt><strong>-HH</strong></dt>
 <dd>
 <p>Pretty print last history session to stdout.</p>
+<p>With <code>-C</code> and <code>-rR</code>, prints with the specified
+restart and start sequences.</p>
 </dd>
 <dt><strong>-i</strong> [<em>PROMPT</em>]</dt>
 <dd>
@@ -794,17 +814,21 @@ Def=<em>1</em>.</p>
 <dd>
 <p>Set number of results. Def=<em>1</em>.</p>
 </dd>
+<dt><strong>-o</strong></dt>
+<dd>
+<p>Copy response to clipboard.</p>
+</dd>
 <dt><strong>-p</strong> [<em>VAL</em>]</dt>
 <dd>
 <p>Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).</p>
 </dd>
 <dt><strong>-r</strong> [<em>SEQ</em>]</dt>
 <dd>
-<p>Set restart sequence string.</p>
+<p>Set restart sequence string (cmpls).</p>
 </dd>
 <dt><strong>-R</strong> [<em>SEQ</em>]</dt>
 <dd>
-<p>Set start sequence string.</p>
+<p>Set start sequence string (cmpls).</p>
 </dd>
 <dt><strong>-s</strong> [<em>SEQ</em>]</dt>
 <dd>
@@ -823,14 +847,13 @@ Def=<em>1</em>.</p>
 <p>Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper
 0.0 - 1.0). Def=<em>0</em>.</p>
 </dd>
-<dt><strong>-o</strong></dt>
+<dt><strong>-u</strong></dt>
 <dd>
-<p>Copy response to clipboard.</p>
+<p>Set multiline prompter.</p>
 </dd>
 <dt><strong>-v</strong></dt>
 <dd>
-<p>Less verbose.</p>
-<p>May set multiple times.</p>
+<p>Less verbose. May set multiple times.</p>
 </dd>
 <dt><strong>-V</strong></dt>
 <dd>

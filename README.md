@@ -32,7 +32,7 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 ### Required packages
 
 - Free [OpenAI GPTChat key](https://platform.openai.com/account/api-keys)
-- [Ksh93u+](https://github.com/ksh93/ksh), Bash or Zsh
+- Bash <!-- [Ksh93u+](https://github.com/ksh93/ksh), Bash or Zsh -->
 - cURL, and JQ
 - Imagemagick (optional)
 - Base64 (optional)
@@ -61,7 +61,8 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 
 ![Chat cmpls with prompt confirmation](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/chat_cpls_verb.gif)
 
-### Text and Chat Completions
+
+### Text Completions
 
 One-shot text completion:
 
@@ -69,20 +70,43 @@ One-shot text completion:
 
 Text completion with Curie model:
 
-    chatgpt.sh -mtext-curie-001 "Hello there! What is your name?"
+    chatgpt.sh -m'text-curie-001' "Hello there! What is your name?"
     chatgpt.sh -m1 "List biggest cities in the world."
 
 _For better results,_ ***set an instruction/system prompt***:
     
-    chatgpt.sh -m1 -S"You are an AI assistant."  "List biggest cities in the world."
+    chatgpt.sh -S'You are an AI assistant.'  "List biggest cities in the world."
 
-Chat completion, _less verbose,_ and set temperature:
 
-    chatgpt.sh -ccv -t0.7 "Hello there! What is your name?"
+## Chat Mode of Text Completions
 
-Text/chat completion, use visual editor instead of shell `read` or `vared` (reuse initial text from positional arguments):
+With `option -c`, some options are set automatically to create a chat bot with text completions.
 
-    chatgpt.sh -cx "Alice was visiting Bob when John arrived  and"
+    chatgpt.sh -c "Hello there! What is your name?"
+
+
+Create a bot manually with the `davinci` model (without the help of `-c` or `-cc`):
+
+    chatgpt.sh -CC -a0.8 -A0.4 -R'Answer:' -r'Question: ' -s'Answer:' -s'Question: ' -S'You are a helpful assistant.'
+
+_Tip:_ set `-VV` to see the actual request body and how options are set!
+
+
+Complete text in multi-turn:
+
+    chatgpt.sh -CC -S'The following is a newspaper article.' "It was starts when FBI agents arrived at the governor house and  "
+
+
+## Native Chat Completions
+
+Start a new session in chat mode, and set a different temperature:
+
+    chatgpt.sh -cc -t0.7
+
+Chat mode in text editor (visual) mode. Edit initial input:
+
+    chatgpt.sh -ccx "Complete the story: Alice visits Bob. John arrives .."
+
 
 ### Awesome Prompts
 
@@ -90,9 +114,10 @@ Set a prompt from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt
 
     chatgpt.sh -cc -S /linux_terminal
 
-
+<!--
 _TIP:_ When using Ksh, press the up arrow key once to edit the _full prompt_
 (see note on [shell interpreters](#shell-interpreters)).
+-->
 
 
 ### Text Edits
@@ -198,6 +223,7 @@ Note that the model's steering and capabilities require prompt engineering
 to even know that it should answer the questions.
 
 
+<!--
 ## Shell Interpreters
 
 The script can be run with either [Ksh93u+](https://github.com/ksh93/ksh) (~~_avoid_ Ksh2020~~),
@@ -225,6 +251,7 @@ new prompts (with the up-arrow key).
 
 See [BUGS](https://github.com/mountaineerbr/shellChatGPT/tree/main/man#bugs)
 in the man page.
+-->
 
 
 <!--
@@ -235,6 +262,8 @@ in Arch Linux and derivative distros (I am still perfecting the PKGBUILD
 but it should work fine).
 -->
 
+
+<!--
 ## Termux Users
 
 Users of Termux may have some difficulty compiling the original Ksh93 under Termux.
@@ -246,6 +275,7 @@ After installing Zsh in Termux, create a symlink with:
 ````
 ln -s /data/data/com.termux/files/usr/bin/zsh /data/data/com.termux/files/usr/bin/ksh
 ````
+-->
 
 
 ## Project Objectives
@@ -257,13 +287,12 @@ ln -s /data/data/com.termux/files/usr/bin/zsh /data/data/com.termux/files/usr/bi
 
 ## Distinct Features
 
-- In chat mode, chat commands run with *operator* `!` or `/`,
-such as `!new` to start new session, `!temp 0.9` to set temperature,
-`!max 2048` to set max tokens, `!log ~/chat.log` to set a readable chat log, and so on.
-- In chat mode, edit history entries with command `!hist`,
-delete or comment them out with `#` to update context on the run.
-- In chat mode, end a line with a backslash to type in a new line.
-- Add operator forward slash `/` to the end of prompt (as last character) to trigger completions *preview mode*.
+- Run as *single* or *multi-turn*.
+- *Text editor interface*, and single and multiline prompters. 
+- Run chat commands with _operator_ `!` or `/`, such as `!new` to start new session, and `!temp 0.9` to set temperature.
+- In chat mode, edit live history entries with command `!hist`.
+- In chat mode, append a backslash `\\` operator at the end of the line to start _multiline input_, or set it by defaults with `option -u`.
+- Add operator forward slash `/` to the end of prompt to trigger completions *preview mode*.
 - One can regenerate a response typing in a new prompt a single slash `/`.
 - Set or search prompts from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts) with `-S /prompt_name`
 - Set clipboard with the latest response with `option -o`.

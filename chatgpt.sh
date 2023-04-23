@@ -1,12 +1,11 @@
-#!/usr/bin/env ksh
-# chatgpt.sh -- Ksh93/Bash/Zsh  ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.11.10  april/2023  by mountaineerbr  GPL+3
-[[ -n $KSH_VERSION  ]] && set -o emacs -o multiline -o pipefail
-[[ -n $BASH_VERSION ]] && { 	shopt -s extglob ;set -o pipefail ;HISTCONTROL=erasedups:ignoredups ;}
-[[ -n $ZSH_VERSION  ]] && { 	emulate zsh ;zmodload zsh/zle ;set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL ;}
+#!/usr/bin/env bash
+# chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
+# v0.12  april/2023  by mountaineerbr  GPL+3
+shopt -s extglob
+set -o pipefail
 
 # OpenAI API key
-#OPENAI_KEY=
+#OPENAI_API_KEY=
 
 # DEFAULTS
 # Text compls model
@@ -23,7 +22,7 @@
 #OPTP=1
 # Maximum response tokens
 OPTMAX=256
-# Maximum model tokens
+# Model capacity (auto)
 #MODMAX=
 # Presence penalty
 #OPTA=
@@ -39,19 +38,16 @@ OPTS=512x512
 OPTI_FMT=b64_json  #url
 # Recorder command
 #REC_CMD=
+# Inject restart text
+#RESTART=
+# Inject   start text
+#START=
+# Text cmpls chat use "\\nQ: " and "\\nA:"
+# Restart/Start seqs have priority
 
 # INSTRUCTION
 # Text and chat completions, and edits endpoints
 #INSTRUCTION="The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly."
-
-# Inject restart text
-#RESTART=
-Q_TYPE='Q: '
-# Inject start text
-#START=
-A_TYPE='A:'
-# (Re)Start seqs have priority
-
 
 # CACHE AND OUTPUT DIRECTORIES
 CONFFILE="$HOME/.chatgpt.conf"
@@ -70,15 +66,27 @@ FILEIN="${CACHEDIR%/}/dalle_in.png"
 FILEINW="${CACHEDIR%/}/whisper_in.mp3"
 FILEAWE="${CACHEDIR%/}/awesome-prompts.csv"
 USRLOG="${OUTDIR%/}/${FILETXT##*/}"
-HISTFILE="${CACHEDIR%/}/history_${KSH_VERSION:+ksh}${BASH_VERSION:+bash}"
-#https://www.zsh.org/mla/users/2013/msg00041.html
+HISTFILE="${CACHEDIR%/}/history_bash"
+HISTCONTROL=erasedups:ignoredups
 HISTSIZE=512
 
-MAN="NAME
+# Def hist, txt chat types
+Q_TYPE="\\nQ: "
+A_TYPE="\\nA:"
+
+# Base API URL
+APIURL="https://api.openai.com/v1"
+
+# Globs
+SPC="*([$IFS])"
+SPC0="*(\\\\[ntrvf])?(\ )"
+SPC1="*(\\\\[ntrvf]|[$IFS])"
+
+HELP="Name
 	${0##*/} -- ChatGPT / DALL-E / Whisper  Shell Wrapper
 
 
-SYNOPSIS
+Synopsis
 	${0##*/} [-m [MODEL_NAME|MODEL_INDEX]] [opt] [PROMPT|TXT_FILE]
 	${0##*/} [-m [MODEL_NAME|MODEL_INDEX]] [opt] [INSTRUCTION] [INPUT]
 	${0##*/} -e [opt] [INSTRUCTION] [INPUT]
@@ -92,389 +100,119 @@ SYNOPSIS
 	${0##*/} -l [MODEL_NAME]
 
 
-DESCRIPTION
-	All positional arguments are read as a single PROMPT. If the
-	chosen model requires an INSTRUCTION and INPUT prompts, the
-	first positional argument is taken as INSTRUCTION and the
-	following ones as INPUT or PROMPT.
-
-	Set option -c to start the chat mode via the text completions
-	and record the conversation. This option accepts various
-	models, defaults to \`text-davinci-003' if none set.
+Description
+	Complete INPUT text when run without any options (single-turn). 
 	
-	Set option -cc to start the chat mode via native chat completions
-	and use the turbo models. While in chat mode, some options are
-	automatically set to un-lobotomise the bot.
+	Positional arguments are read as a single PROMPT. When INSTRUCTION
+	is mandatory (such as for edits models), the first positional
+	argument is taken as INSTRUCTION and the following ones as INPUT
+	or PROMPT.
 
-	Set -C to resume from last history session. Setting -CC starts a
-	new session in the history file (without -c or -cc).
+	Set option -c to start the chat mode via text completions or -cc
+	for native chat completions. Combined with option -C, resumes from
+	last history session.
 
-	Set model with -m [NAME] (full model name). Some models have an
-	equivalent INDEX as short-hand, so \`-mtext-davinci-003' and
-	\`-m0' set the same model (list model by NAME with option -l or
-	by INDEX with option -ll).
+	Option -CC (without -cc) starts a pure text completions session,
+	and use restart and start sequences, if defined.
 
-	Set \`maximum response' tokens with option \`-NUM' or \`-M NUM'.
-	This defaults to $OPTMAX tokens in chat and single-turn modes.
+	Option -i generates or edits images. Option -w transcribes audio
+	and option -W tarnslates audio to English.
 
-	\`Maximum model' tokens can be set with a second NUM such as
-	\`-NUM,NUM' or \`-M NUM-NUM', otherwise it is set automatically
-	to the capacity of known models, or to 2048 tokens as fallback.
-
-	If a plain text file path is set as first positional argument,
-	it is loaded as text PROMPT (text cmpls, chat cmpls, and text/code
-	edits).
-
-	Option -S sets an INSTRUCTION prompt (the initial prompt) for
-	text cmpls, chat cmpls, and text/code edits. A text file path
-	may be supplied as the single argument. If the argument to this
-	option starts with a backslash such as \`-S /linux_terminal',
-	start search for an awesome-chatgpt-prompts (by Fatih KA).
-
-	Option -e sets the \`text edits' endpoint. That endpoint requires
-	both INSTRUCTION and INPUT prompts. User may choose a model amongst
-	the \`edit' model family.
-
-	Option -i generates images according to text PROMPT. If the first
-	positional argument is an IMAGE file, then generate variations of
-	it. If the first positional argument is an IMAGE file and the second
-	a MASK file (with alpha channel and transparency), and a text PROMPT
-	(required), then edit the IMAGE according to MASK and PROMPT.
-	If MASK is not provided, IMAGE must have transparency.
-
-	Optionally, size of output image may be set with [S]mall, [M]edium
-	or [L]arge as the first positional argument. See IMAGES section
-	below for more information on inpaint and outpaint.
-
-	Option -w transcribes audio from mp3, mp4, mpeg, mpga, m4a, wav,
-	and webm files. First positional argument must be an AUDIO file.
-	Optionally, set a TWO-LETTER input language (ISO-639-1) as second
-	argument. A PROMPT may also be set after language (must be in the
-	same language as the audio).
-
-	Option -W translates audio stream to English text. A PROMPT in
-	English may be set to guide the model as the second positional
-	argument.
-
-	Combine -wW with -cc to start chat with voice input (Whisper)
-	support. Output may be piped to a voice synthesiser to have a
-	full voice in and out experience.
-
-	Stdin is supported when there is no positional arguments left
-	after option parsing. Stdin input sets a single PROMPT.
-
-	User configuration is kept at \`${CHATGPTRC:-${CONFFILE/$HOME/"~"}}'.
-	Script cache is kept at \`${CACHEDIR/$HOME/"~"}'.
-
-	A personal (free) OpenAI API is required, set it with -K. Also,
-	see ENVIRONMENT section.
-
-	For complete model and settings information, refer to OpenAI
-	API docs at <https://platform.openai.com/docs/>.
+	A personal (free) OpenAI API is required, set it with -K. Also
+	see ENVIRONMENT section in man page.
 
 
-TEXT / CHAT COMPLETIONS
-	1. Text completions
-	Given a prompt, the model will return one or more predicted
-	completions. For example, given a partial input, the language
-	model will try completing it until probable \`<|endoftext|>',
-	or other stop sequences (stops may be set with -s).
+See Also
+	Check the man page for extended description of interface and
+	settings. It is also available online at:
 
-	Language model SKILLS can activated, with specific prompts,
-	see <https://platform.openai.com/examples>.
-
-	To enable multiline input, type in a backslash \`\\' as the last
-	character of the input line and press ENTER (backslash will be
-	removed from input). Once enabled, press ENTER twice to confirm
-	the multiline prompt. Useful to paste from clipboard, but empty
-	lines will confirm the prompt up to that point.
+	<https://github.com/mountaineerbr/shellChatGPT#help-page>.
 
 
-	2. Chat Mode
-	2.1 Text Completions Chat
-	Set option -c to start chat mode of text completions. It keeps
-	a history file, and keeps new questions in context. This works
-	with a variety of models.
-
-	2.2 Native Chat Completions
-	Set the double option -cc to start chat completions mode. Turbo
-	models are also the best option for many non-chat use cases.
-
-	2.3 Q & A Format
-	The defaults chat format is \`Q & A'. So, the \`\`restart text''
-	\`$Q_TYPE' and the \`\`start text'' \`$A_TYPE' must be injected
-	for the chat bot to work well with text cmpls.
-
-	Typing only a colon \`:' at the start of the prompt causes it to
-	be appended after a newline to the last prompt (answer) in text
-	cmpls. If this trick is used with the initial prompt in text cmpls,
-	it works as the INSTRUCTION. In chat cmpls, setting a prompt with
-	\`:' always sets it as a \`SYSTEM' message.
-
-	2.4 Chat Commands
+Chat Commands
 	While in chat mode, the following commands can be typed in the
-	new prompt to set a new parameter:
+	new prompt to set a new parameter. The command operator may be
+	either \`!', or \`/'.
 
-	    ------    ----------    ----------------------------------
-	     !NUM      !max          Set response / model max tokens.
-	       -a      !pre          Set presence pensalty.
-	       -A      !freq         Set frequency penalty.
-	       -c      !new          Start new session.
-	       -H      !hist         Edit history in editor.
-	       -L      !log          Save to log file.
-	       -m      !mod          Set model (by index or name).
-	       -p      !top          Set top_p.
-	       -r      !restart      Set restart sequence.
-	       -R      !start        Set start sequence.
-	       -s      !stop         Set stop sequences.
-	       -t      !temp         Set temperature.
-	       -o      !clip         Copy responses to clipboard.
-	       -v      !ver          Set/unset verbose.
-	       -x      !ed           Set/unset text editor interface.
-	       -w      !rec          Start audio record chat.
-	       !r      !regen        Renegerate last response.
-	       !q      !quit         Exit.
-	    ------    ----------    ----------------------------------
+	  ------    ----------    ---------------------------------------
+	   !NUM      !max          Set response tokens / model capacity.
+	     -a      !pre          Set presence pensalty.
+	     -A      !freq         Set frequency penalty.
+	     -c      !new          Start new session.
+	     -H      !hist         Edit history in editor.
+	     -L      !log          Save to log file.
+	     -m      !mod          Set model (by index or name).
+	     -o      !clip         Copy responses to clipboard.
+	     -p      !top          Set top_p.
+	     -r      !restart      Set restart sequence.
+	     -R      !start        Set start sequence.
+	     -s      !stop         Set stop sequences.
+	     -t      !temp         Set temperature.
+	     -u      !multi        Toggle multiline prompter.
+	     -v      !ver          Toggle verbose.
+	     -x      !ed           Toggle text editor interface.
+	     -w      !rec          Start audio record chat.
+	     !r      !regen        Renegerate last response.
+	     !q      !quit         Exit.
+	  ------    ----------    ---------------------------------------
 	
-	Examples: \`!temp 0.7', \`!mod1', and \`-p 0.2'.
-	Note that the command operator may be either \`!', or \`/'.
+	E.g.: \`!temp 0.7', \`!mod1', and \`-p 0.2'.
 
-	To change the chat context at run time, the history file must be
-	edited with \`!hist'. Delete history entries or comment them out
-	with \`#'.
+	Change chat context at run time with the \`!hist' command to edit
+	the history file (delete or comment out entries).
 
-
-	2.5 Completion Preview / Regeneration
-	To preview a prompt completion before commiting it to history,
-	append a forward slash \`/' to the prompt as the last character.
-	Regenerate it again or press ENTER to accept it.
+	To preview a prompt completion, append a forward slash \`/' to it
+	and press ENTER. Regenerate it again or press ENTER to accept it.
 
 	After a response has been written to the history file, regenerate
 	it with command \`!regen' or type in a single forward slash in
 	the new empty prompt.
 
-
-	3. Prompt Engineering and Design
-	Unless the chat options -c or -cc are set, _NO_ **INSTRUCTION** is
-	given to the language model (as would, otherwise, be the initial
-	prompt).
-
-	On chat mode, if no INSTRUCTION is set, a short one is given,
-	and some options set, such as increasing temp and presence penalty,
-	in order to un-lobotomise the bot. With cheap and fast models of
-	text cmpls, such as Curie, the best_of option may even be worth
-	setting (to 2 or 3).
-
-	Prompt engineering is an art on itself. Study carefully how to
-	craft the best prompts to get the most out of text, code and
-	chat compls models.
-
-	Certain prompts may return empty responses. Maybe the model has
-	nothing to further complete input or it expects more text. Try
-	trimming spaces, appending a full stop/ellipsis, resetting
-	temperature or adding more text.
-
-	Prompts ending with a space character may result in lower quality
-	output. This is because the API already incorporates trailing
-	spaces in its dictionary of tokens.
-
-	Note that the model's steering and capabilities require prompt
-	engineering to even know that it should answer the questions.
-
-	For more on prompt design, see:
-
-	<https://platform.openai.com/docs/guides/completion/prompt-design>
-	<https://github.com/openai/openai-cookbook/blob/main/techniques_to_improve_reliability.md>
+	To enable multiline input, type in a backslash \`\\' as the last
+	character of the input line and press ENTER, or set option -u.
+	Once enabled, press ENTER twice to confirm the prompt.
 
 
-	See detailed info on settings for each endpoint at:
-
-	<https://platform.openai.com/docs/>
-
-
-CODE COMPLETIONS
-	Codex models are discontinued. Use davinci or turbo models for
-	coding tasks.
-
-	Turn comments into code, complete the next line or function in
-	context, add code comments, and rewrite code for efficiency,
-	amongst other functions.
-
-	Start with a comment with instructions, data or code. To create
-	useful completions it's helpful to think about what information
-	a programmer would need to perform a task. 
-
-
-TEXT EDITS
-	This endpoint is set with models with \`edit' in their name or
-	option -e. Editing works by setting INSTRUCTION on how to modify
-	a prompt and the prompt proper.
-
-	The edits endpoint can be used to change the tone or structure
-	of text, or make targeted changes like fixing spelling. Edits
-	work well on empty prompts, thus enabling text generation similar
-	to the completions endpoint. 
-
-
-IMAGES / DALL-E
-	1. Image Generations
-	An image can be created given a text prompt. A text PROMPT of
-	the desired image(s) is required. The maximum length is 1000
-	characters.
-
-
-	2. Image Variations
-	Variations of a given IMAGE can be generated. The IMAGE to use as
-	the basis for the variations must be a valid PNG file, less than
-	4MB and square.
-
-
-	3. Image Edits
-	To edit an IMAGE, a MASK file may be optionally provided. If MASK
-	is not provided, IMAGE must have transparency, which will be used
-	as the mask. A text prompt is required.
-
-	3.1 ImageMagick
-	If ImageMagick is available, input IMAGE and MASK will be checked
-	and processed to fit dimensions and other requirements.
-
-	3.2 Transparent Colour and Fuzz
-	A transparent colour must be set with \`-@[COLOUR]' to create the
-	mask. Defaults=black.
-
-	By defaults, the COLOUR must be exact. Use the fuzz option to match
-	colours that are close to the target colour. This can be set with
-	\`-@[VALUE%]' as a percentage of the maximum possible intensity,
-	for example \`-@10%black'.
-
-	See also:
-	    <https://imagemagick.org/script/color.php>
-	    <https://imagemagick.org/script/command-line-options.php#fuzz>
-
-	3.3 Mask File / Alpha Channel
-	An alpha channel is generated with ImageMagick from any image
-	with the set transparent colour (defaults to black). In this way,
-	it is easy to make a mask with any black and white image as a
-	template.
-
-	3.4 In-Paint and Out-Paint
-	In-painting is achieved setting an image with a MASK and a prompt.
-
-	Out-painting can also be achieved manually with the aid of this
-	script. Paint a portion of the outer area of an image with alpha,
-	or a defined transparent colour which will be used as the mask,
-	and set the same colour in the script with -@. Choose the best
-	result amongst many results to continue the out-painting process
-	step-wise.
-
-
-	Optionally, for all image generations, variations, and edits,
-	set size of output image with 256x256 (Small), 512x512 (Medium),
-	or 1024x1024 (Large) as the first positional argument. Defaults=$OPTS.
-
-
-AUDIO / WHISPER
-	1. Transcriptions
-	Transcribes audio file or voice record into the input language.
-	Set a two-letter ISO-639-1 language code (en, es, ja, or zh) as
-	the positional argument following the input audio file. A prompt
-	may also be set as last positional parameter to help guide the
-	model. This prompt should match the audio language.
-
-	2. Translations
-	Translates audio into English. An optional text to guide the
-	model's style or continue a previous audio segment is optional
-	as last positional argument. This prompt should be in English.
-	
-	Setting temperature has an effect, the higher the more random.
-
-
-QUOTING AND SPECIAL SYMBOLS
-	The special sequences (\`\\b', \`\\f', \`\\n', \`\\r', \`\\t' and \`\\uHEX')
-	are interpreted as quoted backspace, form feed, new line, return,
-	tab and unicode hex. To preserve these symbols as literals instead
-	(e. g. Latex syntax), type in an extra backslash such as \`\\\\theta'.
-
-
-ENVIRONMENT
-	CHATGPTRC 	Path to user ${0##*/} configuration.
-			Defaults=${CHATGPTRC:-${CONFFILE/$HOME/"~"}}
-
-	INSTRUCTION 	Initial instruction set for the chatbot.
-
-	OPENAI_API_KEY
-	OPENAI_KEY 	Set your personal (free) OpenAI API key.
-
-	REC_CMD 	Audio recording command.
-
-	VISUAL
-	EDITOR 		Text editor for external prompt editing.
-			Defaults=vim
-
-
-BUGS
-	Ksh93 mangles multibyte characters when re-editing input prompt
-	and truncates input longer than 80 chars. Workaround is to move
-	cursor one char and press the up arrow key.
-
-	Ksh2020 lacks functionality compared to Ksh83u+, such as \`read'
-	with history.
-
-	With the exception of Davinci models, older models were designed
-	to be run as one-shot.
-
-	Instruction prompts are required for the model to even know that
-	it should answer questions.
-
-	Garbage in, garbage out. An idiot savant.
-
-
-REQUIREMENTS
-	A free OpenAI API key.
-	
-	Bash, Ksh93u+, or Zsh. cURL, and JQ.
-
-	ImageMagick, and Sox/Alsa-tools/FFmpeg are optionally required.
-
-
-LONG OPTIONS
-	Long options can be set with an argument, or multiple times when
-	appropriate. Ex: \`--chat', \`--temp=0.9', \`--max=1024,128',
-	and \`--presence-penalty 0.6'.
+Long Options
+	The following options can be set with an argument, or multiple
+	times when appropriate.
 
 	--alpha, --api-key, --best, --best-of, --chat, --clipboard,
 	--clip, --cont, --continue, --edit, --editor, --frequency,
 	--frequency-penalty, --help, --hist, --image, --instruction,
-	--last, --list-model, --list-models, --log, --log-prob, --man,
-	--max, --max-tokens, --mod, --model, --no-colour, --no-config,
+	--last, --list-model, --list-models, --log, --log-prob, --max,
+	--max-tokens, --mod, --model, --no-colour, --no-config,
 	--presence, --presence-penalty, --prob, --raw, --restart-seq,
 	--restart-sequence, --results, --resume, --start-seq,
 	--start-sequence, --stop, --temp, --temperature, --top, --top-p,
-	--transcribe, --translate, and --verbose.
+	--transcribe, --translate, --multi, --multiline, and --verbose.
+
+	E.g.: \`--chat', \`--temp=0.9', \`--max=1024,128', and \`--presence-penalty 0.6'.
 
 
-OPTIONS
+Options
 	-@ [[VAL%]COLOUR]
 		 Set transparent colour of image mask. Def=black.
 		 Fuzz intensity can be set with [VAL%]. Def=0%.
 	-NUM
 	-M [NUM[-NUM]]
-		 Set maximum number of \`response tokens'. Maximum
-		 \`model tokens' can be set with a second number. Def=$OPTMAX.
+		 Set maximum number of \`response tokens'. Def=$OPTMAX.
+		 \`Model capacity' can be set with a second number.
 	-a [VAL] Set presence penalty  (cmpls/chat, -2.0 - 2.0).
 	-A [VAL] Set frequency penalty (cmpls/chat, -2.0 - 2.0).
 	-b [VAL] Set best of, must be greater than opt -n (cmpls). Def=1.
 	-B 	 Print log probabilities to stderr (cmpls, 0 - 5).
 	-c 	 Chat mode in text completions, new session.
 	-cc 	 Chat mode in chat completions, new session.
-	-C 	 Continue from last session (compls/chat). Set twice
-		 to start new session in chat mode (without -c, -cc).
+	-C 	 Continue from last session (compls/chat).
+	-CC 	 Start new session of pure text compls (without -cc).
 	-e [INSTRUCTION] [INPUT]
 		 Set Edit mode. Model def=text-davinci-edit-001.
 	-f 	 Ignore user config file and environment.
 	-h 	 Print this help page.
 	-H 	 Edit history file with text editor or pipe to stdout.
 	-HH 	 Pretty print last history session to stdout.
+      		 With -C and -rR, prints the specified seqs.
 	-i [PROMPT]
 		 Generate images given a prompt.
 	-i [PNG]
@@ -501,9 +239,10 @@ OPTIONS
 		6.  text-moderation-latest
 		7.  text-moderation-stable
 	-n [NUM] Set number of results. Def=$OPTN.
+	-o 	 Copy response to clipboard.
 	-p [VAL] Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
-	-r [SEQ] Set restart sequence string.
-	-R [SEQ] Set start sequence string.
+	-r [SEQ] Set restart sequence string (cmpls).
+	-R [SEQ] Set start sequence string (cmpls).
 	-s [SEQ] Set stop sequences, up to 4. Def=\"<|endoftext|>\".
 	-S [INSTRUCTION|FILE]
 		 Set an instruction prompt. It may be a text file.
@@ -511,7 +250,7 @@ OPTIONS
 		 Set/search prompt from awesome-chatgpt-prompts.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
-	-o 	 Copy response to clipboard.
+	-u 	 Set multiline prompter.
 	-v 	 Less verbose. May set multiple times.
 	-V 	 Pretty-print request. Set twice to dump raw request.
 	-x 	 Edit prompt in text editor.
@@ -590,18 +329,22 @@ function set_model_epnf
 #make cmpls request
 function promptf
 {
+	typeset silence
+	((OPTV>2)) && silence=1
+
 	json_minif
 	if ((OPTVV)) && ((!OPTII))
-	then 	block_printf || { 	! printf '\n' >&2 ;return ;}
+	then 	block_printf || { 	printf '\n' >&2 ;return 1 ;}
 	fi
-
-	curl -\# -L "https://api.openai.com/v1/${ENDPOINTS[EPN]}" \
+	
+	curl -\# ${silence:+-s} -L "$APIURL/${ENDPOINTS[EPN]}" \
 		-H "Content-Type: application/json" \
-		-H "Authorization: Bearer $OPENAI_KEY" \
+		-H "Authorization: Bearer $OPENAI_API_KEY" \
 		-d "$BLOCK" \
 		-o "$FILE" \
-	&& { 	((OPTV)) && printf '\e[A\e[K' >&2 ;: ;}
+	&& { 	((silence)) || __clr_lineupf ;}
 }
+function __clr_lineupf { 	printf '\e[A\e[K' >&2 ;} 
 
 #pretty print request body or dump and exit
 function block_printf
@@ -610,7 +353,9 @@ function block_printf
 	then 	printf '%s\n%s\n' "${ENDPOINTS[EPN]}" "$BLOCK"
 		printf '%s ' '<CTRL-D> redo, <CTR-C> exit, or continue' >&2
 		typeset REPLY ;read
-	else	jq -r '.instruction//empty, .input//empty, .prompt//(.messages[]|"\(.role):\t\(.content)")//empty' <<<"$BLOCK" \
+	else	jq -r '.instruction//empty,
+		.input//empty,
+		.prompt//(.messages[]|.role+": "+.content)//empty' <<<"$BLOCK" \
 		|| printf '%s\n' "$BLOCK"
 	fi >&2
 }
@@ -619,10 +364,9 @@ function block_printf
 function new_prompt_confirmf
 {
 	typeset REPLY
-	((OPTV==1)) && return
 
-	__sysmsgf 'Confirm prompt?' '[Y]es, [n]o, [e]dit, [r]edo or [a]bort ' ''
-	REPLY=$(__read_charf)
+	OPTV=  __sysmsgf 'Confirm prompt?' '[Y]es, [n]o, [e]dit, [r]edo or [a]bort ' ''
+	REPLY=$(__read_charf) ;__clr_lineupf
 	case "${REPLY}" in
 		[AaQq]|$'\e') 	return 201;;  #break
 		[Rr]) 	return 200;;  #continue
@@ -635,7 +379,7 @@ function new_prompt_confirmf
 function __read_charf
 {
 	typeset REPLY
-	read -n ${ZSH_VERSION:+-k} 1 "$@"
+	read -n 1 "$@"
 	printf '%.1s\n' "$REPLY"
 	[[ -z ${REPLY//[$IFS]} ]] || printf '\n' >&2
 }
@@ -643,7 +387,7 @@ function __read_charf
 #print response
 function prompt_printf
 {
-	if ((OPTJ)) #print raw json
+	if ((OPTJ)) #raw json
 	then 	cat -- "$FILE"
 	else 	((OPTV)) || jq -r '(.choices[].logprobs//empty),
 			(.model//"'"$MOD"'"//"?")+" ("+(.object//"?")+") ["
@@ -668,8 +412,8 @@ function prompt_printf
 #make request to image endpoint
 function prompt_imgvarf
 {
-	curl -\# ${OPTV:+-s} -L "https://api.openai.com/v1/${ENDPOINTS[EPN]}" \
-		-H "Authorization: Bearer $OPENAI_KEY" \
+	curl -\# ${OPTV:+-s} -L "$APIURL/${ENDPOINTS[EPN]}" \
+		-H "Authorization: Bearer $OPENAI_API_KEY" \
 		-F image="@$1" \
 		-F response_format="$OPTI_FMT" \
 		-F n="$OPTN" \
@@ -717,17 +461,17 @@ function prompt_imgprintf
 
 function prompt_audiof
 {
-	((OPTVV)) && echo "Model=$MOD  Temp=$OPTT  $*" >&2
+	((OPTVV)) && echo "model=$MOD  temp=$OPTT  $*" >&2
 
-	curl -\# ${OPTV:+-s} -L "https://api.openai.com/v1/${ENDPOINTS[EPN]}" \
+	curl -\# ${OPTV:+-s} -L "$APIURL/${ENDPOINTS[EPN]}" \
 		-X POST \
-		-H "Authorization: Bearer $OPENAI_KEY" \
+		-H "Authorization: Bearer $OPENAI_API_KEY" \
 		-H 'Content-Type: multipart/form-data' \
 		-F file="@$1" \
 		-F model="$MOD" \
 		-F temperature="$OPTT" \
-		"${@:2}" \
-		-o "$FILE"
+		-o "$FILE" \
+		"${@:2}"
 }
 
 function list_modelsf
@@ -740,8 +484,8 @@ function list_modelsf
 		return
 	fi
 	
-	curl "https://api.openai.com/v1/models${1:+/}${1}" \
-		-H "Authorization: Bearer $OPENAI_KEY" \
+	curl "$APIURL/models${1:+/}${1}" \
+		-H "Authorization: Bearer $OPENAI_API_KEY" \
 		-o "$FILE"
 
 	if [[ -n $1 ]]
@@ -765,53 +509,59 @@ function token_prevf
 	__sysmsgf "Prompt:" "~$TKN_PREV tokens"
 }
 
-#set up $HIST and $HIST_C
+#set up context from history file ($HIST and $HIST_C)
 function set_histf
 {
-	typeset time token string user_type max_prev
+	typeset time token string max_prev q_type a_type role rest
 	[[ -s "$FILECHAT" ]] || return
-	(($#)) && OPTV=1 OPTV_AUTO= token_prevf "$*"
-
 	unset HIST HIST_C
+	(($#)) && OPTV=1 token_prevf "$*"
+	q_type="${Q_TYPE##$SPC0}" a_type="${A_TYPE##$SPC0}"
+	
 	while IFS=$'\t' read -r time token string
 	do 	[[ ${time//[$IFS]}${token//[$IFS]} = \#* ]] && continue
 		[[ -z $time$token$string ]] && continue
-		[[ $time$token = *[Bb][Rr][Ee][Aa][Kk]* ]] && break
+		[[ ${time}${token} = *[Bb][Rr][Ee][Aa][Kk]* ]] && break
 		if ((token<1))
 		then 	((OPTVV>1||OPTJ)) &&
 			__warmsgf "Warning:" "Zero/Neg token in history"
-			token=$(__tiktokenf "$string")
+			token=$(__tiktokenf "${string}")
 		fi
 
-		if ((max_prev+token+TKN_PREV+64 < MODMAX-OPTMAX))
-		then 	((max_prev+=token)) ;((N_LOOP)) || ((OLD_TOTAL+=token))
+		if ((max_prev+token+TKN_PREV+( (max_prev*4)/100) < MODMAX-OPTMAX)) #4% for tkn count errs
+		then 	((max_prev+=token))
+			((N_LOOP)) || ((OLD_TOTAL+=token))
+			H_TIME="${time}" MAX_PREV="${max_prev}"
+			string="${string##[\"]}" string="${string%%[\"]}" string="${string##$SPC0}"
+			stringc="${string##@("${q_type:-%#}"|"${a_type:-%#}"|":")}"
 
-			string="${string##$SPC1}" string="${string%%[\"]}"
-			if [[ $string = :* ]]
-			then 	HIST="${string##:}${HIST:+\\n}\\n$HIST"
-			else 	HIST="${string##:}${HIST:+\\n}$HIST"
-			fi
+			unset role rest
+			case "${string}" in
+				:*) 	role=system
+					rest=
+					;;
+				"${a_type:-%#}"*|"${START:-%#}"*)
+					role=assistant
+					if ((OPTC)) || [[ -n "${START}" ]]
+					then 	rest="${START:-$A_TYPE}"
+					fi
+					;;
+				*) #q_type, RESTART
+					role=user
+					if ((OPTC)) || [[ -n "${RESTART}" ]]
+					then 	rest="${RESTART:-$Q_TYPE}"
+					fi
+					;;
+			esac
 
-			if ((EPN==6))  #turbo models
-			then 	user_type="$SET_TYPE" SET_TYPE= ;set_typef "$string"
-
-				case "${SET_TYPE:-${string}}" in
-					:*) 	role=system
-						;;
-					"${A_TYPE:-%#}"*|"${START:-%#}"*)
-						role=assistant
-						;;
-					*|"${Q_TYPE:-%#}"*|"${user_type:-%#}"*|"${RESTART:-%#}"*)
-						role=user
-						;;
-				esac
-
-				HIST_C="$(fmt_ccf "${string##$SPC1@(${user_type:-%#}|${SET_TYPE:-%#}|${RESTART:-%#}|${START:-%#}|${Q_TYPE:-%#}|${A_TYPE:-%#}|:)$SPC2}" "$role")${HIST_C:+,}$HIST_C"
-				SET_TYPE="$user_type"
-			fi
+			HIST="${rest}${stringc}${HIST}"
+			((EPN==6)) && HIST_C="$(fmt_ccf "${stringc##$SPC0}" "${role}")${HIST_C:+,}${HIST_C}"
 		else 	break
 		fi
 	done < <(tac -- "$FILECHAT")
+	if [[ "$role" = system ]]  #1st sys/instruction msg extra newline 
+	then 	HIST="${HIST##"$stringc"}" HIST="${HIST##\\n}" HIST="${stringc}\\n\\n${HIST}"
+	fi ;HIST="${HIST##$SPC0}"
 }
 #https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
 
@@ -820,7 +570,7 @@ function set_histf
 function push_tohistf
 {
 	typeset string tkn_min tkn
-	[[ -n $1 ]] || return ;((SKIPF)) && return
+	[[ -n $1 ]] || return
 	string="$1" ;tkn_min=$(__tiktokenf "$string" "4")
 	((tkn = ${2:-tkn_min}>0 ? ${2:-tkn_min} : tkn_min ))
 	printf '%s\t%d\t"%s"\n' "${3:-$(date -Isec)}" "$tkn" "$string" >> "$FILECHAT"
@@ -842,41 +592,13 @@ function __tiktokenf
 	printf '%d\n' "${tkn:-0}" ;((tkn>0))
 }
 
-#check for interlocutor (or restart text)
-SPC1="*(\\\\[ntrvf]|[$IFS]|\")"
-TYPE_GLOB="*([A-Za-z0-9@_/.+-])"
-SPC2="*(\\\\[ntrvf]|[$IFS])"
-function check_typef
-{
-	typeset glob ;OK=1
-	for glob in "$TYPE_GLOB:" "${RESTART:-${Q_TYPE%%$SPC2}}" "${START:-${A_TYPE%%$SPC2}}"
-	do 	[[ -n $glob ]] || continue
-		{ 	[[ ${*} = ${SPC1}${glob}${SPC2}* ]] ||
-			[[ ${*} = *@(\\n|$'\n')${SPC1}${glob}${SPC2}* ]] 
-		} && return 0
-		unset OK
-	done ;return 1
-}
-#set interlocutor from string
-function set_typef
-{
-	((OPTE)) && return 0
-	check_typef "$*" || return 1
-	((OK)) || return 0 
-
-	SET_TYPE="$*"
-	SET_TYPE="${SET_TYPE##$SPC1}"
-	SET_TYPE="${SET_TYPE%%:*}"
-	SET_TYPE="$SET_TYPE:"
-}
-
 #set output image size
 function set_sizef
 {
 	case "$1" in
-		1024*|[Ll]arge|[Ll]) 	OPTS=1024x1024;;
-		512*|[Mm]edium|[Mm]) 	OPTS=512x512;;
-		256*|[Ss]mall|[Ss]) 	OPTS=256x256;;
+		1024*|[Ll][Aa][Rr][Gg][Ee]|[Ll]) 	OPTS=1024x1024;;
+		512*|[Mm][Ee][Dd][Ii][Uu][Mm]|[Mm]) 	OPTS=512x512;;
+		256*|[Ss][Mm][Aa][Ll][Ll]|[Ss]) 	OPTS=256x256;;
 		*) 	return 1;;
 	esac ;return 0
 }
@@ -898,35 +620,40 @@ function set_maxtknf
 	fi
 }
 
-#check if input is a command
+#check input and run a chat command
 function check_cmdf
 {
-	[[ ${*//[$IFS:]} = [/!-]* ]] || return
+	typeset var
+	[[ ${*//[$IFS:]} = [/!-]* ]] || return $?
 	set -- "${*##*([$IFS:\/!])}"
 	case "$*" in
 		-[0-9]*|[0-9]*|max*)
 			set -- "${*%.*}" ;OPTMM="${*:-$OPTMM}"
-			set_maxtknf $OPTMM ;__cmdmsgf 'Max model / response' "$MODMAX / $OPTMAX tkns"
+			set_maxtknf $OPTMM
+			__cmdmsgf 'Max model / response' "$MODMAX / $OPTMAX tkns"
 			;;
 		-a*|presence*|pre*)
 			set -- "${*//[!0-9.]}"
 			OPTA="${*:-$OPTA}"
-			fix_dotf OPTA  ;__cmdmsgf 'Presence penalty' "$OPTA"
+			fix_dotf OPTA
+			__cmdmsgf 'Presence penalty' "$OPTA"
 			;;
 		-A*|frequency*|freq*)
 			set -- "${*//[!0-9.]}"
 			OPTAA="${*:-$OPTAA}"
-			fix_dotf OPTAA ;__cmdmsgf 'Frequency penalty' "$OPTAA"
+			fix_dotf OPTAA
+			__cmdmsgf 'Frequency penalty' "$OPTAA"
 			;;
-		-c|br|break|session)
+		-[Cc]|br|break|session)
 			break_sessionf
 			;;
 		-[Hh]|history|hist)
 			__edf "$FILECHAT"
 			;;
 		-L*|log*)
-			((OPTLOG)) && unset OPTLOG || OPTLOG=1
-			set -- "${*##@(-L|log)$SPC2}"
+			((++OPTLOG)) ;((OPTLOG%=2))
+			((OPTLOG)) || set --
+			set -- "${*##@(-L|log)$SPC}"
 			USRLOG="${*:-${USRLOG:-$HOME/chatgpt.log}}"
 			__cmdmsgf $'\nLog file' "\`\`$USRLOG''"
 			;;
@@ -935,55 +662,72 @@ function check_cmdf
 			if [[ $* = *[a-zA-Z]* ]]
 			then 	MOD="${*//[$IFS]}"  #by name
 			else 	MOD="${MODELS[${*//[!0-9]}]}" #by index
-			fi ;set_model_epnf "$MOD" ;__cmdmsgf 'Model' "$MOD"
+			fi
+			set_model_epnf "$MOD" ;__cmdmsgf 'Model' "$MOD"
 			((EPN==6)) && OPTC=2 || OPTC=1
 			;;
 		-p*|top*)
 			set -- "${*//[!0-9.]}"
 			OPTP="${*:-$OPTP}"
-			fix_dotf OPTP ;__cmdmsgf 'Top P' "$OPTP"
+			fix_dotf OPTP
+			__cmdmsgf 'Top P' "$OPTP"
 			;;
 		-r*|restart*)
-			set -- "${*##@(-r|restart)$SPC2}"
-			RESTART="$*" ;__cmdmsgf 'Restart Sequence' "$RESTART"
+			((EPN==6)) || {
+				set -- "${*##@(-r|restart)$SPC}"
+				RESTART="$*"
+				__cmdmsgf 'Restart Sequence' "$RESTART"
+			}
 			;;
 		-R*|start*)
-			set -- "${*##@(-R|start)$SPC2}"
-			START="$*" ;__cmdmsgf 'Start Sequence' "$START"
+			((EPN==6)) || {
+				set -- "${*##@(-R|start)$SPC}"
+				START="$*"
+				__cmdmsgf 'Start Sequence' "$START"
+			}
 			;;
 		-s*|stop*)
-			set -- "${*##@(-s|stop)$SPC2}"
+			set -- "${*##@(-s|stop)$SPC}"
 			STOPS=("${*}" "${STOPS[@]}")
 			__cmdmsgf 'Stop Sequences' "${STOPS[*]}"
 			;;
 		-t*|temperature*|temp*)
 			set -- "${*//[!0-9.]}"
 			OPTT="${*:-$OPTT}"
-			fix_dotf OPTT  ;__cmdmsgf 'Temperature' "$OPTT"
+			fix_dotf OPTT
+			__cmdmsgf 'Temperature' "$OPTT"
 			;;
-		-[uo]|clipboard|clip)
-			((OPTCLIP)) && unset OPTCLIP || OPTCLIP=1
-			set_clipcmdf ;
+		-o|clipboard|clip)
+			((++OPTCLIP)) ;((OPTCLIP%=2))
+			set_clipcmdf
 			__cmdmsgf 'Clipboard' $( ((OPTCLIP)) && echo ON || echo OFF)
 			;;
+		-u|multiline|multi)
+			((++OPTMULTI)) ;((OPTMULTI%=2))
+			__cmdmsgf 'Multiline' $( ((OPTMULTI)) && echo ON || echo OFF)
+			;;
 		-v|verbose|ver)
-			((OPTV)) && ((++OPTV)) || unset OPTV
-			((OPTV_AUTO)) && ((++OPTV_AUTO))
-			((OPTV_AUTO>2)) && unset OPTV OPTV_AUTO
-			__cmdmsgf 'Verbose' $( ((OPTV)) && echo ON || echo OFF)
+			((++OPTV)) ;((OPTV%=4))
+			case "$OPTV" in
+				1) var='Less';;
+				2) var='Much less';;
+				3) var='OFF';;
+				0) var='ON';;
+			esac
+			OPTV=  __cmdmsgf 'Verbose' "$var"
 			;;
 		-V|block|blk)
-			((OPTVV)) && unset OPTVV || OPTVV=1
+			((OPTVV==1)) && unset OPTVV || OPTVV=1
 			;;
-		-VV|[/!]blk|[/!]block)  #debug
-			OPTVV=2
+		-VV)  #debug
+			((OPTVV==2)) && unset OPTVV || OPTVV=2
 			;;
 		-x|editor|ed|vim|vi)
-			((OPTX)) && unset OPTX || OPTX=1
+			((++OPTX)) ;((OPTX%=2))
 			;;
 		-[wW]*|audio*|rec*)
 			OPTW=1 ;[[ $* = -W* ]] && OPTW=2
-			set -- "${*##@(-[wW][wW]|-[wW]|audio|rec)$SPC2}"
+			set -- "${*##@(-[wW][wW]|-[wW]|audio|rec)$SPC}"
 
 			var="${*##*([$IFS])}"
 			[[ $var = [a-z][a-z][$IFS]*[[:graph:]]* ]] \
@@ -1007,22 +751,29 @@ function check_cmdf
 	esac ;return 0
 }
 
-#command run feedback
-function __cmdmsgf
-{
-	((OPTV-OPTV_AUTO)) || printf "${BWhite}%-11s => %s${NC}\\n" "$1" "${2:-unset}" >&2
-}
-
 #print msg to stderr
 #usage: __sysmsgf [string_one] [string_two] ['']
 function __sysmsgf
 {
-	((OPTV-OPTV_AUTO)) || printf "${BWhite}%s${NC}${2:+ }%s${3-\\n}" "$1" "$2" >&2
+	((!OPTV)) || return
+	col1="${col1:-${BWhite}}" col2="${col2}"
+	printf "${col1}%s${NC}${2:+ }${col2}%s${NC}${3-\\n}" "$1" "$2" >&2
+	unset col1 col2
 }
 
 function __warmsgf
 {
-	printf "${Red}%s${NC}${2:+ }${Red}%s${NC}${3-\\n}" "$1" "$2" >&2
+	OPTV=  col1="${Red}" __sysmsgf "$*"
+}
+
+#command run feedback
+function __cmdmsgf
+{
+	typeset c
+	for ((c=${#1};c<13;c++))
+	do 	set -- "$1 " "${@:2}"
+	done
+	col1="${White}" __sysmsgf "$1 => ${2:-unset}"
 }
 
 #main plain text editor
@@ -1034,41 +785,45 @@ function __edf
 #text editor wrapper
 function edf
 {
-	typeset ed_msg pre restart pos REPLY
+	typeset ed_msg pre rest pos REPLY
+	((OPTCMPL))|| ed_msg=$'\n\n'",,,,,,(edit below this line),,,,,,"
+	((OPTC)) && rest="${RESTART:-$Q_TYPE}" || rest="${RESTART}"
+	rest="$(unescapef "$rest")"
 
-	restart="${SET_TYPE:-${RESTART:-$Q_TYPE}}"
 	if ((OPTC+OPTRESUME))
-	then 	ed_msg=$'\n\n'",,,,,,(edit below this line),,,,,,"
-		EPN= N_LOOP=1 set_histf "${restart}${*}"
+	then 	N_LOOP=1 set_histf "${rest}${*}"
+		HIST="${HIST//\\n\\n/\\n}" HIST="${HIST//\\n\\n/\\n}"
+		HIST="${HIST//\\n/\\n\\n}"
 	fi
-		
+
 	pre="$(unescapef "${INSTRUCTION}")"${INSTRUCTION:+$'\n\n'}"$(unescapef "$HIST")""${ed_msg}"
-	[[ -n $restart ]] && pre="${pre}"$'\n\n'"${restart}" || set -- $'\n\n'"$@"
-	printf "%s\\n" "${pre}${*}" >"$FILETXT"
-	
+	printf "%s\\n" "${pre}"$'\n\n'"${rest}${*}" > "$FILETXT"
+
 	__edf "$FILETXT"
 
-	pos=$(<"$FILETXT")
-	while [[ "$pos" != "${pre%%$SPC2"${restart}"$SPC2}"$SPC2?("${restart%%$SPC2}")* ]] \
-		|| [[ "$pos" = *"${restart:-%#}" ]]
+	pos="$(<"$FILETXT")"
+	
+	while [[ "$pos" != "${pre:-%#}"* ]] || [[ "$pos" = *"${rest:-%#}" ]]
 	do 	__warmsgf "Warning:" "Bad edit: [E]dit, [r]edo, [c]ontinue or [a]bort? " ''
 		REPLY=$(__read_charf)
-		case "${REPLY:-$1}" in
+		case "$REPLY" in
 			[AaQq]|$'\e') return 201;; #abort	
-			[CcNn]) break;;           #continue
-			[Rr]*)  return 200;;      #redo
-			[Ee]|*) __edf "$FILETXT"  #edit
+			[CcNn]) break;;            #continue
+			[Rr]*)  return 200;;       #redo
+			[Ee]|*) __edf "$FILETXT"   #edit
 				pos=$(<"$FILETXT");;
 		esac
 	done
 	
-	set -- "${pos#*"${pre%%$SPC2"${restart}"$SPC2}"$SPC2?("${restart%%$SPC2}")$SPC2}"
-	set -- "${*##*([$IFS])}"
-	printf "%s\\n" "$*" >"$FILETXT"
+	if ((OPTCMPL))
+	then 	set -- "${pos##*"${pre}"?($SPC"${rest}")}"
+	else 	set -- "${pos##*"${pre}"$SPC?("${rest}")$SPC}"
+	fi
+	printf "%s\\n" "$*" > "$FILETXT"
 
 	if ((OPTC+OPTRESUME))
 	then 	check_cmdf "${*#*:}" && return 200
-	fi
+	fi ;return 0
 }
 
 #special json chars
@@ -1080,16 +835,18 @@ function escapef
 	typeset var b c
 	var="$*" b='@#'
 
-	#escape slash
- 	for c in "${JSON_CHARS[@]}"
+	#special chars
+ 	for c in "${JSON_CHARS[@]}" " "
 	do 	var="${var//"\\\\$c"/$b$b$c}"
 		var="${var//"\\$c"/$b$c}"
 	done
- 		var="${var//"\\"/\\\\}"
+ 		var="${var//"\\"/\\\\}"  #slash proper
 	for c in "${JSON_CHARS[@]}"
 	do 	var="${var//"$b$b$c"/\\\\$c}"
 		var="${var//"$b$c"/\\$c}"
 	done
+		var="${var//"$b$b "/\\\\ }"  #space
+		var="${var//"$b "/ }"
 
 	var="${var//[$'\t']/\\t}"    #tabs
 	var="${var//[$'\n']/\\n}"    #new line
@@ -1139,11 +896,7 @@ function usr_logf
 	set -- "${*//$NL$NL/$NL}"
 	set -- "${*//$NL$NL/$NL}"
 	set -- "${*//$NL/$NL$NL}"
-	set -- "$(date -R 2>/dev/null||date)" "$*"
-	if [[ "$USRLOG" = - ]]
-	then 	printf '%s\n\n' "$@"
-	else 	printf '%s\n\n' "$@" > "$USRLOG"
-	fi
+	printf '%s%s\n\n%s\n' "${H_TIME:-$(date -R 2>/dev/null||date)}" "${MAX_PREV:+  Tokens: $MAX_PREV}" "${*##$SPC}"
 }
 
 #wrap text at spaces rather than mid-word
@@ -1162,11 +915,9 @@ function check_optrangef
 	typeset val min max prop ret
 	val="${1:-0}" min="${2:-0}" max="${3:-0}" prop="${4:-property}"
 
-	if [[ -n $ZSH_VERSION$KSH_VERSION ]]
-	then 	ret=$(( (val < min) || (val > max) ))
-	elif ${OK_BC} command -v bc && OK_BC=:
+	if ${OK_BC} command -v bc >/dev/null 2>&1 && OK_BC=:
 	then 	ret=$(bc <<<"($val < $min) || ($val > $max)")
-	fi  >/dev/null 2>&1
+	fi
 	
 	if [[ $val = *[!0-9.,+-]* ]] || ((ret))
 	then 	printf "${Red}Warning: Bad %s -- ${BRed}%s${NC}  ${Yellow}(%s - %s)${NC}\\n" "$prop" "$val" "$min" "$max" >&2
@@ -1178,28 +929,28 @@ function check_optrangef
 function set_optsf
 {
 	typeset s n
-	check_optrangef "$OPTA"  -2.0 2.0 'Presence Penalty'
+	check_optrangef "$OPTA"   -2.0 2.0 'Presence Penalty'
 	check_optrangef "$OPTAA"  -2.0 2.0 'Frequency Penalty'
 	check_optrangef "${OPTB:-$OPTN}"  "$OPTN" 50 'Best Of'
-	check_optrangef "$OPTBB"  0 5 'Log Probs'
-	check_optrangef "$OPTP"  0.0 1.0 Top_p
-	check_optrangef "$OPTT"  0.0 2.0 Temperature  #whisper max=1
+	check_optrangef "$OPTBB" 0   5 'Log Probs'
+	check_optrangef "$OPTP"  0.0 1.0 'Top_p'
+	check_optrangef "$OPTT"  0.0 2.0 'Temperature'  #whisper max=1
 	check_optrangef "$OPTMAX"  1 "$MODMAX" 'Response Max Tokens'
 	((OPTI)) && check_optrangef "$OPTN"  1 10 'Number of Results'
-	[[ -n ${OPTT#0} ]] && [[ -n ${OPTP#1} ]] \
-	&& __warmsgf "Warning:" "Temperature and Top_P are both set"
+	#[[ -n ${OPTT#0} ]] && [[ -n ${OPTP#1} ]] \
+	#&& __warmsgf "Warning:" "Temperature and Top_P are both set"
 
 	[[ -n $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA," || unset OPTA_OPT
 	[[ -n $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA," || unset OPTAA_OPT
 	[[ -n $OPTB ]] && OPTB_OPT="\"best_of\": $OPTB," || unset OPTB_OPT
 	[[ -n $OPTBB ]] && OPTBB_OPT="\"logprobs\": $OPTBB," || unset OPTBB_OPT
 	[[ -n $OPTP ]] && OPTP_OPT="\"top_p\": $OPTP," || unset OPTP_OPT
-	((!OPTV)) && unset OPTV
+	((OPTV<1)) && unset OPTV
 	
 	if ((${#STOPS[@]}))
 	then  #compile stop sequences  #def: <|endoftext|>
 		unset OPTSTOP
-		for s in "${STOPS[@]}" ${SET_TYPE:+"${SET_TYPE%%:}:"} 
+		for s in "${STOPS[@]}"
 		do 	[[ -n $s ]] || continue
 			((++n)) ;((n>4)) && break
 			OPTSTOP="${OPTSTOP}${OPTSTOP:+,}\"$(escapef "$s")\""
@@ -1210,18 +961,18 @@ function set_optsf
 		then 	OPTSTOP="\"stop\":[${OPTSTOP}],"
 		fi
 	fi #https://help.openai.com/en/articles/5072263-how-do-i-use-stop-sequences
-	[[ -n $RESTART ]] && RESTART="$(escapef "$RESTART")"
-	[[ -n $START ]] && START="$(escapef "$START")"
+	[[ "$RESTART" = "$OLD_RST" ]] || RESTART="$(escapef "$RESTART")" OLD_RST="$RESTART"
+	[[ "$START" = "$OLD_ST" ]] || START="$(escapef "$START")" OLD_ST="$START"
 }
 
 #record mic
 #usage: recordf [filename]
 function recordf
 {
-	typeset termux pid REPLY
+	typeset termux pid sig REPLY
 
 	[[ -e $1 ]] && rm -- "$1"  #remove file before writing to it
-	if { 	((! (OPTV-OPTV_AUTO))) && ((!WSKIP)) ;} || [[ ! -t 1 ]]
+	if { 	((OPTV<2)) && ((!WSKIP)) ;} || [[ ! -t 1 ]]
 	then 	printf "\\r${BWhite}${On_Purple}%s${NC} " ' * Press ENTER to START record * ' >&2
 		REPLY=$(__read_charf)
 		case "$REPLY" in [AaNnQq]|$'\e') 	return 201;; esac
@@ -1245,15 +996,19 @@ function recordf
 		#-acodec libmp3lame -ab 32k -ac 1  #https://stackoverflow.com/questions/19689029/
 	fi >&2
 	pid=${pid:-$!}
-	trap "__recordkillf $pid $termux ;return 2" INT HUP TERM EXIT
-	read ;__recordkillf $pid $termux ;trap "-" INT HUP TERM EXIT
+	
+	sig="INT HUP TERM EXIT"
+	trap "rec_killf $pid $termux; trap - $sig" $sig
+	read ;rec_killf $pid $termux
+	trap "-" $sig
 	wait
 }
 #avfoundation for macos: <https://apple.stackexchange.com/questions/326388/>
-function __recordkillf
+function rec_killf
 {
-	typeset pid termux ;pid=$1 termux=$2
-	((termux)) && termux-microphone-record -q >&2 || kill -INT $pid
+	typeset pid termux
+	pid=$1 termux=$2
+	((termux)) && termux-microphone-record -q >&2 || kill -INT $pid;
 }
 
 #set whisper language
@@ -1263,8 +1018,7 @@ function __set_langf
 	then 	if ((!OPTWW))
 		then 	LANGW="-F language=$1"
 			((OPTV)) || __sysmsgf 'Language:' "$1" >&2
-		fi
-		return 0
+		fi ;return 0
 	fi ;return 1
 }
 
@@ -1541,16 +1295,19 @@ function editf
 # awesome-chatgpt-prompts / custom prompts
 function awesomef
 {
-	typeset act_keys act a l n  ;OPTAWE=1
+	typeset act_keys act a l n
 	set -- "${INSTRUCTION##/}"
-	set -- "${1// /-}"
+	set -- "${1// /_}"
 
 	if [[ ! -s $FILEAWE ]] || [[ $1 = /* ]]  #second slash
 	then 	set -- "${1##/}"
-		curl -\#L "https://raw.githubusercontent.com/f/awesome-chatgpt-prompts/main/prompts.csv" -o "$FILEAWE" \
-		|| { 	[[ -e $FILEAWE ]] && rm -- "$FILEAWE" ;return 1 ;}
-	fi ;set -- "${1:-#@}" 
+		if ! curl -\#L "https://raw.githubusercontent.com/f/awesome-chatgpt-prompts/main/prompts.csv" -o "$FILEAWE"
+		then 	[[ -f $FILEAWE ]] && rm -- "$FILEAWE"
+			return 1
+		fi
+	fi ;set -- "${1:-%#}" 
 
+	#map prompts to indexes and get user selection
 	act_keys=$(sed -e '1d; s/,.*//; s/^"//; s/"$//; s/""/\\"/g; s/[][()`*_]//g; s/ /_/g' "$FILEAWE")
 	if ! act=$(grep -n -i -e "${1//[ _-]/[ _-]}" <<<"${act_keys}")
 	then 	select act in ${act_keys}
@@ -1568,43 +1325,11 @@ function awesomef
 	fi
 
 	INSTRUCTION="$(sed -n -e 's/^[^,]*,//; s/""/"/g; s/^"//; s/"$//' -e "$((act+1))p" "$FILEAWE")"
-	if [[ $ZSH_VERSION ]]  #edit chosen awesome prompt
-	then 	vared -c -e -h $arg INSTRUCTION
-	else 	kshfix_truncf "$INSTRUCTION"
-		read -r ${BASH_VERSION:+-e} ${BASH_VERSION:+-i "$INSTRUCTION"} ${KSH_VERSION:+-v} INSTRUCTION
-	fi
-	[[ -n $INSTRUCTION ]] || { 	__warmsgf 'Warning:' 'awesome-chatgpt-prompts fail' ;false ;}
-}
-
-# Ksh workaround for input truncation
-# ksh truncates input at 80 chars (LOOKAHEAD)
-function kshfix_truncf
-{
-	[[ -n $KSH_VERSION ]] || return 1
-	typeset input
-	input="$*"
-
-	if [[ -n ${input:80} ]]
-	then 	read -r -s <<<"$input"
-		__warmsgf 'Ksh:' 'Press up arrow for full prompt.'
-	else 	false
-	fi
-}
-
-# Ksh check for multibyte input
-# ksh mangles multibyte input on `read -v`
-function kshfix_mbf
-{
-	[[ -n $KSH_VERSION ]] || return 1
-	typeset input test
-	input="$*"
-	test=$(LC_CTYPE=C; printf ${#input})  || return
-
-	if ((${#input} != test))
-	then 	read -r -s <<<"$input"
-		__warmsgf 'Ksh:' 'Move cursor and press up arrow to unmangle prompt.'
-	else 	false
-	fi
+	read -r -e -i "$INSTRUCTION" INSTRUCTION
+	if [[ -z $INSTRUCTION ]]
+	then 	__warmsgf 'Err:' 'awesome-chatgpt-prompts fail'
+		return 1
+	fi ;return 0
 }
 
 # Set the clipboard command
@@ -1632,15 +1357,15 @@ do
 			A:frequency-penalty     A:frequency \
 			b:best-of   b:best      B:log-prob  B:prob \
 			c:chat      C:resume  C:continue  C:cont \
-			e:edit      f:no-config  h:help  h:man  H:hist \
+			e:edit      f:no-config  h:help  H:hist \
 			i:image     j:raw       k:no-colo?r \
 			K:api-key   l:list-model   l:list-models \
 			L:log       m:model        m:mod \
-			n:results   p:top-p        p:top \
-			r:restart-sequence         r:restart-seq \
+			n:results  o:clipboard  o:clip  p:top-p \
+			p:top  r:restart-sequence  r:restart-seq \
 			R:start-sequence           R:start-seq \
 			s:stop      S:instruction  t:temperature \
-			t:temp      o:clipboard  o:clip  v:verbose \
+			t:temp       u:multiline   u:multi  v:verbose \
 			x:editor  w:transcribe  W:translate  z:last
 			#opt:cmd_name
 		do
@@ -1690,12 +1415,12 @@ do
 		c) 	((++OPTC));;
 		C) 	((++OPTRESUME));;
 		e) 	OPTE=1 EPN=2;;
-		f$OPTF) unset EPN MOD MOD_CHAT MOD_EDIT MOD_AUDIO MODMAX INSTRUCTION CHATINSTR OPTC OPTRESUME OPTHH OPTL OPTMARG OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTN OPTP OPTT OPTV OPTVV OPTW OPTWW OPT_AT_PC OPT_AT Q_TYPE A_TYPE RESTART START STOPS
+		f$OPTF) unset EPN MOD MOD_CHAT MOD_EDIT MOD_AUDIO MODMAX INSTRUCTION CHATINSTR OPTC OPTE OPTI OPTJ OPTLOG USRLOG OPTRESUME OPTHH OPTL OPTMARG OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTN OPTP OPTT OPTV OPTVV OPTW OPTWW OPTZ OPTCLIP OPTMULTI MULTI OPT_AT_PC OPT_AT Q_TYPE A_TYPE RESTART START STOPS
 			OPTF=1 OPTIND=1 OPTARG= ;. "$0" "$@" ;exit;;
 		h) 	while read
 			do 	[[ $REPLY = \#\ v* ]] && break
 			done <"$0"
-			printf '%s\n' "$REPLY" "$MAN"
+			printf '%s\n' "$REPLY" "$HELP"
 			exit;;
 		H) 	((++OPTHH));;
 		i) 	OPTI=1 EPN=3 MOD=image;;
@@ -1705,13 +1430,13 @@ do
 			__cmdmsgf 'Log file' "\`\`$USRLOG''";;
 		m) 	OPTMARG="${OPTARG:-0}"
 			if [[ $OPTARG = *[a-zA-Z]* ]]
-			then 	MOD="$OPTARG"  #set model name
-			else 	MOD="${MODELS[OPTARG]}" #set one pre defined model number
+			then 	MOD="$OPTARG"  #model name
+			else 	MOD="${MODELS[OPTARG]}" #pre-defined model index
 			fi;;
 		n) 	OPTN="$OPTARG" ;;
 		k) 	OPTK=1;;
-		K) 	OPENAI_KEY="$OPTARG";;
-		o|u) 	OPTCLIP=1;;
+		K) 	OPENAI_API_KEY="$OPTARG";;
+		o) 	OPTCLIP=1;;
 		p) 	OPTP="$OPTARG";;
 		r) 	RESTART="$OPTARG";;
 		R) 	START="$OPTARG";;
@@ -1722,6 +1447,7 @@ do
 			else 	INSTRUCTION="$OPTARG"
 			fi;;
 		t) 	OPTT="$OPTARG";;
+		u) 	OPTMULTI=1;;
 		v) 	((++OPTV));;
 		V) 	((++OPTVV));;  #debug
 		x) 	OPTX=1;;
@@ -1730,7 +1456,7 @@ do
 		z) 	OPTZ=1;;
 		\?) 	exit 1;;
 	esac ;OPTARG=
-done ;unset LANGW OK N_LOOP optstring opt
+done ;unset LANGW CMPLOK N_LOOP optstring opt col1 col2 role rest
 shift $((OPTIND -1))
 
 [[ -t 1 ]] || OPTK=1 ;((OPTK)) ||
@@ -1748,12 +1474,18 @@ def purple: "\u001b[0;35m"; def bpurple: "\u001b[1;35m"; def bwhite: "\u001b[1;3
 def yellow: "\u001b[33m"; def byellow: "\u001b[1;33m"; def reset: "\u001b[0m";'
 NL=$'\n'
 
-OPENAI_KEY="${OPENAI_KEY:-${OPENAI_API_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
+OPENAI_API_KEY="${OPENAI_API_KEY:-${OPENAI_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
 ((OPTL+OPTZ)) && unset OPTX
 ((OPTE+OPTI)) && unset OPTC
-((OPTC)) || unset Q_TYPE A_TYPE
-
 ((OPTCLIP)) && set_clipcmdf
+((OPTC)) || OPTT="${OPTT:-0}"  #!#
+((!OPTC)) && ((OPTRESUME)) && OPTCMPL=1
+
+#invert -v logic for chat
+if ((OPTC+OPTRESUME))
+then 	((++OPTV)) ;((OPTV%=4))
+fi
+
 if ((OPTI+OPTII))
 then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
 	if set_sizef "${OPTS:-$1}"
@@ -1777,7 +1509,7 @@ MOD="${MOD:-${MODELS[OPTM]}}"
 [[ -n $EPN ]] || set_model_epnf "$MOD"
 [[ -n ${INSTRUCTION//[$IFS]} ]] || unset INSTRUCTION
 
-#defaults ``max model tkns''
+#auto set ``model capacity''
 ((MODMAX)) ||
 case "$MOD" in  #set model max tokens
 	davinci|curie|babbage|ada) 	MODMAX=2049;;
@@ -1790,13 +1522,9 @@ esac
 
 #set ``max response tkns''
 set_maxtknf "${OPTMM:-$OPTMAX}"
-((OPTHH+OPTI+OPTL+OPTZ+OPTW)) || __sysmsgf "Max Input / Response:" "$MODMAX / $OPTMAX tokens"
 
 #set other options
 set_optsf
-
-# awesome/custom prompts
-[[ $INSTRUCTION = /* ]] && awesomef
 
 #load stdin
 (($#)) || [[ -t 0 ]] || set -- "$(</dev/stdin)"
@@ -1804,8 +1532,11 @@ set_optsf
 ((OPTX)) && ((OPTE+OPTEMBED+OPTI+OPTII)) &&
 edf "$@" && set -- "$(<"$FILETXT")"  #editor
 
-((OPTC)) || OPTT="${OPTT:-0}"  #temp
-((OPTHH+OPTI+OPTL+OPTZ+OPTW)) || ((!$#)) || token_prevf "$*"
+if ((!(OPTHH+OPTI+OPTL+OPTZ+OPTW) ))
+then 	__sysmsgf 'Language Model' "$MOD"
+	__sysmsgf "Max Input / Response:" "$MODMAX / $OPTMAX tokens"
+     	((!$#)) || token_prevf "$*"
+fi
 
 for arg  #escape input
 do 	((init++)) || set --
@@ -1817,13 +1548,14 @@ command -v jq >/dev/null 2>&1 || function jq { 	false ;}
 
 if ((OPTHH))  #edit history/pretty print last session
 then 	if ((OPTHH>1))
-	then 	EPN= MODMAX=65536 set_histf
-		USRLOG=- usr_logf "$(unescapef "$HIST")"
+	then 	((!OPTRESUME)) && OPTC=1
+		MODMAX=65536 set_histf
+		usr_logf "$(unescapef "$HIST")"
 	elif [[ -t 1 ]]
 	then 	__edf "$FILECHAT"
 	else 	cat -- "$FILECHAT"
 	fi
-elif ((OPTZ))        #last received json
+elif ((OPTZ))      #last response json
 then 	lastjsonf
 elif ((OPTL))      #model list
 then 	list_modelsf "$@"
@@ -1851,79 +1583,76 @@ then 	__sysmsgf 'Text Edits'
 else               #text/chat completions
 	[[ -f $1 ]] && set -- "$(<"$1")" "${@:2}"  #load file as 1st arg
 	((OPTW)) && { 	INPUT_ORIG=("$@") ;unset OPTX ;set -- ;}  #whisper input
-	((OPTE)) && function set_typef { : ;}
 	if ((OPTC))
 	then 	__sysmsgf 'Chat Completions'
-		if ((!OPTV))  #chat less verb by defs
-		then 	((OPTV=1, OPTV_AUTO=1))
-		elif ((OPTV==1))
-		then 	((OPTV=2, OPTV_AUTO=2))
-		elif ((OPTV>1))  #-vvv
-		then 	unset OPTV
-		fi
 		#chatbot must sound like a human, shouldn't be lobotomised
-		#playGround: presencePenalty:0.6 temp:0.9
-		OPTA="${OPTA:-0.4}" OPTT="${OPTT:-0.6}"
-		((EPN==6)) || STOPS+=("${Q_TYPE%%$SPC2}" "${A_TYPE%%$SPC2}")
+		#presencePenalty:0.6 temp:0.9 maxTkns:150 :The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.
+		#frequencyPenalty:0.5 temp:0.5 top_p:03 maxTkns:60 :Marv is a chatbot that reluctantly answers questions with sarcastic responses:
+		OPTA="${OPTA:-0.4}" OPTT="${OPTT:-0.6}"  #!#
+		((EPN==6)) || STOPS+=("${Q_TYPE//$SPC0}" "${A_TYPE//$SPC0}")
 	else 	((EPN==6)) || __sysmsgf 'Text Completions'
-		unset Q_TYPE A_TYPE
 	fi
+	if ((OPTCMPL))
+	then 	OPTMULTI=1 ;OPTV= __cmdmsgf 'Multiline' 'ON'
+	fi
+	((EPN!=6)) || unset RESTART START
 
+	#awesome prompts
+	if [[ $INSTRUCTION = /* ]] && ((!OPTW))
+	then 	OPTAWE=1 ;((OPTC)) || OPTC=1
+		awesomef || exit
+	fi
 	#model instruction
 	if ((OPTC+OPTRESUME))
 	then 	{ 	((OPTC)) && ((OPTRESUME)) ;} || ((OPTRESUME==1)) || {
 		  break_sessionf
 		  INSTRUCTION="${INSTRUCTION:-Be a helpful assistant.}"
-		  push_tohistf "$(escapef ":${INSTRUCTION##:}")"
-		  __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
+		  push_tohistf "$(escapef ":${INSTRUCTION##:$SPC}")"
+		  __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:$SPC}" 2>&1 | foldf >&2
 		} ;unset INSTRUCTION
 	elif [[ -n $INSTRUCTION ]]
 	then 	  __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
 	fi
 
-	#load history (only ksh/bash)
-	[[ -n $BASH_VERSION ]] && { 	history -c ;history -r ;}
-	[[ -n $KSH_VERSION ]] && read -s <<<""
+	#load history
+	history -c ;history -r
 	if ((OPTC+OPTRESUME))  #chat mode
 	then 	if check_cmdf "$*"
 		then 	set --
-		else 	if [[ -n $BASH_VERSION ]]
-			then 	history -s -- "$*"
-			else 	print -s -- "$*"  #zsh/ksh
-			fi
+		else 	history -s -- "$*"
 		fi
 	fi
 
 	WSKIP=1 ;unset REPLY N_LOOP SKIP EDIT input arg
 	while :
-	do 	((REGEN)) && { 	set -- "${PROMPT_LAST[@]:-$@}" ;unset REGEN ;}
-		((OPTAWE)) || {  #skip if awesome option is set on 1st run
+	do 	((REGEN)) && { 	set -- "${PROMPT_LAST:-$*}" ;unset REGEN ;}
+		((OPTAWE)) || {  #awesome 1st pass skip
 
 		#text editor prompter
 		if ((OPTX))
 		then 	edf "$@" || case $? in 200) 	continue;; 201) 	break;; esac
-			while Q="$(<"$FILETXT")" QQ="${Q##$SPC1"${SET_TYPE:-${RESTART:-${Q_TYPE%%$SPC2}}}"$SPC2}"
-				printf "${BRed}${QQ:+${BCyan}}%s${NC}\\n" "${QQ:-(EMPTY)}"
-			do 	((OPTV==1)) || new_prompt_confirmf
+			while P="$(<"$FILETXT")" P="${P##$SPC1}"
+				printf "${BRed}${P:+${BCyan}}%s${NC}\\n" "${P:-(EMPTY)}"
+			do 	((OPTV>1)) || new_prompt_confirmf
 				case $? in
 					201) 	break 2;;  #abort
 					200) 	continue 2;;  #redo
-					199) 	edf "${Q:-$*}" || break 2;;  #edit
-					0) 	set -- "$Q" ; break;;  #yes
+					199) 	edf "${P:-$*}" || break 2;;  #edit
+					0) 	set -- "$P" ; break;;  #yes
 					*) 	set -- ; break;;  #no
 				esac
-			done ;unset Q QQ
+			done ;unset P
 		fi
 
 		#defaults prompter
-		if [[ ${*//[$'\t\n'\"]} = *($TYPE_GLOB:) ]]
-		then
-			Q="${SET_TYPE:-${RESTART:-${Q_TYPE:-:}}}" Q="${Q%%$SPC2}"
+		if [[ "$* " = @("${Q_TYPE##$SPC0}"|"${RESTART##$SPC1}")$SPC ]] || [[ "$*" = $SPC ]]
+		then 	((OPTC)) && Q="${RESTART:-${Q_TYPE}}" || Q="${RESTART}"
+			Q="$(unescapef "${Q}")" ;[[ -n "${Q//[$IFS]}" ]] || Q=">"
 			while { 	((SKIP)) && { 	((OPTK)) || printf "${BCyan}" >&2 ;} ;} ||
-				printf "${Purple}%s${NC}${Cyan}%s${NC}\\r${BCyan}" "${OPTW:+VOICE-}" "$Q" >&2
+				printf "${Cyan}%s${NC}${Purple}%s${NC}\\r${BCyan}" "${Q}" "${OPTW:+VOICE}" >&2
 			do
 				if ((OPTW)) && ((!EDIT))
-				then 	((OPTV==1)) && ((!WSKIP)) && [[ -t 1 ]] \
+				then 	((OPTV)) && ((!WSKIP)) && [[ -t 1 ]] \
 					&& __read_charf -t $((SLEEP/4))  #3-6 (words/tokens)/sec
 
 					if recordf "$FILEINW"
@@ -1933,46 +1662,52 @@ else               #text/chat completions
 						whisperf "$FILEINW" "${INPUT_ORIG[@]}"
 					)
 					else 	unset OPTW
-					fi ;printf "${BPurple}%s${NC}\\n${REPLY:+---\\n}" "${REPLY:-"(EMPTY)"}" >&2
+					fi ;printf "${BPurple}%s${NC}\\n" "${REPLY:-"(EMPTY)"}" >&2
 				else
-					while ((EDIT)) || unset REPLY
-						if [[ -n $ZSH_VERSION ]]
-						then 	((OPTK)) || arg='-p%B%F{14}' #cyan=14
-							vared -c -e -h $arg REPLY
-						else 	if ((EDIT))
-							then 	kshfix_mbf "$REPLY" ||
-								kshfix_truncf "$REPLY"
-							fi
-							read -r ${BASH_VERSION:+-e} \
-							${EDIT:+${BASH_VERSION:+-i "$REPLY"} ${KSH_VERSION:+-v}} REPLY
-						fi
-					do 	case "$REPLY" in
-							*\\) 	cont=1
+					if ((OPTCMPL)) && ((N_LOOP)) && [[ -z "${RESTART}${REPLY}" ]]
+					then 	REPLY="\\ " EDIT=1 CMPLOK=1
+					fi ;unset ex
+					while ((EDIT)) || unset REPLY  #!#
+						((OPTMULTI+MULTI)) && printf "> \\r" >&2
+						read -r -e ${REPLY:+-i "$REPLY"} REPLY
+					do 	unset EDIT
+						case "$REPLY" in
+							*\\) 	MULTI=1 ex=1
 								REPLY="${REPLY%%?(\\)\\}"
 								if [[ -z $REPLY ]]
 								then 	input="${input}${input:+\\n}"
 									continue
 								fi;;
-						esac ;[[ -n $REPLY ]] || break
+							[:/!-]*)
+								if check_cmdf "$REPLY"
+								then 	continue
+								fi;;
+						esac
+						[[ -n "$REPLY" ]] || break ;unset ex
 						input="${input}${input:+\\n}${REPLY}"
-						((cont)) || break
-					done ;REPLY="${input:-$REPLY}"
-				fi ;unset arg cont input
+						((MULTI+OPTMULTI)) || break
+					done
+					REPLY="${input:-$REPLY}"
+					((ex)) || REPLY="${REPLY%%\\n}"
+					unset MULTI CMPLOK arg input ex
+				fi
 				((OPTK)) || printf "${NC}" >&2
 				
 				if check_cmdf "$REPLY"
-				then 	REPLY="${REPLY_OLD:-$REPLY}"  #regen cmd integration
+				then 	unset EDIT
+					REPLY="${REPLY_OLD:-$REPLY}"  #regen cmd integration
 					set --
 					continue 2
 				elif [[ ${REPLY//[$IFS]} = */ ]] && ((!OPTW)) #regen cmd
 				then
 					[[ $REPLY = /* ]] && REPLY="${REPLY_OLD:-$REPLY}"  #regen cmd integration
 					REPLY="${REPLY%/*}" REPLY_OLD="$REPLY"
-					optv_save=${OPTV:-0} OPTV=1 RETRY=1
+					optv_save=${OPTV:-0} OPTV=2 RETRY=1
 					((OPTK)) || BCyan='\e[0;36m' 
 				elif [[ -n $REPLY ]]
 				then
-					((RETRY)) || new_prompt_confirmf
+					((RETRY)) || ((OPTV>1)) \
+					|| new_prompt_confirmf 
 					case $? in
 						201) 	break 2;;  #abort
 						200) 	WSKIP=1 ;continue;;  #redo
@@ -1996,52 +1731,53 @@ else               #text/chat completions
 			done
 		fi
 
-		if [[ -z "$INSTRUCTION$*" ]]
+		if ((!OPTCMPL)) && [[ -z "${INSTRUCTION}${*}" ]]
 		then 	__warmsgf "Err:" "PROMPT is empty!"
 			__read_charf -t 1 ;set -- ; continue
-		fi  ;set -- "${*##$SPC1}" #!#
+		fi
+		if ((!OPTCMPL))
+		then 	set -- "${*##$SPC1}" #!#
+			set -- "${*%%$SPC1}"
+		fi
 		
-		}  #end awesome option skips
+		}  #awesome 1st pass skip end
 
-		if ((OPTC+OPTRESUME)) && [[ -n $* ]]
-		then 	((RETRY==1)) ||
-			if [[ -n $KSH_VERSION ]]
-			then 	read -r -s <<<"${*//$NL/\\n}"
-			elif [[ -n $BASH_VERSION ]]
-			then 	history -s -- "${*//$NL/\\n}" ;history -a
-			else 	print -s -- "${*//$NL/\\n}"  #zsh
-			fi
+		if ((OPTC+OPTRESUME)) && [[ -n "${*}" ]]
+		then
+			((RETRY==1)) ||
+			{ 	history -s -- "${*//$NL/\\n}" ;history -a ;}
 
-			if [[ $* = :* ]]
-			then 	#system/instruction?
-				push_tohistf "$(escapef "$*")"
-				__sysmsgf "System/Instruction added"
+			#system/instruction?
+			if [[ ${*} = $SPC:* ]]
+			then 	push_tohistf "$(escapef ":${*##$SPC:}")"
+				if ((OPTV<3)) && ((EPN==6))
+				then 	OPTV=  __sysmsgf "System message added"
+				elif ((OPTV<3))
+				then 	OPTV=  __sysmsgf "Text appended"
+				fi
 				set -- ;continue
 			fi
-
-			PROMPT_LAST=("$@")
-			if set_typef "$(escapef ${*})"
-			then 	REC_OUT="${*}"
-			else 	REC_OUT="${SET_TYPE:-${RESTART:-${Q_TYPE}}}${*}"
-				set -- "${REC_OUT}"
-			fi
+			REC_OUT="${Q_TYPE}${*}" PROMPT_LAST="${*}"
 		fi
 
 		if ((RETRY<2))
-		then 	((OPTC+OPTRESUME)) && set_histf "$@"
-			ESC="$(escapef "$INSTRUCTION")${INSTRUCTION:+\\n\\n}$HIST${HIST:+\\n}$(escapef "$*")"
+		then 	((OPTC+OPTRESUME)) && set_histf "${@}"
+			if ((OPTC)) || [[ -n "${RESTART}" ]]
+			then 	rest="${RESTART:-$Q_TYPE}"
+			else 	unset rest
+			fi
+			ESC="$(escapef "${INSTRUCTION}")${INSTRUCTION:+\\n\\n}${HIST}$(escapef "${rest}${*}")"
+			
 			if ((EPN==6))
 			then 	#chat cmpls
 				[[ ${*//[$IFS]} = :* ]] && role=system || role=user
-				set -- "$(fmt_ccf "$(escapef "$INSTRUCTION")" system)${INSTRUCTION:+,}\
-${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q_TYPE%%$SPC2}}}"$SPC2}")" "$role")"
-				unset role
+				set -- "$(fmt_ccf "$(escapef "$INSTRUCTION")" system)${INSTRUCTION:+,}${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "$*")" "$role")"
 			else 	#text compls
-				if ((OPTC))
-				then 	set -- "${ESC}${A_TYPE:+\\n}${A_TYPE}"
-				else 	set -- "${ESC}${START:+\\n}${START}"
+				if ((OPTC)) || [[ -n "${START}" ]]
+				then 	set -- "${ESC}${START:-$A_TYPE}"
+				else 	set -- "${ESC}"
 				fi
-			fi
+			fi ;unset rest role
 		fi
 		
 		set_optsf
@@ -2058,8 +1794,8 @@ ${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q
 
 		#request prompt
 		((RETRY>1)) || promptf || { 	EDIT=1 SKIP=1 ;set -- ;continue ;} #opt -VV
-		((OPTV)) && printf '\n' >&2
-		
+		((OPTC)) && printf '\n' >&2 
+
 		#response colours for jq
 		if ((RETRY>1)) ;then 	unset JQCOL2
 		elif ((RETRY)) ;then 	((OPTK)) || JQCOL2='def byellow: yellow;'
@@ -2070,9 +1806,7 @@ ${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q
 		then 	out=$(JQCOL2='def byellow:"";def reset:""' OPTV=1 prompt_printf)
 			((OPTCLIP)) && ${CLIP_CMD:-false} <<<"$out" &
 			[[ ! -t 1 ]] && printf "%s\\n" "$out" >&2
-			unset out
 		fi
-		((OPTC+OPTRESUME)) && printf '\n' >&2
 		
 		((RETRY==1)) && { 	SKIP=1 EDIT=1 ;set -- ;continue ;}
 
@@ -2083,29 +1817,23 @@ ${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "${*##$SPC1"${SET_TYPE:-${RESTART:-${Q
 				(.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"
 			) )
 			ans=$(jq '.choices[0]|.text//.message.content' "$FILE")
-			ans="${ans##[\"]}" ans="${ans%%[\"]}" ans="${ans##\\[ntrvf]}"
+			ans="${ans##[\"]}" ans="${ans%%[\"]}"
 			((${#tkn[@]}>2)) && ((${#ans}))
 		}
-		then 	user_type="$SET_TYPE" SET_TYPE= glob=
-			if check_typef "$ans"
-			then 	A_TYPE="${SET_TYPE:-${START:-$A_TYPE}}"
-			elif ((OPTC))
-			then 	ans="${START:-$A_TYPE} ${ans##$SPC1}"
-			else 	ans="${START:-$A_TYPE} ${ans}"
-			fi
+		then
+			ans="${A_TYPE##$SPC0}${ans}"
 			((OPTB>1)) && tkn[1]=$(__tiktokenf "$(unescapef "$ans" "4")") #tkn sum will compensate later
-			SKIPF=$OPTAWE push_tohistf "$(escapef "${REC_OUT:-$*}")" "$((tkn[0]-OLD_TOTAL))" "${tkn[2]}"
+			((OPTAWE)) || push_tohistf "$(escapef "${REC_OUT:-$*}")" "$((tkn[0]-OLD_TOTAL))" "${tkn[2]}"
 			push_tohistf "$ans" "${tkn[1]}" "${tkn[2]}"
-			((OLD_TOTAL=tkn[0]+tkn[1]))
-			SET_TYPE="$user_type"
+			((OLD_TOTAL=tkn[0]+tkn[1])) ;MAX_PREV="$OLD_TOTAL" H_TIME=
 		elif ((OPTC+OPTRESUME))
 		then 	BAD_RESPONSE=1 SKIP=1 EDIT=1 ;set -- ;continue
 		fi
+		((OPTLOG)) && usr_logf "$(unescapef "$ESC\\n${ans}")" > "$USRLOG" &
 		SLEEP="${tkn[1]}"
-		((OPTLOG)) && usr_logf "$(unescapef "$ESC\\n${ans##$SPC1}")"
 
 		((++N_LOOP)) ;set --
-		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP SKIPF EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC OK QQ Q user_type optv_save role tkn arg ans glob out s n
+		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC CMPLOK Q P optv_save role rest tkn arg ans glob out s n
 		((OPTC+OPTRESUME)) || break
-	done ;unset OLD_TOTAL SLEEP N_LOOP SPC1 SPC2 TYPE_GLOB
+	done ;unset OLD_TOTAL SLEEP N_LOOP SPC SPC0 SPC1 TYPE_GLOB
 fi
