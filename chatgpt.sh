@@ -1466,25 +1466,19 @@ do
 done ;unset LANGW CMPLOK N_LOOP optstring opt col1 col2 role rest
 shift $((OPTIND -1))
 
-[[ -t 1 ]] || OPTK=1
-if ((OPTK))
-then 	unset NC  Black  BBlack  On_Black  Red  BRed   On_Red \
-	Green   BGreen   On_Green  Yellow  BYellow  On_Yellow \
-	Blue    BBlue    On_Blue   Purple  BPurple  On_Purple \
-	Cyan    BCyan    On_Cyan   White   BWhite   On_White
-else 	# Normal Colours   # Bold              # Background
-	Black='\e[0;30m'   BBlack='\e[1;30m'   On_Black='\e[40m'  \
-	Red='\e[0;31m'     BRed='\e[1;31m'     On_Red='\e[41m'    \
-	Green='\e[0;32m'   BGreen='\e[1;32m'   On_Green='\e[42m'  \
-	Yellow='\e[0;33m'  BYellow='\e[1;33m'  On_Yellow='\e[43m' \
-	Blue='\e[0;34m'    BBlue='\e[1;34m'    On_Blue='\e[44m'   \
-	Purple='\e[0;35m'  BPurple='\e[1;35m'  On_Purple='\e[45m' \
-	Cyan='\e[0;36m'    BCyan='\e[1;36m'    On_Cyan='\e[46m'   \
-	White='\e[0;37m'   BWhite='\e[1;37m'   On_White='\e[47m'  \
-	Alert=$BWhite$On_Red  NC='\e[m'  JQCOL='def red: "\u001b[31m"; def bgreen: "\u001b[1;32m";
+[[ -t 1 ]] || OPTK=1 ;((OPTK)) ||
+# Normal Colours    # Bold              # Background
+Black='\e[0;30m'   BBlack='\e[1;30m'   On_Black='\e[40m'  \
+Red='\e[0;31m'     BRed='\e[1;31m'     On_Red='\e[41m'    \
+Green='\e[0;32m'   BGreen='\e[1;32m'   On_Green='\e[42m'  \
+Yellow='\e[0;33m'  BYellow='\e[1;33m'  On_Yellow='\e[43m' \
+Blue='\e[0;34m'    BBlue='\e[1;34m'    On_Blue='\e[44m'   \
+Purple='\e[0;35m'  BPurple='\e[1;35m'  On_Purple='\e[45m' \
+Cyan='\e[0;36m'    BCyan='\e[1;36m'    On_Cyan='\e[46m'   \
+White='\e[0;37m'   BWhite='\e[1;37m'   On_White='\e[47m'  \
+Alert=$BWhite$On_Red  NC='\e[m'  JQCOL='def red: "\u001b[31m"; def bgreen: "\u001b[1;32m";
 def purple: "\u001b[0;35m"; def bpurple: "\u001b[1;35m"; def bwhite: "\u001b[1;37m";
 def yellow: "\u001b[33m"; def byellow: "\u001b[1;33m"; def reset: "\u001b[0m";'
-fi
 
 OPENAI_API_KEY="${OPENAI_API_KEY:-${OPENAI_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
 ((OPTL+OPTZ)) && unset OPTX
