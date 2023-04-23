@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.4  april/2023  by mountaineerbr  GPL+3
+# v0.12.5  april/2023  by mountaineerbr  GPL+3
 shopt -s extglob
 set -o pipefail
 
@@ -81,6 +81,7 @@ APIURL="https://api.openai.com/v1"
 SPC="*([$IFS])"
 SPC0="*(\\\\[ntrvf]|\ )"
 SPC1="*(\\\\[ntrvf]|[$IFS])"
+NL=$'\n'
 
 HELP="Name
 	${0##*/} -- ChatGPT / DALL-E / Whisper  Shell Wrapper
@@ -655,8 +656,10 @@ function check_cmdf
 			((++OPTLOG)) ;((OPTLOG%=2))
 			((OPTLOG)) || set --
 			set -- "${*##@(-L|log)$SPC}"
-			USRLOG="${*:-${USRLOG:-$HOME/chatgpt.log}}"
-			__cmdmsgf $'\nLog file' "\`\`$USRLOG''"
+			if [[ -d "$*" ]]
+			then 	USRLOG="${*%%/}/${USRLOG##*/}"
+			else 	USRLOG="${*:-${USRLOG}}"
+			fi ;OPTV= __cmdmsgf $'\nLog file' "\`\`$USRLOG''"
 			;;
 		-m*|model*|mod*)
 			set -- "${*##@(-m|model|mod)}"
@@ -1427,8 +1430,11 @@ do
 		i) 	OPTI=1 EPN=3 MOD=image;;
 		j) 	OPTJ=1;;
 		l) 	((++OPTL));;
-		L) 	OPTLOG=1 USRLOG="$OPTARG"
-			__cmdmsgf 'Log file' "\`\`$USRLOG''";;
+		L) 	OPTLOG=1
+			if [[ -d "$OPTARG" ]]
+			then 	USRLOG="${OPTARG%%/}/${USRLOG##*/}"
+			else 	USRLOG="${OPTARG:-${USRLOG}}"
+			fi ;OPTV= __cmdmsgf 'Log file' "\`\`$USRLOG''";;
 		m) 	OPTMARG="${OPTARG:-0}"
 			if [[ $OPTARG = *[a-zA-Z]* ]]
 			then 	MOD="$OPTARG"  #model name
@@ -1460,20 +1466,25 @@ do
 done ;unset LANGW CMPLOK N_LOOP optstring opt col1 col2 role rest
 shift $((OPTIND -1))
 
-[[ -t 1 ]] || OPTK=1 ;((OPTK)) ||
-# Normal Colours    # Bold              # Background
-Black='\e[0;30m'   BBlack='\e[1;30m'   On_Black='\e[40m'  \
-Red='\e[0;31m'     BRed='\e[1;31m'     On_Red='\e[41m'    \
-Green='\e[0;32m'   BGreen='\e[1;32m'   On_Green='\e[42m'  \
-Yellow='\e[0;33m'  BYellow='\e[1;33m'  On_Yellow='\e[43m' \
-Blue='\e[0;34m'    BBlue='\e[1;34m'    On_Blue='\e[44m'   \
-Purple='\e[0;35m'  BPurple='\e[1;35m'  On_Purple='\e[45m' \
-Cyan='\e[0;36m'    BCyan='\e[1;36m'    On_Cyan='\e[46m'   \
-White='\e[0;37m'   BWhite='\e[1;37m'   On_White='\e[47m'  \
-Alert=$BWhite$On_Red  NC='\e[m'  JQCOL='def red: "\u001b[31m"; def bgreen: "\u001b[1;32m";
+[[ -t 1 ]] || OPTK=1
+if ((OPTK))
+then 	unset NC  Black  BBlack  On_Black  Red  BRed   On_Red \
+	Green   BGreen   On_Green  Yellow  BYellow  On_Yellow \
+	Blue    BBlue    On_Blue   Purple  BPurple  On_Purple \
+	Cyan    BCyan    On_Cyan   White   BWhite   On_White
+else 	# Normal Colours   # Bold              # Background
+	Black='\e[0;30m'   BBlack='\e[1;30m'   On_Black='\e[40m'  \
+	Red='\e[0;31m'     BRed='\e[1;31m'     On_Red='\e[41m'    \
+	Green='\e[0;32m'   BGreen='\e[1;32m'   On_Green='\e[42m'  \
+	Yellow='\e[0;33m'  BYellow='\e[1;33m'  On_Yellow='\e[43m' \
+	Blue='\e[0;34m'    BBlue='\e[1;34m'    On_Blue='\e[44m'   \
+	Purple='\e[0;35m'  BPurple='\e[1;35m'  On_Purple='\e[45m' \
+	Cyan='\e[0;36m'    BCyan='\e[1;36m'    On_Cyan='\e[46m'   \
+	White='\e[0;37m'   BWhite='\e[1;37m'   On_White='\e[47m'  \
+	Alert=$BWhite$On_Red  NC='\e[m'  JQCOL='def red: "\u001b[31m"; def bgreen: "\u001b[1;32m";
 def purple: "\u001b[0;35m"; def bpurple: "\u001b[1;35m"; def bwhite: "\u001b[1;37m";
 def yellow: "\u001b[33m"; def byellow: "\u001b[1;33m"; def reset: "\u001b[0m";'
-NL=$'\n'
+fi
 
 OPENAI_API_KEY="${OPENAI_API_KEY:-${OPENAI_KEY:-${GPTCHATKEY:-${BEARER:?API key required}}}}"
 ((OPTL+OPTZ)) && unset OPTX
@@ -1650,7 +1661,7 @@ else               #text/chat completions
 		if [[ "$* " = @("${Q_TYPE##$SPC0}"|"${RESTART##$SPC1}")$SPC ]] || [[ "$*" = $SPC ]]
 		then 	((OPTC)) && Q="${RESTART:-${Q_TYPE}}" || Q="${RESTART}"
 			Q="$(unescapef "${Q}")" ;[[ -n "${Q//[$IFS]}" ]] || Q=">"
-			while { 	((SKIP)) && { 	((OPTK)) || printf "${BCyan}" >&2 ;} ;} ||
+			while { 	((SKIP)) && printf "${BCyan}" >&2 ;} ||
 				printf "${Cyan}%s${NC}${Purple}%s${NC}\\r${BCyan}" "${Q}" "${OPTW:+VOICE}" >&2
 			do
 				if ((OPTW)) && ((!EDIT))
@@ -1682,7 +1693,8 @@ else               #text/chat completions
 								fi;;
 							[:/!-]*)
 								if check_cmdf "$REPLY"
-								then 	continue
+								then 	printf "${BCyan}" >&2 
+									continue
 								fi;;
 						esac
 						[[ -n "$REPLY" ]] || break ;unset ex
@@ -1697,7 +1709,7 @@ else               #text/chat completions
 				
 				if check_cmdf "$REPLY"
 				then 	unset EDIT
-					REPLY="${REPLY_OLD:-$REPLY}"  #regen cmd integration
+					REPLY="${REPLY_OLD:-$REPLY}" SKIP=1 #regen cmd integration
 					set --
 					continue 2
 				elif [[ ${REPLY//[$IFS]} = */ ]] && ((!OPTW)) #regen cmd
