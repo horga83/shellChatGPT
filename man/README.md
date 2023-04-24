@@ -47,8 +47,8 @@ and use turbo models. While in chat mode, some options are automatically
 set to un-lobotomise the bot.
 
 Set `option -C` to **resume** from last history session. Setting only
-`-CC` starts a **new session** in **pure text completions**, and use
-restart and start sequences, if defined.
+`option -CC` (without -cc) starts a multi-turn session in **pure text
+completions**, and use restart and start sequences when defined.
 
 Set model with “`-m` \[*NAME*\]” (full model name). Some models have an
 equivalent *INDEX* as short-hand, so “`-m`*text-davinci-003*” and
@@ -203,20 +203,20 @@ empty prompt.
 
 #### 3. Prompt Engineering and Design
 
-Unless the chat `options -cc` are set, **NO** INSTRUCTION is given to
-the language model (as would, otherwise, be the initial prompt).
+Very short **INSTRUCTION** to behave like a chatbot are given with
+`options -ccCC`, unless otherwise explicitly set by the user.
 
 On chat mode, if no INSTRUCTION is set, a short one is given, and some
-options set, such as increasing temp and presence penalty, in order to
-un-lobotomise the bot. With cheap and fast models of text cmpls, such as
-Curie, the best_of option may even be worth setting (to 2 or 3).
+options auto set, such as increasing temp and presence penalty, in order
+to un-lobotomise the bot. With cheap and fast models of text cmpls, such
+as Curie, the best_of option may be worth setting (to 2 or 3).
 
 Prompt engineering is an art on itself. Study carefully how to craft the
 best prompts to get the most out of text, code and chat compls models.
 
 Certain prompts may return empty responses. Maybe the model has nothing
 to further complete input or it expects more text. Try trimming spaces,
-appending a full stop/ellipsis, resetting temperature or adding more
+appending a full stop/ellipsis, resetting temperature, or adding more
 text.
 
 Prompts ending with a space character may result in lower quality
@@ -553,7 +553,7 @@ Toggle multiline prompter.
 Less verbose. May set multiple times.
 
 **-V**  
-Pretty-print request.
+Pretty-print context.
 
 Set twice to dump raw request.
 

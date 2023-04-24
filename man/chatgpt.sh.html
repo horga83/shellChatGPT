@@ -215,9 +215,9 @@ various models, defaults to <em>text-davinci-003</em> if none set.</p>
 chat completions</strong> and use turbo models. While in chat mode, some
 options are automatically set to un-lobotomise the bot.</p>
 <p>Set <code>option -C</code> to <strong>resume</strong> from last
-history session. Setting only <code>-CC</code> starts a <strong>new
-session</strong> in <strong>pure text completions</strong>, and use
-restart and start sequences, if defined.</p>
+history session. Setting only <code>option -CC</code> (without -cc)
+starts a multi-turn session in <strong>pure text completions</strong>,
+and use restart and start sequences when defined.</p>
 <p>Set model with “<code>-m</code> [<em>NAME</em>]” (full model name).
 Some models have an equivalent <em>INDEX</em> as short-hand, so
 “<code>-m</code><em>text-davinci-003</em>” and
@@ -431,19 +431,20 @@ Regenerate it again or press ENTER to accept it.</p>
 type in a single forward slash in the new empty prompt.</p>
 <h4 id="prompt-engineering-and-design">3. Prompt Engineering and
 Design</h4>
-<p>Unless the chat <code>options -cc</code> are set, <strong>NO</strong>
-INSTRUCTION is given to the language model (as would, otherwise, be the
-initial prompt).</p>
+<p>Very short <strong>INSTRUCTION</strong> to behave like a chatbot are
+given with <code>options -ccCC</code>, unless otherwise explicitly set
+by the user.</p>
 <p>On chat mode, if no INSTRUCTION is set, a short one is given, and
-some options set, such as increasing temp and presence penalty, in order
-to un-lobotomise the bot. With cheap and fast models of text cmpls, such
-as Curie, the best_of option may even be worth setting (to 2 or 3).</p>
+some options auto set, such as increasing temp and presence penalty, in
+order to un-lobotomise the bot. With cheap and fast models of text
+cmpls, such as Curie, the best_of option may be worth setting (to 2 or
+3).</p>
 <p>Prompt engineering is an art on itself. Study carefully how to craft
 the best prompts to get the most out of text, code and chat compls
 models.</p>
 <p>Certain prompts may return empty responses. Maybe the model has
 nothing to further complete input or it expects more text. Try trimming
-spaces, appending a full stop/ellipsis, resetting temperature or adding
+spaces, appending a full stop/ellipsis, resetting temperature, or adding
 more text.</p>
 <p>Prompts ending with a space character may result in lower quality
 output. This is because the API already incorporates trailing spaces in
@@ -857,7 +858,7 @@ restart and start sequences.</p>
 </dd>
 <dt><strong>-V</strong></dt>
 <dd>
-<p>Pretty-print request.</p>
+<p>Pretty-print context.</p>
 <p>Set twice to dump raw request.</p>
 </dd>
 <dt><strong>-x</strong></dt>

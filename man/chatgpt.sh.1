@@ -97,8 +97,9 @@ While in chat mode, some options are automatically set to un-lobotomise
 the bot.
 .PP
 Set \f[V]option -C\f[R] to \f[B]resume\f[R] from last history session.
-Setting only \f[V]-CC\f[R] starts a \f[B]new session\f[R] in \f[B]pure
-text completions\f[R], and use restart and start sequences, if defined.
+Setting only \f[V]option -CC\f[R] (without -cc) starts a multi-turn
+session in \f[B]pure text completions\f[R], and use restart and start
+sequences when defined.
 .PP
 Set model with \[lq]\f[V]-m\f[R] [\f[I]NAME\f[R]]\[rq] (full model
 name).
@@ -385,15 +386,14 @@ After a response has been written to the history file,
 in a single forward slash in the new empty prompt.
 .SS 3. Prompt Engineering and Design
 .PP
-Unless the chat \f[V]options -cc\f[R] are set, \f[B]NO\f[R] INSTRUCTION
-is given to the language model (as would, otherwise, be the initial
-prompt).
+Very short \f[B]INSTRUCTION\f[R] to behave like a chatbot are given with
+\f[V]options -ccCC\f[R], unless otherwise explicitly set by the user.
 .PP
 On chat mode, if no INSTRUCTION is set, a short one is given, and some
-options set, such as increasing temp and presence penalty, in order to
-un-lobotomise the bot.
+options auto set, such as increasing temp and presence penalty, in order
+to un-lobotomise the bot.
 With cheap and fast models of text cmpls, such as Curie, the best_of
-option may even be worth setting (to 2 or 3).
+option may be worth setting (to 2 or 3).
 .PP
 Prompt engineering is an art on itself.
 Study carefully how to craft the best prompts to get the most out of
@@ -403,7 +403,7 @@ Certain prompts may return empty responses.
 Maybe the model has nothing to further complete input or it expects more
 text.
 Try trimming spaces, appending a full stop/ellipsis, resetting
-temperature or adding more text.
+temperature, or adding more text.
 .PP
 Prompts ending with a space character may result in lower quality
 output.
@@ -837,7 +837,7 @@ Less verbose.
 May set multiple times.
 .TP
 \f[B]-V\f[R]
-Pretty-print request.
+Pretty-print context.
 .RS
 .PP
 Set twice to dump raw request.

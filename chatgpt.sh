@@ -113,8 +113,8 @@ Description
 	for native chat completions. Combined with option -C, resumes from
 	last history session.
 
-	Option -CC (without -cc) starts a pure text completions session,
-	and use restart and start sequences, if defined.
+	Option -CC (without -cc) starts a multi-turn and pure text com-
+	pletions session, and use restart and start sequences when defined.
 
 	Option -i generates or edits images. Option -w transcribes audio
 	and option -W tarnslates audio to English.
@@ -253,7 +253,7 @@ Options
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
 	-u 	 Toggle multiline prompter.
 	-v 	 Less verbose. May set multiple times.
-	-V 	 Pretty-print request. Set twice to dump raw request.
+	-V 	 Pretty-print context. Set twice to dump raw request.
 	-x 	 Edit prompt in text editor.
 	-w [AUD] [LANG]
 		 Transcribe audio file into text. LANG is optional.
@@ -815,7 +815,7 @@ function edf
 		case "$REPLY" in
 			[AaQq]|$'\e') return 201;; #abort	
 			[CcNn]) break;;            #continue
-			[Rr]*)  return 200;;       #redo
+			[Rr])  return 200;;       #redo
 			[Ee]|*) __edf "$FILETXT"   #edit
 				pos=$(<"$FILETXT");;
 		esac
@@ -1542,7 +1542,7 @@ set_optsf
 edf "$@" && set -- "$(<"$FILETXT")"  #editor
 
 if ((!(OPTHH+OPTI+OPTL+OPTZ+OPTW) ))
-then 	__sysmsgf 'Language Model' "$MOD"
+then 	__sysmsgf 'Language Model:' "$MOD"
 	__sysmsgf "Max Input / Response:" "$MODMAX / $OPTMAX tokens"
      	((!$#)) || token_prevf "$*"
 fi
