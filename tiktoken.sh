@@ -1,10 +1,13 @@
 #!/usr/bin/env python
-# v0.1  april/2023  by mountaineerbr
+# tiktoken.sh - Count tokens of text string
+# Usage: tiktoken.sh [MODEL|ENCODING] [TEXT|-]
+# v0.1.1  april/2023  by mountaineerbr
 import sys
 import select
 import tiktoken
 
 mod = "gpt-3.5-turbo"
+fallback = "cl100k_base"
 #davinci: r50k_base
 
 #input, pos args or stdin
@@ -19,7 +22,7 @@ elif (len(sys.argv) > 2):
 elif (len(sys.argv) > 1):
     text = sys.argv[1]
 else:
-    sys.stderr.write("Usage: %s [MODEL] \"STRING\"\nSet \"-\" to read from stdin.\n" % (sys.argv[0].split("/")[-1]) )
+    sys.stderr.write("Usage: %s [MODEL|ENCODING] \"STRING\"\nSet \"-\" to read from stdin.\n" % (sys.argv[0].split("/")[-1]) )
     sys.exit(2)
 
 #choose model encoding
@@ -27,8 +30,12 @@ try:
     enc = tiktoken.encoding_for_model(mod)
     sys.stderr.write("Model: %s %s\n" % (mod , enc) )
 except KeyError:
-    sys.stderr.write("Warning: Model not found. Using cl100k_base encoding.\n")
-    enc = tiktoken.get_encoding("cl100k_base")
+    try:
+        enc = tiktoken.get_encoding(mod)
+        sys.stderr.write("Encoding: %s\n" % mod )
+    except Exception:
+        sys.stderr.write("Warning: Model/encoding not found. Using %s.\n" % fallback)
+        enc = tiktoken.get_encoding(fallback)
 
 #
 encoded_text = enc.encode_ordinary(text)
