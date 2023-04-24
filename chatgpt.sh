@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.6  april/2023  by mountaineerbr  GPL+3
+# v0.12.7  april/2023  by mountaineerbr  GPL+3
 shopt -s extglob
 set -o pipefail
 
@@ -513,7 +513,7 @@ function token_prevf
 #set up context from history file ($HIST and $HIST_C)
 function set_histf
 {
-	typeset time token string max_prev q_type a_type role not_sys rest A_APPEND
+	typeset time token string max_prev q_type a_type role role_last rest A_APPEND
 	[[ -s "$FILECHAT" ]] || return
 	unset HIST HIST_C
 	(($#)) && OPTV=1 token_prevf "$*"
@@ -537,19 +537,20 @@ function set_histf
 			string="${string##[\"]}" string="${string%%[\"]}" string="${string##\\n}"
 			stringc="${string##@("${q_type}"|"${a_type}"|":")}"
 
-			unset role rest not_sys
+			role_last=$role
+			unset role rest
 			case "${string}" in
 				:*) 	role=system
 					rest=
 					;;
 				"${a_type:-%#}"*|"${START:-%#}"*)
-					role=assistant  not_sys=1
+					role=assistant
 					if ((OPTC)) || [[ -n "${START}" ]]
 					then 	rest="${START:-${A_TYPE}${A_APPEND}}"
 					fi
 					;;
 				*) #q_type, RESTART
-					role=user  not_sys=1
+					role=user
 					if ((OPTC)) || [[ -n "${RESTART}" ]]
 					then 	rest="${RESTART:-$Q_TYPE}"
 					fi
@@ -562,7 +563,8 @@ function set_histf
 		fi
 	done < <(tac -- "$FILECHAT")
 	if [[ "$role" = system ]]  #1st sys/instruction msg extra newline 
-	then 	HIST="${HIST##"$stringc"}" HIST="${HIST##\\n}" HIST="${stringc}${not_sys:+\\n}\\n${HIST}"
+	then 	[[ ${role_last:=user} = @(user|assistant) ]] || unset role_last
+		HIST="${HIST##"$stringc"}" HIST="${HIST##\\n}" HIST="${stringc}${role_last:+\\n}\\n${HIST}"
 	fi ;HIST="${HIST##$SPC0}"
 }
 #https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
@@ -1463,8 +1465,9 @@ do
 		z) 	OPTZ=1;;
 		\?) 	exit 1;;
 	esac ;OPTARG=
-done ;unset LANGW CMPLOK N_LOOP optstring opt col1 col2 role rest
+done
 shift $((OPTIND -1))
+unset LANGW CMPLOK REPLY N_LOOP SKIP EDIT optstring opt col1 col2 role rest input arg
 
 [[ -t 1 ]] || OPTK=1 ;((OPTK)) ||
 # Normal Colours    # Bold              # Background
@@ -1485,7 +1488,7 @@ OPENAI_API_KEY="${OPENAI_API_KEY:-${OPENAI_KEY:-${GPTCHATKEY:-${BEARER:?API key 
 ((OPTE+OPTI)) && unset OPTC
 ((OPTCLIP)) && set_clipcmdf
 ((OPTC)) || OPTT="${OPTT:-0}"  #!#
-((!OPTC)) && ((OPTRESUME)) && OPTCMPL=1
+((!OPTC)) && ((OPTRESUME)) && OPTCMPL=$OPTRESUME
 
 #invert -v logic for chat
 if ((OPTC+OPTRESUME))
@@ -1631,7 +1634,10 @@ else               #text/chat completions
 		fi
 	fi
 
-	WSKIP=1 ;unset REPLY N_LOOP SKIP EDIT input arg
+	#pos arg input confirmation (disabled)
+	#if (($#)) && [[ -t 1 ]] ;then 	REPLY="$*" EDIT=1 SKIP=1 ;set -- ;fi
+
+	WSKIP=1
 	while :
 	do 	((REGEN)) && { 	set -- "${PROMPT_LAST:-$*}" ;unset REGEN ;}
 		((OPTAWE)) || {  #awesome 1st pass skip
@@ -1672,7 +1678,8 @@ else               #text/chat completions
 					else 	unset OPTW
 					fi ;printf "${BPurple}%s${NC}\\n" "${REPLY:-"(EMPTY)"}" >&2
 				else
-					if ((OPTCMPL)) && ((N_LOOP)) && [[ -z "${RESTART}${REPLY}" ]]
+					if ((OPTCMPL)) && { 	((N_LOOP)) || ((OPTCMPL==1)) ;} \
+						&& [[ -z "${RESTART}${REPLY}" ]]
 					then 	REPLY=" " EDIT=1 CMPLOK=1
 					fi ;unset ex
 					while ((EDIT)) || unset REPLY  #!#
