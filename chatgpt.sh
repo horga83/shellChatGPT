@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.9  april/2023  by mountaineerbr  GPL+3
+# v0.12.10  april/2023  by mountaineerbr  GPL+3
 shopt -s extglob
 set -o pipefail
 
@@ -534,7 +534,8 @@ function set_histf
 		then 	((max_prev+=token))
 			((N_LOOP)) || ((OLD_TOTAL+=token))
 			H_TIME="${time}" MAX_PREV="${max_prev}"
-			string="${string##[\"]}" string="${string%%[\"]}" string="${string##\\n}"
+			string="${string##[\"]}" string="${string%%[\"]}"
+			string="${string##\\n}" ;((OPTC)) && string="${string%%$SPC0}"
 			stringc="${string##@("${q_type}"|"${a_type}"|":")}"
 
 			role_last=$role
@@ -588,13 +589,38 @@ function __tiktokenf
 	typeset str tkn by
 	by="$2"
 
+	set -f
 	# 1 TOKEN ~= 4 CHARS IN ENGLISH
 	#str="${1// }" str=${str//[$'\t\n']/xxxx} str="${str//\\[ntrvf]/xxxx}" tkn=$((${#str}/${by:-4}))
+	
 	# 1 TOKEN ~= ¾ WORDS
-	set -- ${1//[[:punct:]]/x} ;tkn=$(( ($# * 4) / ${by:-3}))
+	set -- "${1//[$'\n\t ']/ x }"
+	set -- ${1//\\[ntrvf]/ x }
+	tkn=$(( ($# * 4) / ${by:-3}))
+	set +f
 
 	printf '%d\n' "${tkn:-0}" ;((tkn>0))
 }
+
+#use openai python tiktoken lib
+#input should be `unescaped'
+#usage: tiktokenf [model] [text]
+function tiktokenf
+{
+	python <(printf "
+import sys
+import tiktoken
+mod = sys.argv[1]
+text = sys.argv[2]
+try:
+    enc = tiktoken.encoding_for_model(mod)
+except KeyError:
+    enc = tiktoken.get_encoding(\"r50k_base\")
+encoded_text = enc.encode_ordinary(text)
+print(len(encoded_text))
+") "${MOD:-davinci}" "${@:-x}"
+}
+#gpt-3.5-turbo: cl100k_base
 
 #set output image size
 function set_sizef
@@ -1602,7 +1628,7 @@ else               #text/chat completions
 	fi
 	if ((OPTCMPL))
 	then 	((++OPTMULTI)); ((OPTMULTI%=2)) &&
-		OPTV= __cmdmsgf 'Multiline' 'ON'
+		((OPTCMPL==1)) || OPTV= __cmdmsgf 'Multiline' 'ON'
 	fi
 	((EPN!=6)) || unset RESTART START
 
@@ -1677,7 +1703,7 @@ else               #text/chat completions
 					fi ;printf "${BPurple}%s${NC}\\n" "${REPLY:-"(EMPTY)"}" >&2
 				else
 					if ((OPTCMPL)) && { 	((N_LOOP)) || ((OPTCMPL==1)) ;} \
-						&& [[ -z "${RESTART}${REPLY}" ]]
+						&&  ((EPN!=6)) && [[ -z "${RESTART}${REPLY}" ]]
 					then 	REPLY=" " EDIT=1 CMPLOK=1
 					fi ;unset ex
 					while ((EDIT)) || unset REPLY  #!#
@@ -1689,11 +1715,6 @@ else               #text/chat completions
 								REPLY="${REPLY%%?(\\)\\}"
 								if [[ -z $REPLY ]]
 								then 	input="${input}${input:+\\n}"
-									continue
-								fi;;
-							[:/!-]*)
-								if check_cmdf "$REPLY"
-								then 	printf "${BCyan}" >&2 
 									continue
 								fi;;
 						esac
@@ -1837,7 +1858,7 @@ else               #text/chat completions
 		}
 		then
 			ans="${A_TYPE##$SPC0}${ans}"
-			((OPTB>1)) && tkn[1]=$(__tiktokenf "$(unescapef "$ans" "4")") #tkn sum will compensate later
+			((OPTB>1)) && tkn[1]=$(__tiktokenf "$ans" "4") #tkn sum will compensate later
 			((OPTAWE)) || push_tohistf "$(escapef "${REC_OUT:-$*}")" "$((tkn[0]-OLD_TOTAL))" "${tkn[2]}"
 			push_tohistf "$ans" "${tkn[1]}" "${tkn[2]}"
 			((OLD_TOTAL=tkn[0]+tkn[1])) ;MAX_PREV="$OLD_TOTAL" H_TIME=
