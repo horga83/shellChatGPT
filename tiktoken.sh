@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # tiktoken.sh - Count tokens of text string
 # Usage: tiktoken.sh [MODEL|ENCODING] [TEXT|-]
-# v0.1.1  april/2023  by mountaineerbr
+# v0.1.2  april/2023  by mountaineerbr
 import sys
 import select
 import tiktoken
@@ -29,11 +29,11 @@ else:
 try:
     enc = tiktoken.encoding_for_model(mod)
     sys.stderr.write("Model: %s %s\n" % (mod , enc) )
-except KeyError:
+except:
     try:
         enc = tiktoken.get_encoding(mod)
         sys.stderr.write("Encoding: %s\n" % mod )
-    except Exception:
+    except:
         sys.stderr.write("Warning: Model/encoding not found. Using %s.\n" % fallback)
         enc = tiktoken.get_encoding(fallback)
 
