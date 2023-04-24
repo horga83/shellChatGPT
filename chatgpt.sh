@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.7  april/2023  by mountaineerbr  GPL+3
+# v0.12.8  april/2023  by mountaineerbr  GPL+3
 shopt -s extglob
 set -o pipefail
 
@@ -1619,10 +1619,10 @@ else               #text/chat completions
 		  break_sessionf
 		  INSTRUCTION="${INSTRUCTION:-Be a helpful assistant.}"
 		  push_tohistf "$(escapef ":${INSTRUCTION##:$SPC}")"
-		  __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:$SPC}" 2>&1 | foldf >&2
+		  OPTV= __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:$SPC}" 2>&1 | foldf >&2
 		} ;unset INSTRUCTION
 	elif [[ -n $INSTRUCTION ]]
-	then 	  __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
+	then 	  OPTV= __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
 	fi
 
 	#load history
