@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-# tiktoken.sh - Count tokens of text string
-# Usage: tiktoken.sh [MODEL|ENCODING] [TEXT|-]
-# v0.1.2  april/2023  by mountaineerbr
+# tkn-count.py - Count tokens of text string
+# Usage: tkn-count.py [MODEL|ENCODING] [TEXT|-]
+# v0.1.3  april/2023  by mountaineerbr
 import sys
-import select
 import tiktoken
 
 mod = "gpt-3.5-turbo"
