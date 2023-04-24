@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.8  april/2023  by mountaineerbr  GPL+3
+# v0.12.9  april/2023  by mountaineerbr  GPL+3
 shopt -s extglob
 set -o pipefail
 
@@ -921,9 +921,7 @@ function check_optrangef
 	typeset val min max prop ret
 	val="${1:-0}" min="${2:-0}" max="${3:-0}" prop="${4:-property}"
 
-	if ${OK_BC} command -v bc >/dev/null 2>&1 && OK_BC=:
-	then 	ret=$(bc <<<"($val < $min) || ($val > $max)")
-	fi
+	ret=$(bc <<<"($val < $min) || ($val > $max)") || function check_optrangef { : ;}  #no-`bc' systems
 	
 	if [[ $val = *[!0-9.,+-]* ]] || ((ret))
 	then 	printf "${Red}Warning: Bad %s -- ${BRed}%s${NC}  ${Yellow}(%s - %s)${NC}\\n" "$prop" "$val" "$min" "$max" >&2
