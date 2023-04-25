@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.12.13 | General Commands Manual
+% CHATGPT.SH(1) v0.12.14 | General Commands Manual
 % mountaineerbr
 % April 2023
 
@@ -641,7 +641,7 @@ times when appropriate.
 
 **-T**
 
-: Count input tokens with python tiktoken. It heeds `options -ccm` for model encoding. Limited input size.
+: Count input tokens with python tiktoken. It heeds `options -ccm` for model encoding.
 
 
 **-u**

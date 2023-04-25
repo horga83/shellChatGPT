@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.13  april/2023  by mountaineerbr  GPL+3
+# v0.12.14  april/2023  by mountaineerbr  GPL+3
 shopt -s extglob
 set -o pipefail
 
@@ -252,8 +252,7 @@ Options
 		 Set/search prompt from awesome-chatgpt-prompts.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
-	-T 	 Count input tokens with tiktoken. It heeds options -ccm
-		 for encoding. Limited input size.
+	-T 	 Count input tokens with tiktoken. It heeds options -ccm.
 	-u 	 Toggle multiline prompter.
 	-v 	 Less verbose. May set multiple times.
 	-V 	 Pretty-print context. Set twice to dump raw request.
@@ -619,8 +618,11 @@ function tiktokenf
 	python <(printf "
 import sys
 import tiktoken
+if (len(sys.argv) > 2) and (sys.argv[2] == \"-\"):
+    text = sys.stdin.read()
+else:
+    text = sys.argv[2]
 mod = sys.argv[1]
-text = sys.argv[2]
 try:
     enc = tiktoken.encoding_for_model(mod)
 except:
@@ -1566,7 +1568,7 @@ set_maxtknf "${OPTMM:-$OPTMAX}"
 set_optsf
 
 #load stdin
-(($#)) || [[ -t 0 ]] || set -- "$(</dev/stdin)"
+(($#)) || [[ -t 0 ]] || ((OPTTIK)) || set -- "$(</dev/stdin)"
 
 ((OPTX)) && ((OPTE+OPTEMBED+OPTI+OPTII+OPTTIK)) &&
 edf "$@" && set -- "$(<"$FILETXT")"  #editor
@@ -1603,6 +1605,8 @@ elif ((OPTL))      #model list
 then 	list_modelsf "$@"
 elif ((OPTTIK))
 then 	__sysmsgf 'Language Model:' "$MOD"
+	(($#)) || [[ -t 0 ]] || set -- "-"
+	[[ -f "$*" ]] && [[ -t 0 ]] && exec 0< "$*" && set -- "-"
 	if ! tiktokenf "$*"
 	then 	__warmsgf "Err:" "Make sure python tiktoken module is installed: \`pip install tiktoken\`"
 		false
