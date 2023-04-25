@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.12.12" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "April 2023" "v0.12.13" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -74,7 +74,7 @@
 .PD 0
 .P
 .PD
-\ \ \ \f[B]chatgpt.sh\f[R] \f[V]-l\f[R] [\f[I]MODEL_NAME\f[R]]
+\ \ \ \f[B]chatgpt.sh\f[R] \f[V]-ll\f[R] [\f[I]MODEL_NAME\f[R]]
 .SS DESCRIPTION
 .PP
 Complete INPUT text when run without any options (single-turn, pure text
@@ -609,9 +609,9 @@ when appropriate.
 \f[V]--restart-seq\f[R], \f[V]--restart-sequence\f[R],
 \f[V]--results\f[R], \f[V]--resume\f[R], \f[V]--start-seq\f[R],
 \f[V]--start-sequence\f[R], \f[V]--stop\f[R], \f[V]--temp\f[R],
-\f[V]--temperature\f[R], \f[V]--top\f[R], \f[V]--top-p\f[R],
-\f[V]--transcribe\f[R], \f[V]--translate\f[R], \f[V]--multi\f[R],
-\f[V]--multiline\f[R], and \f[V]--verbose\f[R].
+\f[V]--temperature\f[R], \f[V]--tiktoken\f[R], \f[V]--top\f[R],
+\f[V]--top-p\f[R], \f[V]--transcribe\f[R], \f[V]--translate\f[R],
+\f[V]--multi\f[R], \f[V]--multiline\f[R], and \f[V]--verbose\f[R].
 .RE
 .PP
 E.g.: \[lq]\f[V]--chat\f[R]\[rq],
@@ -828,6 +828,11 @@ Set/search prompt from awesome-chatgpt-prompts.
 Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper 0.0
 - 1.0).
 Def=\f[I]0\f[R].
+.TP
+\f[B]-T\f[R]
+Count input tokens with python tiktoken.
+It heeds \f[V]options -ccm\f[R] for model encoding.
+Limited input size.
 .TP
 \f[B]-u\f[R]
 Toggle multiline prompter.

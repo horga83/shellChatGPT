@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.12.12 | General Commands Manual
+% CHATGPT.SH(1) v0.12.13 | General Commands Manual
 % mountaineerbr
 % April 2023
 
@@ -20,7 +20,7 @@
 |    **chatgpt.sh** `-W` \[`opt`] \[_AUDIO_FILE_] \[_PROMPT-EN_]
 |    **chatgpt.sh** `-ccw` \[`opt`] \[_LANG_]
 |    **chatgpt.sh** `-ccW` \[`opt`]
-|    **chatgpt.sh** `-l` \[_MODEL_NAME_]
+|    **chatgpt.sh** `-ll` \[_MODEL_NAME_]
 
 
 ### DESCRIPTION
@@ -439,8 +439,9 @@ times when appropriate.
 > `--max-tokens`, `--mod`, `--model`, `--no-colour`, `--no-config`,
 > `--presence`, `--presence-penalty`, `--prob`, `--raw`, `--restart-seq`,
 > `--restart-sequence`, `--results`, `--resume`, `--start-seq`,
-> `--start-sequence`, `--stop`, `--temp`, `--temperature`, `--top`, `--top-p`,
-> `--transcribe`, `--translate`, `--multi`, `--multiline`, and `--verbose`.
+> `--start-sequence`, `--stop`, `--temp`, `--temperature`, `--tiktoken`,
+> `--top`, `--top-p`, `--transcribe`, `--translate`, `--multi`,
+> `--multiline`, and `--verbose`.
 
 | E.g.: "`--chat`", "`--temp`=_0.9_", "`--max`=_1024,128_", and "`--presence-penalty` _0.6_".
 
@@ -636,6 +637,11 @@ times when appropriate.
 **-t** \[_VAL_]
 
 : Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper 0.0 - 1.0). Def=_0_.
+
+
+**-T**
+
+: Count input tokens with python tiktoken. It heeds `options -ccm` for model encoding. Limited input size.
 
 
 **-u**

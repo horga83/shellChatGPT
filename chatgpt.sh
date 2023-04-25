@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.12  april/2023  by mountaineerbr  GPL+3
+# v0.12.13  april/2023  by mountaineerbr  GPL+3
 shopt -s extglob
 set -o pipefail
 
@@ -98,7 +98,7 @@ Synopsis
 	${0##*/} -W [opt] [AUDIO_FILE] [PROMPT-EN]
 	${0##*/} -ccw [opt] [LANG]
 	${0##*/} -ccW [opt]
-	${0##*/} -l [MODEL_NAME]
+	${0##*/} -ll [MODEL_NAME]
 
 
 Description
@@ -185,8 +185,9 @@ Long Options
 	--max-tokens, --mod, --model, --no-colour, --no-config,
 	--presence, --presence-penalty, --prob, --raw, --restart-seq,
 	--restart-sequence, --results, --resume, --start-seq,
-	--start-sequence, --stop, --temp, --temperature, --top, --top-p,
-	--transcribe, --translate, --multi, --multiline, and --verbose.
+	--start-sequence, --stop, --temp, --temperature, --tiktoken,
+	--top, --top-p, --transcribe, --translate, --multi, --multiline,
+	and --verbose.
 
 	E.g.: \`--chat', \`--temp=0.9', \`--max=1024,128', and \`--presence-penalty 0.6'.
 
@@ -251,6 +252,8 @@ Options
 		 Set/search prompt from awesome-chatgpt-prompts.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
+	-T 	 Count input tokens with tiktoken. It heeds options -ccm
+		 for encoding. Limited input size.
 	-u 	 Toggle multiline prompter.
 	-v 	 Less verbose. May set multiple times.
 	-V 	 Pretty-print context. Set twice to dump raw request.
@@ -571,7 +574,7 @@ function set_histf
 #https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
 function __set_histf
 {
-	printf "${BBlack}${On_White}Hist...${NC}\\r" >&2
+	printf "${BBlack}${On_White}Hist..${NC}\\r" >&2
 	set_histf "${@}"
 	printf '\e[K' >&2
 }
@@ -620,11 +623,11 @@ mod = sys.argv[1]
 text = sys.argv[2]
 try:
     enc = tiktoken.encoding_for_model(mod)
-except KeyError:
+except:
     enc = tiktoken.get_encoding(\"r50k_base\")
 encoded_text = enc.encode_ordinary(text)
-print(len(encoded_text))
-") "${MOD:-davinci}" "${@:-x}"
+print(len(encoded_text),(enc))
+") "${MOD:-davinci}" "${@:-}"
 }
 #gpt-3.5-turbo: cl100k_base
 
@@ -829,9 +832,8 @@ function edf
 	rest="$(unescapef "$rest")"
 
 	if ((OPTC+OPTRESUME))
-	then 	N_LOOP=1 __set_histf "${rest}${*}"
-		HIST="${HIST//\\n\\n/\\n}" HIST="${HIST//\\n\\n/\\n}"
-		HIST="${HIST//\\n/\\n\\n}"
+	then 	N_LOOP=1 Q_TYPE="\\n${Q_TYPE}" A_TYPE="\\n${A_TYPE}" \
+		__set_histf "${rest}${*}"
 	fi
 
 	pre="$(unescapef "${INSTRUCTION}")"${INSTRUCTION:+$'\n\n'}"$(unescapef "$HIST")""${ed_msg}"
@@ -931,8 +933,7 @@ function usr_logf
 {
 	[[ -d $USRLOG ]] && USRLOG="$USRLOG/${FILETXT##*/}"
 	[[ "$USRLOG" = '~'* ]] && USRLOG="${HOME}${USRLOG##\~}"
-	printf '%s%s\n\n' "${H_TIME:-$(date -R 2>/dev/null||date)}" "${MAX_PREV:+  Tokens: $MAX_PREV}"
-	sed 's/^/\n/' | cat -s 
+	printf '%s%s\n\n%s\n' "${H_TIME:-$(date -R 2>/dev/null||date)}" "${MAX_PREV:+  Tokens: $MAX_PREV}" "${*}"
 }
 
 #wrap text at spaces rather than mid-word
@@ -1382,7 +1383,7 @@ function set_clipcmdf
 
 
 #parse opts
-optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:r:R:s:S:t:ouvVxwWz0123456789@:/,.+-:"
+optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:r:R:s:S:t:TouvVxwWz0123456789@:/,.+-:"
 while getopts "$optstring" opt
 do
 	if [[ $opt = - ]]  #long options
@@ -1399,8 +1400,8 @@ do
 			p:top  r:restart-sequence  r:restart-seq \
 			R:start-sequence           R:start-seq \
 			s:stop      S:instruction  t:temperature \
-			t:temp       u:multiline   u:multi  v:verbose \
-			x:editor  w:transcribe  W:translate  z:last
+			t:temp      T:tiktoken  u:multiline   u:multi \
+			v:verbose  x:editor  w:transcribe  W:translate  z:last
 			#opt:cmd_name
 		do
 			name="${opt##*:}"  name="${name/[_-]/[_-]}"
@@ -1484,6 +1485,7 @@ do
 			else 	INSTRUCTION="$OPTARG"
 			fi;;
 		t) 	OPTT="$OPTARG";;
+		T) 	OPTTIK=1;;
 		u) 	((++OPTMULTI)); ((OPTMULTI%=2));;
 		v) 	((++OPTV));;
 		V) 	((++OPTVV));;  #debug
@@ -1566,15 +1568,16 @@ set_optsf
 #load stdin
 (($#)) || [[ -t 0 ]] || set -- "$(</dev/stdin)"
 
-((OPTX)) && ((OPTE+OPTEMBED+OPTI+OPTII)) &&
+((OPTX)) && ((OPTE+OPTEMBED+OPTI+OPTII+OPTTIK)) &&
 edf "$@" && set -- "$(<"$FILETXT")"  #editor
 
-if ((!(OPTHH+OPTI+OPTL+OPTZ+OPTW) ))
+if ((!(OPTHH+OPTI+OPTL+OPTZ+OPTW+OPTTIK) ))
 then 	__sysmsgf 'Language Model:' "$MOD"
 	__sysmsgf "Max Input / Response:" "$MODMAX / $OPTMAX tokens"
      	((!$#)) || token_prevf "$*"
 fi
 
+((OPTTIK)) ||
 for arg  #escape input
 do 	((init++)) || set --
 	set -- "$@" "$(escapef "$arg")"
@@ -1587,8 +1590,9 @@ if ((OPTHH))  #edit history/pretty print last session
 then 	if ((OPTHH>1))
 	then 	{ 	((OPTC)) || ((EPN==6)) ;} && OPTC=2
 		((OPTRESUME)) || { 	((OPTC)) || OPTC=1 ;}
-		MODMAX=65536 set_histf
-		usr_logf <<<"$(unescapef "$HIST")"
+		Q_TYPE="\\n${Q_TYPE}" A_TYPE="\\n${A_TYPE}" \
+		MODMAX=65536 __set_histf
+		usr_logf "$(unescapef "$HIST")"
 	elif [[ -t 1 ]]
 	then 	__edf "$FILECHAT"
 	else 	cat -- "$FILECHAT"
@@ -1597,6 +1601,12 @@ elif ((OPTZ))      #last response json
 then 	lastjsonf
 elif ((OPTL))      #model list
 then 	list_modelsf "$@"
+elif ((OPTTIK))
+then 	__sysmsgf 'Language Model:' "$MOD"
+	if ! tiktokenf "$*"
+	then 	__warmsgf "Err:" "Make sure python tiktoken module is installed: \`pip install tiktoken\`"
+		false
+	fi
 elif ((OPTW)) && ((!OPTC))  #audio transcribe/translation
 then 	whisperf "$@"
 elif ((OPTII))     #image variations/edits
@@ -1869,7 +1879,7 @@ else               #text/chat completions
 		elif ((OPTC+OPTRESUME))
 		then 	BAD_RESPONSE=1 SKIP=1 EDIT=1 ;set -- ;continue
 		fi
-		((OPTLOG)) && usr_logf <<<"$(unescapef "$ESC\\n${ans}")" > "$USRLOG" &
+		((OPTLOG)) && usr_logf "$(unescapef "$ESC\\n${ans}")" > "$USRLOG" &
 		SLEEP="${tkn[1]}"
 
 		((++N_LOOP)) ;set --
