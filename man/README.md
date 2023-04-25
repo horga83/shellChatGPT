@@ -2,7 +2,7 @@
 author:
 - mountaineerbr
 date: April 2023
-title: CHATGPT.SH(1) v0.12.14 \| General Commands Manual
+title: CHATGPT.SH(1) v0.12.15 \| General Commands Manual
 ---
 
 ### NAME
@@ -548,7 +548,7 @@ Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper
 
 **-T**  
 Count input tokens with python tiktoken. It heeds `options -ccm` for
-model encoding.
+model or encoding.
 
 **-u**  
 Toggle multiline prompter.

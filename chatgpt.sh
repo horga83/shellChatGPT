@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.14  april/2023  by mountaineerbr  GPL+3
+# v0.12.15  april/2023  by mountaineerbr  GPL+3
 shopt -s extglob
 set -o pipefail
 
@@ -626,7 +626,10 @@ mod = sys.argv[1]
 try:
     enc = tiktoken.encoding_for_model(mod)
 except:
-    enc = tiktoken.get_encoding(\"r50k_base\")
+    try:
+        enc = tiktoken.get_encoding(mod)
+    except:
+        enc = tiktoken.get_encoding(\"r50k_base\")
 encoded_text = enc.encode_ordinary(text)
 print(len(encoded_text),(enc))
 ") "${MOD:-davinci}" "${@:-}"
