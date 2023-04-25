@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.11  april/2023  by mountaineerbr  GPL+3
+# v0.12.12  april/2023  by mountaineerbr  GPL+3
 shopt -s extglob
 set -o pipefail
 
@@ -569,6 +569,12 @@ function set_histf
 	fi ;HIST="${HIST##$SPC0}"
 }
 #https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
+function __set_histf
+{
+	printf "${BBlack}${On_White}Hist...${NC}\\r" >&2
+	set_histf "${@}"
+	printf '\e[K' >&2
+}
 
 #print to history file
 #usage: push_tohistf [string] [tokens] [time]
@@ -823,7 +829,7 @@ function edf
 	rest="$(unescapef "$rest")"
 
 	if ((OPTC+OPTRESUME))
-	then 	N_LOOP=1 set_histf "${rest}${*}"
+	then 	N_LOOP=1 __set_histf "${rest}${*}"
 		HIST="${HIST//\\n\\n/\\n}" HIST="${HIST//\\n\\n/\\n}"
 		HIST="${HIST//\\n/\\n\\n}"
 	fi
@@ -1794,7 +1800,7 @@ else               #text/chat completions
 		fi
 
 		if ((RETRY<2))
-		then 	((OPTC+OPTRESUME)) && set_histf "${@}"
+		then 	((OPTC+OPTRESUME)) && __set_histf "${@}"
 			if ((OPTC)) || [[ -n "${RESTART}" ]]
 			then 	rest="${RESTART:-$Q_TYPE}"
 			else 	unset rest
