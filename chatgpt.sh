@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.10  april/2023  by mountaineerbr  GPL+3
+# v0.12.11  april/2023  by mountaineerbr  GPL+3
 shopt -s extglob
 set -o pipefail
 
@@ -925,10 +925,8 @@ function usr_logf
 {
 	[[ -d $USRLOG ]] && USRLOG="$USRLOG/${FILETXT##*/}"
 	[[ "$USRLOG" = '~'* ]] && USRLOG="${HOME}${USRLOG##\~}"
-	set -- "${*//$NL$NL/$NL}"
-	set -- "${*//$NL$NL/$NL}"
-	set -- "${*//$NL/$NL$NL}"
-	printf '%s%s\n\n%s\n' "${H_TIME:-$(date -R 2>/dev/null||date)}" "${MAX_PREV:+  Tokens: $MAX_PREV}" "${*##$SPC}"
+	printf '%s%s\n\n' "${H_TIME:-$(date -R 2>/dev/null||date)}" "${MAX_PREV:+  Tokens: $MAX_PREV}"
+	sed 's/^/\n/' | cat -s 
 }
 
 #wrap text at spaces rather than mid-word
@@ -1584,7 +1582,7 @@ then 	if ((OPTHH>1))
 	then 	{ 	((OPTC)) || ((EPN==6)) ;} && OPTC=2
 		((OPTRESUME)) || { 	((OPTC)) || OPTC=1 ;}
 		MODMAX=65536 set_histf
-		usr_logf "$(unescapef "$HIST")"
+		usr_logf <<<"$(unescapef "$HIST")"
 	elif [[ -t 1 ]]
 	then 	__edf "$FILECHAT"
 	else 	cat -- "$FILECHAT"
@@ -1865,7 +1863,7 @@ else               #text/chat completions
 		elif ((OPTC+OPTRESUME))
 		then 	BAD_RESPONSE=1 SKIP=1 EDIT=1 ;set -- ;continue
 		fi
-		((OPTLOG)) && usr_logf "$(unescapef "$ESC\\n${ans}")" > "$USRLOG" &
+		((OPTLOG)) && usr_logf <<<"$(unescapef "$ESC\\n${ans}")" > "$USRLOG" &
 		SLEEP="${tkn[1]}"
 
 		((++N_LOOP)) ;set --
