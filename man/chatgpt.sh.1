@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.12.15" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "April 2023" "v0.12.16" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -62,6 +62,12 @@
 .PD
 \ \ \ \f[B]chatgpt.sh\f[R] \f[V]-W\f[R] [\f[V]opt\f[R]]
 [\f[I]AUDIO_FILE\f[R]] [\f[I]PROMPT-EN\f[R]]
+.PD 0
+.P
+.PD
+\ \ \ \f[B]chatgpt.sh\f[R] \f[V]-T\f[R] [-v]
+[\f[V]-m\f[R][\f[I]MODEL\f[R]|\f[I]ENCODING\f[R]]]
+[\f[I]TEXT\f[R]|\f[I]FILE\f[R]]
 .PD 0
 .P
 .PD
@@ -830,8 +836,13 @@ Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper 0.0
 Def=\f[I]0\f[R].
 .TP
 \f[B]-T\f[R]
-Count input tokens with python tiktoken.
-It heeds \f[V]options -ccm\f[R] for model or encoding.
+Count input tokens with python tiktoken, heeds \f[V]options -ccm\f[R].
+.RS
+.PP
+Set twice to print tokens, thrice to available encodings.
+.PP
+Set model or encoding with \f[V]option -m\f[R].
+.RE
 .TP
 \f[B]-u\f[R]
 Toggle multiline prompter.

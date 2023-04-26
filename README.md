@@ -19,7 +19,7 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 - Choose amongst available models
 - Lots of command line options
 - Converts base64 JSON data to PNG image
-- Should™ work on Linux, FreeBSD, MacOS, and Termux.
+- Should™ work on Linux, FreeBSD, MacOS, and [Termux](#termux-users).
 
 
 ## ✨ Getting Started
@@ -32,7 +32,7 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 ### Required packages
 
 - Free [OpenAI GPTChat key](https://platform.openai.com/account/api-keys)
-- Bash <!-- [Ksh93u+](https://github.com/ksh93/ksh), Bash or Zsh -->
+- Bash or Zsh <!-- [Ksh93u+](https://github.com/ksh93/ksh), Bash or Zsh -->
 - cURL, and JQ
 - Imagemagick (optional)
 - Base64 (optional)
@@ -223,17 +223,15 @@ Note that the model's steering and capabilities require prompt engineering
 to even know that it should answer the questions.
 
 
-<!--
 ## Shell Interpreters
 
-The script can be run with either [Ksh93u+](https://github.com/ksh93/ksh) (~~_avoid_ Ksh2020~~),
-Zsh and Bash. If the defaults
-interpreter is not available in your system, run the script
-such as `bash ./chatgpt.sh` (consider adding an alias in your shell rc file).
+The script can be run with either Bash, or Zsh.
 
-There should be equivalency of features under Bash, Ksh and Zsh.
+There should be equivalency of features under Bash, and Zsh.
 
-The _reccomended interpreter_ is _Bash_, followed by Ksh and then Zsh.
+Zsh is much faster than Bash in respect to some features.
+
+<!--
 Although it should be noted that I test the script under Ksh and Zsh,
 and it is almost never tested under Bash, but so far, Bash seems to be
 a little more polised than the other shells [AFAIK](https://github.com/mountaineerbr/shellChatGPT/discussions/13),
@@ -245,13 +243,14 @@ with this script is to press the up-arrow key once to edit the full prompt.
 Ksh will mangle multibyte characters when re-editing input. A workaround
 is to move the cursor and press the up-arrow key once to unmangle the input text.
 
-Zsh cannot read a history file unless started in interactive mode,
+Zsh cannot read/load a history file in non-interactive mode,
 so only commands of the running session are available for retrieval in
 new prompts (with the up-arrow key).
 
 See [BUGS](https://github.com/mountaineerbr/shellChatGPT/tree/main/man#bugs)
 in the man page.
 -->
+<!-- [Ksh93u+](https://github.com/ksh93/ksh) (~~_avoid_ Ksh2020~~), -->
 
 
 <!--
@@ -263,9 +262,20 @@ but it should work fine).
 -->
 
 
-<!--
 ## Termux Users
 
+To run `tiktoken` with `option -T`, be sure to have your system
+updated and installed with `python`, `rust`, and `rustc-dev` packages
+for building python `tiktoken`.
+
+```
+$ pkg update
+$ pkg upgrade
+$ pkg install python rust rustc-dev
+$ pip install tiktoken
+```
+
+<!--
 Users of Termux may have some difficulty compiling the original Ksh93 under Termux.
 As a workaround, use Ksh emulation from Zsh. To make Zsh emulate Ksh, simply
 add a symlink to `zsh` under your path with the name `ksh`.
@@ -287,17 +297,17 @@ ln -s /data/data/com.termux/files/usr/bin/zsh /data/data/com.termux/files/usr/bi
 
 ## Distinct Features
 
-- Run as *single* or *multi-turn*.
-- *Text editor interface*, and single and multiline prompters. 
-- Run chat commands with _operator_ `!` or `/`, such as `!new` to start new session, and `!temp 0.9` to set temperature.
+- Run as **single** or **multi-turn**.
+- **Text editor** *interface*, and **single** and **multiline** *prompters*. 
+- Run chat commands with _operator_ `!` or `/`.
 - In chat mode, edit live history entries with command `!hist`.
-- In chat mode, append a backslash `\\` operator at the end of the line to start _multiline input_, or set it by defaults with `option -u`.
-- Add operator forward slash `/` to the end of prompt to trigger completions *preview mode*.
+- Add operator forward slash `/` to the end of prompt to trigger completions **preview mode**.
 - One can regenerate a response typing in a new prompt a single slash `/`.
 - Set or search prompts from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts) with `-S /prompt_name`
 - Set clipboard with the latest response with `option -o`.
 - Hopefully, default colours are colour-blind friendly.
 
+_For a simple python wrapper for_ tiktoken, _see_ [tkn-cnt.py](https://github.com/mountaineerbr/scripts/blob/main/tkn-cnt.py).
 
 ## Limitations
 

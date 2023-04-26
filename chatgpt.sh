@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.15  april/2023  by mountaineerbr  GPL+3
-shopt -s extglob
-set -o pipefail
+# v0.12.16  april/2023  by mountaineerbr  GPL+3
+if [[ -n $ZSH_VERSION  ]]
+then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
+else 	shopt -s extglob ;set -o pipefail
+fi
 
 # OpenAI API key
 #OPENAI_API_KEY=
@@ -49,6 +51,9 @@ OPTI_FMT=b64_json  #url
 # Text and chat completions, and edits endpoints
 #INSTRUCTION="The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly."
 
+# Prompt history size (tokens)
+#OPTHISTSIZE=2048
+
 # CACHE AND OUTPUT DIRECTORIES
 CONFFILE="$HOME/.chatgpt.conf"
 CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatgptsh"
@@ -66,9 +71,6 @@ FILEIN="${CACHEDIR%/}/dalle_in.png"
 FILEINW="${CACHEDIR%/}/whisper_in.mp3"
 FILEAWE="${CACHEDIR%/}/awesome-prompts.csv"
 USRLOG="${OUTDIR%/}/${FILETXT##*/}"
-HISTFILE="${CACHEDIR%/}/history_bash"
-HISTCONTROL=erasedups:ignoredups
-HISTSIZE=512
 
 # Def hist, txt chat types
 Q_TYPE="\\nQ: "
@@ -96,6 +98,7 @@ Synopsis
 	${0##*/} -i [opt] [S|M|L] [PNG_FILE] [MASK_FILE] [PROPMT]
 	${0##*/} -w [opt] [AUDIO_FILE] [LANG] [PROMPT-LANG]
 	${0##*/} -W [opt] [AUDIO_FILE] [PROMPT-EN]
+	${0##*/} -T [-v] [-m[MODEL|ENCODING]] [TEXT|FILE]
 	${0##*/} -ccw [opt] [LANG]
 	${0##*/} -ccW [opt]
 	${0##*/} -ll [MODEL_NAME]
@@ -252,7 +255,9 @@ Options
 		 Set/search prompt from awesome-chatgpt-prompts.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
-	-T 	 Count input tokens with tiktoken. It heeds options -ccm.
+	-TTT 	 Count input tokens with tiktoken, heeds options -ccm.
+		 Set twice to print tokens, thrice to available encodings.
+		 Set model or encoding with option -m.
 	-u 	 Toggle multiline prompter.
 	-v 	 Less verbose. May set multiple times.
 	-V 	 Pretty-print context. Set twice to dump raw request.
@@ -382,7 +387,7 @@ function new_prompt_confirmf
 function __read_charf
 {
 	typeset REPLY
-	read -n 1 "$@"
+	read -n ${ZSH_VERSION:+-k} 1 "$@"
 	printf '%.1s\n' "$REPLY"
 	[[ -z ${REPLY//[$IFS]} ]] || printf '\n' >&2
 }
@@ -392,7 +397,7 @@ function prompt_printf
 {
 	if ((OPTJ)) #raw json
 	then 	cat -- "$FILE"
-	else 	((OPTV)) || jq -r '(.choices[].logprobs//empty),
+	else 	((OPTV+OPTEMBED)) || jq -r '(.choices[].logprobs//empty),
 			(.model//"'"$MOD"'"//"?")+" ("+(.object//"?")+") ["
 			+(.usage.prompt_tokens//"?"|tostring)+" + "+(.usage.completion_tokens//"?"|tostring)+" = "
 			+(.usage.total_tokens//"?"|tostring)+" tkns]"' "$FILE" >&2
@@ -400,8 +405,8 @@ function prompt_printf
 		jq -r "def byellow: \"\"; def reset: \"\"; $JQCOL $JQCOL2
 		  .choices[1] as \$sep | .choices[] |
 		  (byellow + (
-		  (.text//.message.content) | gsub(\"^[\\\\n\\\\t ]\"; \"\") |
-		  if ${OPTC:-0} > 0 then gsub(\"[\\\\n\\\\t ]+$\"; \"\") else . end
+		  (.text//.message.content) |
+		  if (${OPTC:-0}>0) then (gsub(\"^[\\\\n\\\\t ]\"; \"\") |  gsub(\"[\\\\n\\\\t ]+$\"; \"\")) else . end
 		  ) + reset,
 		  if \$sep != null then \"---\" else empty end)" "$FILE" 2>/dev/null | foldf ||
 
@@ -517,6 +522,7 @@ function set_histf
 {
 	typeset time token string max_prev q_type a_type role role_last rest A_APPEND
 	[[ -s "$FILECHAT" ]] || return
+	((OPTV>2)) || printf "Hist..\\r" >&2
 	unset HIST HIST_C
 	(($#)) && OPTV=1 token_prevf "$*"
 	{ 	((OPTC>1)) || ((EPN==6)) ;} && A_APPEND=" "
@@ -525,7 +531,7 @@ function set_histf
 	while IFS=$'\t' read -r time token string
 	do 	[[ ${time//[$IFS]}${token//[$IFS]} = \#* ]] && continue
 		[[ -z $time$token$string ]] && continue
-		[[ ${time}${token} = *[Bb][Rr][Ee][Aa][Kk]* ]] && break
+		[[ ${time}${token} = *[Bb][Rr][Ee][Aa][Kk]* ]] && { 	((OPTHIST)) && continue || break ;}
 		if ((token<1))
 		then 	((OPTVV>1||OPTJ)) &&
 			__warmsgf "Warning:" "Zero/Neg token in history"
@@ -537,7 +543,7 @@ function set_histf
 			((N_LOOP)) || ((OLD_TOTAL+=token))
 			H_TIME="${time}" MAX_PREV="${max_prev}"
 			string="${string##[\"]}" string="${string%%[\"]}"
-			string="${string##\\n}" ;((OPTC)) && string="${string%%$SPC0}"
+			string="${string##\\n}"  #;((OPTC)) && string="${string%%$SPC0}"
 			stringc="${string##@("${q_type}"|"${a_type}"|":")}"
 
 			role_last=$role
@@ -559,6 +565,11 @@ function set_histf
 					fi
 					;;
 			esac
+			if ((OPTHIST))
+			then 	[[ $role = assistant ]] && { 	((max_prev-=token)) ;continue ;}
+				[[ $'\n'"${HIST}"$'\n' = *$'\n'"${stringc}"$'\n'* ]] && continue
+				rest=$'\n'
+			fi
 
 			HIST="${rest}${stringc}${HIST}"
 			((EPN==6)) && HIST_C="$(fmt_ccf "${stringc##$SPC0}" "${role}")${HIST_C:+,}${HIST_C}"
@@ -569,14 +580,9 @@ function set_histf
 	then 	[[ ${role_last:=user} = @(user|assistant) ]] || unset role_last
 		HIST="${HIST##"$stringc"}" HIST="${HIST##\\n}" HIST="${stringc}${role_last:+\\n}\\n${HIST}"
 	fi ;HIST="${HIST##$SPC0}"
+	((OPTV>2)) || printf '\e[K' >&2
 }
 #https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
-function __set_histf
-{
-	printf "${BBlack}${On_White}Hist..${NC}\\r" >&2
-	set_histf "${@}"
-	printf '\e[K' >&2
-}
 
 #print to history file
 #usage: push_tohistf [string] [tokens] [time]
@@ -597,7 +603,7 @@ function __tiktokenf
 	typeset str tkn by
 	by="$2"
 
-	set -f
+	[[ -n $ZSH_VERSION ]] && setopt NO_GLOB || set -f
 	# 1 TOKEN ~= 4 CHARS IN ENGLISH
 	#str="${1// }" str=${str//[$'\t\n']/xxxx} str="${str//\\[ntrvf]/xxxx}" tkn=$((${#str}/${by:-4}))
 	
@@ -605,20 +611,25 @@ function __tiktokenf
 	set -- "${1//[$'\n\t ']/ x }"
 	set -- ${1//\\[ntrvf]/ x }
 	tkn=$(( ($# * 4) / ${by:-3}))
-	set +f
+	[[ -n $ZSH_VERSION ]] && setopt GLOB || set +f
 
 	printf '%d\n' "${tkn:-0}" ;((tkn>0))
 }
 
 #use openai python tiktoken lib
 #input should be `unescaped'
-#usage: tiktokenf [model] [text]
+#usage: tiktokenf [model|encoding] [text|-]
 function tiktokenf
 {
 	python <(printf "
 import sys
 import tiktoken
-if (len(sys.argv) > 2) and (sys.argv[2] == \"-\"):
+opttik, optv, optl = ${OPTTIK:-0}, ${OPTV:-0}, ${OPTL:-0}
+if opttik+optl > 2:
+    for enc_name in tiktoken.list_encoding_names():
+        print(enc_name)
+    sys.exit()
+elif (len(sys.argv) > 2) and (sys.argv[2] == \"-\"):
     text = sys.stdin.read()
 else:
     text = sys.argv[2]
@@ -631,7 +642,12 @@ except:
     except:
         enc = tiktoken.get_encoding(\"r50k_base\")
 encoded_text = enc.encode_ordinary(text)
-print(len(encoded_text),(enc))
+if opttik > 1:
+    print(encoded_text)
+if optv:
+    print(len(encoded_text))
+else:
+    print(len(encoded_text),str(enc))
 ") "${MOD:-davinci}" "${@:-}"
 }
 #gpt-3.5-turbo: cl100k_base
@@ -688,8 +704,10 @@ function check_cmdf
 			fix_dotf OPTAA
 			__cmdmsgf 'Frequency penalty' "$OPTAA"
 			;;
-		-[Cc]|br|break|session)
+		-[Cc]|br|break|session|new)
 			break_sessionf
+			push_tohistf "$(escapef ":${INSTRUCTION_OLD}")"
+			OPTV= __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:$SPC}" 2>&1 | foldf >&2
 			;;
 		-[Hh]|history|hist)
 			__edf "$FILECHAT"
@@ -838,7 +856,7 @@ function edf
 
 	if ((OPTC+OPTRESUME))
 	then 	N_LOOP=1 Q_TYPE="\\n${Q_TYPE}" A_TYPE="\\n${A_TYPE}" \
-		__set_histf "${rest}${*}"
+		set_histf "${rest}${*}"
 	fi
 
 	pre="$(unescapef "${INSTRUCTION}")"${INSTRUCTION:+$'\n\n'}"$(unescapef "$HIST")""${ed_msg}"
@@ -873,15 +891,20 @@ function edf
 
 #special json chars
 JSON_CHARS=(\" / b f n r t u)  #\\ uHEX
-#unescape / escape text to json format
-function unescapef { 	printf "${*//\%/%%}" ;}
+
+#unescape text
+[[ -n $ZSH_VERSION ]] &&
+function unescapef { 	printf -- "${${*//\%/%%}//\\\"/\"}" ;} ||
+function unescapef { 	printf -- "${*//\%/%%}" ;}
+
+#escape text to json format
 function escapef
 {
 	typeset var b c
 	var="$*" b='@#'
 
 	#special chars
- 	for c in "${JSON_CHARS[@]}"  ##" "
+ 	for c in "${JSON_CHARS[@]}"
 	do 	var="${var//"\\\\$c"/$b$b$c}"
 		var="${var//"\\$c"/$b$c}"
 	done
@@ -890,8 +913,6 @@ function escapef
 	do 	var="${var//"$b$b$c"/\\\\$c}"
 		var="${var//"$b$c"/\\$c}"
 	done
-	##	var="${var//"$b$b "/\\\\ }"  #space
-	##	var="${var//"$b "/ }"
 
 	var="${var//[$'\t']/\\t}"    #tabs
 	var="${var//[$'\n']/\\n}"    #new line
@@ -957,7 +978,10 @@ function check_optrangef
 	typeset val min max prop ret
 	val="${1:-0}" min="${2:-0}" max="${3:-0}" prop="${4:-property}"
 
-	ret=$(bc <<<"($val < $min) || ($val > $max)") || function check_optrangef { : ;}  #no-`bc' systems
+	if [[ -n $ZSH_VERSION ]]
+	then 	ret=$(( (val < min) || (val > max) ))
+	else 	ret=$(bc <<<"($val < $min) || ($val > $max)") || function check_optrangef { : ;}  #no-`bc' systems
+	fi
 	
 	if [[ $val = *[!0-9.,+-]* ]] || ((ret))
 	then 	printf "${Red}Warning: Bad %s -- ${BRed}%s${NC}  ${Yellow}(%s - %s)${NC}\\n" "$prop" "$val" "$min" "$max" >&2
@@ -1365,7 +1389,10 @@ function awesomef
 	fi
 
 	INSTRUCTION="$(sed -n -e 's/^[^,]*,//; s/""/"/g; s/^"//; s/"$//' -e "$((act+1))p" "$FILEAWE")"
-	read -r -e -i "$INSTRUCTION" INSTRUCTION
+	if [[ -n $ZSH_VERSION ]]  #edit chosen awesome prompt
+	then 	vared -c -e -h INSTRUCTION
+	else 	read -r -e -i "$INSTRUCTION" INSTRUCTION
+	fi
 	if [[ -z $INSTRUCTION ]]
 	then 	__warmsgf 'Err:' 'awesome-chatgpt-prompts fail'
 		return 1
@@ -1388,7 +1415,7 @@ function set_clipcmdf
 
 
 #parse opts
-optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:r:R:s:S:t:TouvVxwWz0123456789@:/,.+-:"
+optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:r:R:s:S:t:TouvVxwWzZ0123456789@:/,.+-:"
 while getopts "$optstring" opt
 do
 	if [[ $opt = - ]]  #long options
@@ -1490,7 +1517,7 @@ do
 			else 	INSTRUCTION="$OPTARG"
 			fi;;
 		t) 	OPTT="$OPTARG";;
-		T) 	OPTTIK=1;;
+		T) 	((++OPTTIK));;
 		u) 	((++OPTMULTI)); ((OPTMULTI%=2));;
 		v) 	((++OPTV));;
 		V) 	((++OPTVV));;  #debug
@@ -1498,6 +1525,10 @@ do
 		w) 	((++OPTW));;
 		W) 	((OPTW)) || OPTW=1 ;((++OPTWW));;
 		z) 	OPTZ=1;;
+		#try to run script with zsh
+		Z) 	if [[ -z $ZSH_VERSION ]]
+			then 	env zsh -- "$0" "$@" ;exit
+			fi;;
 		\?) 	exit 1;;
 	esac ;OPTARG=
 done
@@ -1596,7 +1627,7 @@ then 	if ((OPTHH>1))
 	then 	{ 	((OPTC)) || ((EPN==6)) ;} && OPTC=2
 		((OPTRESUME)) || { 	((OPTC)) || OPTC=1 ;}
 		Q_TYPE="\\n${Q_TYPE}" A_TYPE="\\n${A_TYPE}" \
-		MODMAX=65536 __set_histf
+		MODMAX=65536 set_histf
 		usr_logf "$(unescapef "$HIST")"
 	elif [[ -t 1 ]]
 	then 	__edf "$FILECHAT"
@@ -1607,7 +1638,7 @@ then 	lastjsonf
 elif ((OPTL))      #model list
 then 	list_modelsf "$@"
 elif ((OPTTIK))
-then 	__sysmsgf 'Language Model:' "$MOD"
+then 	((OPTTIK>2)) || __sysmsgf 'Language Model:' "$MOD"
 	(($#)) || [[ -t 0 ]] || set -- "-"
 	[[ -f "$*" ]] && [[ -t 0 ]] && exec 0< "$*" && set -- "-"
 	if ! tiktokenf "$*"
@@ -1623,7 +1654,8 @@ elif ((OPTI))      #image generations
 then 	__sysmsgf 'Image Generations'
 	imggenf "$@"
 elif ((OPTEMBED))  #embeds
-then 	[[ $MOD = *embed* ]] || __warmsgf "Warning:" "Not an embedding model -- $MOD"
+then 	[[ $MOD = *embed* ]] || [[ $MOD = *moderation* ]] \
+	|| __warmsgf "Warning:" "Not an embedding model -- $MOD"
 	unset Q_TYPE A_TYPE OPTC
 	embedf "$@"
 elif ((OPTE))      #edits
@@ -1662,21 +1694,27 @@ else               #text/chat completions
 	if ((OPTC+OPTRESUME))
 	then 	{ 	((OPTC)) && ((OPTRESUME)) ;} || ((OPTRESUME==1)) || {
 		  break_sessionf
-		  INSTRUCTION="${INSTRUCTION:-Be a helpful assistant.}"
+		  INSTRUCTION="${INSTRUCTION:-Be a helpful assistant.}" INSTRUCTION_OLD="$INSTRUCTION"
 		  push_tohistf "$(escapef ":${INSTRUCTION##:$SPC}")"
 		  OPTV= __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:$SPC}" 2>&1 | foldf >&2
 		} ;unset INSTRUCTION
 	elif [[ -n $INSTRUCTION ]]
 	then 	  OPTV= __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
+		  INSTRUCTION_OLD="$INSTRUCTION"
 	fi
 
-	#load history
-	history -c ;history -r
 	if ((OPTC+OPTRESUME))  #chat mode
-	then 	if check_cmdf "$*"
-		then 	set --
-		else 	history -s -- "$*"
-		fi
+	then 	#load history manually
+		OPTHIST=1 EPN= OPTV= OPTC= RESTART= START= \
+		MODMAX="${OPTHISTSIZE:-2048}" set_histf
+		check_cmdf "$*" && set -- || HIST="${HIST}"${HIST:+$'\n'}"${*}"
+		while IFS= read -r
+		do 	[[ -n ${REPLY//[$IFS]} ]] || continue
+			if [[ -n $ZSH_VERSION ]]
+			then 	print -s -- "$(unescapef "$REPLY")"
+			else 	history -s -- "$(unescapef "$REPLY")"
+			fi
+		done <<<"$HIST" ;unset HIST REPLY
 	fi
 
 	#pos arg input confirmation (disabled)
@@ -1729,7 +1767,11 @@ else               #text/chat completions
 					fi ;unset ex
 					while ((EDIT)) || unset REPLY  #!#
 						((OPTMULTI+MULTI)) && [[ -z "$RESTART" ]] && printf ">\\r" >&2
-						IFS=$'\n' read -r -e ${REPLY:+-i "$REPLY"} REPLY
+						if [[ -n $ZSH_VERSION ]]
+						then 	((OPTK)) || arg='-p%B%F{14}' #cyan=14
+							vared -c -e -h $arg REPLY
+						else 	IFS=$'\n' read -r -e ${REPLY:+-i "$REPLY"} REPLY
+						fi
 					do 	unset EDIT
 						case "$REPLY" in
 							*\\) 	MULTI=1 ex=1
@@ -1801,7 +1843,10 @@ else               #text/chat completions
 		if ((OPTC+OPTRESUME)) && [[ -n "${*}" ]]
 		then
 			((RETRY==1)) ||
-			{ 	history -s -- "${*//$NL/\\n}" ;history -a ;}
+			if [[ -n $ZSH_VERSION ]]
+			then 	print -s -- "${*//$NL/\\n}"  #zsh
+			else 	history -s -- "${*//$NL/\\n}"
+			fi
 
 			#system/instruction?
 			if [[ ${*} = $SPC:* ]]
@@ -1810,14 +1855,14 @@ else               #text/chat completions
 				then 	OPTV=  __sysmsgf "System message added"
 				elif ((OPTV<3))
 				then 	OPTV=  __sysmsgf "Text appended"
-				fi
+				fi ;INSTRUCTION_OLD="${INSTRUCTION_OLD:-$INSTRUCTION}"
 				set -- ;continue
 			fi
 			REC_OUT="${Q_TYPE##$SPC0}${*}" PROMPT_LAST="${*}"
 		fi
 
 		if ((RETRY<2))
-		then 	((OPTC+OPTRESUME)) && __set_histf "${@}"
+		then 	((OPTC+OPTRESUME)) && set_histf "${@}"
 			if ((OPTC)) || [[ -n "${RESTART}" ]]
 			then 	rest="${RESTART:-$Q_TYPE}"
 			else 	unset rest

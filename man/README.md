@@ -2,7 +2,7 @@
 author:
 - mountaineerbr
 date: April 2023
-title: CHATGPT.SH(1) v0.12.15 \| General Commands Manual
+title: CHATGPT.SH(1) v0.12.16 \| General Commands Manual
 ---
 
 ### NAME
@@ -23,6 +23,8 @@ title: CHATGPT.SH(1) v0.12.15 \| General Commands Manual
    **chatgpt.sh** `-w` \[`opt`\] \[*AUDIO_FILE*\] \[*LANG*\]
 \[*PROMPT-LANG*\]  
    **chatgpt.sh** `-W` \[`opt`\] \[*AUDIO_FILE*\] \[*PROMPT-EN*\]  
+   **chatgpt.sh** `-T` \[-v\] \[`-m`\[*MODEL*\|*ENCODING*\]\]
+\[*TEXT*\|*FILE*\]  
    **chatgpt.sh** `-ccw` \[`opt`\] \[*LANG*\]  
    **chatgpt.sh** `-ccW` \[`opt`\]  
    **chatgpt.sh** `-ll` \[*MODEL_NAME*\]
@@ -385,7 +387,8 @@ should answer questions.
 Garbage in, garbage out. An idiot savant.
 
 <!--
-`Ksh93` mangles multibyte characters when re-editing input prompt
+`Zsh` does not read history file in non-interactive mode.
+&#10;`Ksh93` mangles multibyte characters when re-editing input prompt
 and truncates input longer than 80 chars. Workaround is to move
 cursor one char and press the up arrow key.
 &#10;`Ksh2020` lacks functionality compared to `Ksh83u+`, such as `read`
@@ -547,8 +550,11 @@ Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper
 0.0 - 1.0). Def=*0*.
 
 **-T**  
-Count input tokens with python tiktoken. It heeds `options -ccm` for
-model or encoding.
+Count input tokens with python tiktoken, heeds `options -ccm`.
+
+Set twice to print tokens, thrice to available encodings.
+
+Set model or encoding with `option -m`.
 
 **-u**  
 Toggle multiline prompter.

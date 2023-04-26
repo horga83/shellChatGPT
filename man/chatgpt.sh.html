@@ -5,7 +5,7 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="mountaineerbr" />
-  <title>CHATGPT.SH(1) v0.12.15 | General Commands Manual</title>
+  <title>CHATGPT.SH(1) v0.12.16 | General Commands Manual</title>
   <style>
     html {
       color: #1a1a1a;
@@ -167,7 +167,7 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">CHATGPT.SH(1) v0.12.15 | General Commands Manual</h1>
+<h1 class="title">CHATGPT.SH(1) v0.12.16 | General Commands Manual</h1>
 <p class="author">mountaineerbr</p>
 <p class="date">April 2023</p>
 </header>
@@ -194,6 +194,9 @@ Wrapper</div>
 [<em>AUDIO_FILE</em>] [<em>LANG</em>] [<em>PROMPT-LANG</em>]<br />
    <strong>chatgpt.sh</strong> <code>-W</code> [<code>opt</code>]
 [<em>AUDIO_FILE</em>] [<em>PROMPT-EN</em>]<br />
+   <strong>chatgpt.sh</strong> <code>-T</code> [-v]
+[<code>-m</code>[<em>MODEL</em>|<em>ENCODING</em>]]
+[<em>TEXT</em>|<em>FILE</em>]<br />
    <strong>chatgpt.sh</strong> <code>-ccw</code> [<code>opt</code>]
 [<em>LANG</em>]<br />
    <strong>chatgpt.sh</strong> <code>-ccW</code>
@@ -599,6 +602,8 @@ be run as one-shot.</p>
 should answer questions.</p>
 <p>Garbage in, garbage out. An idiot savant.</p>
 <!--
+`Zsh` does not read history file in non-interactive mode.
+
 `Ksh93` mangles multibyte characters when re-editing input prompt
 and truncates input longer than 80 chars. Workaround is to move
 cursor one char and press the up arrow key.
@@ -850,8 +855,10 @@ restart and start sequences.</p>
 </dd>
 <dt><strong>-T</strong></dt>
 <dd>
-<p>Count input tokens with python tiktoken. It heeds
-<code>options -ccm</code> for model or encoding.</p>
+<p>Count input tokens with python tiktoken, heeds
+<code>options -ccm</code>.</p>
+<p>Set twice to print tokens, thrice to available encodings.</p>
+<p>Set model or encoding with <code>option -m</code>.</p>
 </dd>
 <dt><strong>-u</strong></dt>
 <dd>
