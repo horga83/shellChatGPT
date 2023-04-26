@@ -5,7 +5,7 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="mountaineerbr" />
-  <title>CHATGPT.SH(1) v0.12.16 | General Commands Manual</title>
+  <title>CHATGPT.SH(1) v0.13 | General Commands Manual</title>
   <style>
     html {
       color: #1a1a1a;
@@ -167,7 +167,7 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">CHATGPT.SH(1) v0.12.16 | General Commands Manual</h1>
+<h1 class="title">CHATGPT.SH(1) v0.13 | General Commands Manual</h1>
 <p class="author">mountaineerbr</p>
 <p class="date">April 2023</p>
 </header>
@@ -240,8 +240,8 @@ loaded as text PROMPT (text cmpls, chat cmpls, and text/code edits).</p>
 prompt) for text cmpls, chat cmpls, and text/code edits. A text file
 path may be supplied as the single argument. If the argument to this
 option starts with a backslash such as “<code>-S</code>
-_/_linux_terminal”, start search for an awesome-chatgpt-prompts (by
-Fatih KA).</p>
+<em>/linux_terminal</em>”, start search for an awesome-chatgpt-prompts
+(by Fatih KA). Set <em>//</em> to refresh cache.</p>
 <p><code>Option -e</code> sets the <strong>text edits</strong> endpoint.
 That endpoint requires both INSTRUCTION and INPUT prompts. User may
 choose a model amongst the <em>edit model family</em>.</p>
@@ -847,6 +847,7 @@ restart and start sequences.</p>
 <dt><strong>-S</strong> <em>/</em>[<em>PROMPT_NAME</em>]</dt>
 <dd>
 <p>Set/search prompt from awesome-chatgpt-prompts.</p>
+<p>Set <em>//</em> to refresh cache.</p>
 </dd>
 <dt><strong>-t</strong> [<em>VAL</em>]</dt>
 <dd>
@@ -890,6 +891,10 @@ restart and start sequences.</p>
 <dt><strong>-z</strong></dt>
 <dd>
 <p>Print last response JSON data.</p>
+</dd>
+<dt><strong>-Z</strong></dt>
+<dd>
+<p>Run with Z-shell.</p>
 </dd>
 </dl>
 </body>

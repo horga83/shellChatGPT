@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.12.16" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "April 2023" "v0.13" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -131,8 +131,9 @@ loaded as text PROMPT (text cmpls, chat cmpls, and text/code edits).
 text cmpls, chat cmpls, and text/code edits.
 A text file path may be supplied as the single argument.
 If the argument to this option starts with a backslash such as
-\[lq]\f[V]-S\f[R] _/_linux_terminal\[rq], start search for an
+\[lq]\f[V]-S\f[R] \f[I]/linux_terminal\f[R]\[rq], start search for an
 awesome-chatgpt-prompts (by Fatih KA).
+Set \f[I]//\f[R] to refresh cache.
 .PP
 \f[V]Option -e\f[R] sets the \f[B]text edits\f[R] endpoint.
 That endpoint requires both INSTRUCTION and INPUT prompts.
@@ -829,6 +830,10 @@ It may be a text file.
 .TP
 \f[B]-S\f[R] \f[I]/\f[R][\f[I]PROMPT_NAME\f[R]]
 Set/search prompt from awesome-chatgpt-prompts.
+.RS
+.PP
+Set \f[I]//\f[R] to refresh cache.
+.RE
 .TP
 \f[B]-t\f[R] [\f[I]VAL\f[R]]
 Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper 0.0
@@ -878,5 +883,8 @@ Set twice to get phrase-level timestamps.
 .TP
 \f[B]-z\f[R]
 Print last response JSON data.
+.TP
+\f[B]-Z\f[R]
+Run with Z-shell.
 .SH AUTHORS
 mountaineerbr.

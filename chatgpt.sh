@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.12.16  april/2023  by mountaineerbr  GPL+3
+# v0.13  april/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;set -o pipefail
@@ -51,7 +51,7 @@ OPTI_FMT=b64_json  #url
 # Text and chat completions, and edits endpoints
 #INSTRUCTION="The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly."
 
-# Prompt history size (tokens)
+# Prompt history size (~tokens)
 #OPTHISTSIZE=2048
 
 # CACHE AND OUTPUT DIRECTORIES
@@ -233,16 +233,16 @@ Options
 		 Set log file. FILEPATH is required.
 	-m [MOD] Set model by NAME.
 	-m [IND] Set model by INDEX:
-		# COMPLETIONS             # EDITS
-		0.  text-davinci-003      8.  text-davinci-edit-001
-		1.  text-curie-001        9.  code-davinci-edit-001
-		2.  text-babbage-001      # AUDIO
-		3.  text-ada-001          11. whisper-1
-		# CHAT                    # GPT-4 
-		4. gpt-3.5-turbo          12. gpt-4
-		# MODERATION              13. gpt-4-32k
-		6.  text-moderation-latest
-		7.  text-moderation-stable
+		# COMPLETIONS               # EDITS
+		0.  text-davinci-003        8.  text-davinci-edit-001
+		1.  text-curie-001          9.  code-davinci-edit-001
+		2.  text-babbage-001        # CHAT
+		3.  text-ada-001            10. gpt-3.5-turbo
+		4.  davinci                 # AUDIO
+		5.  curie                   11. whisper-1
+		# MODERATION                # GPT-4 
+		6.  text-moderation-latest  12. gpt-4
+		7.  text-moderation-stable  13. gpt-4-32k
 	-n [NUM] Set number of results. Def=$OPTN.
 	-o 	 Copy response to clipboard.
 	-p [VAL] Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
@@ -252,7 +252,8 @@ Options
 	-S [INSTRUCTION|FILE]
 		 Set an instruction prompt. It may be a text file.
 	-S /[PROMPT_NAME]
-		 Set/search prompt from awesome-chatgpt-prompts.
+		 Set or search prompt from awesome-chatgpt-prompts.
+		 Set _//_ to refresh cache.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
 	-TTT 	 Count input tokens with tiktoken, heeds options -ccm.
@@ -267,7 +268,8 @@ Options
 		 Set twice to get phrase-level timestamps. 
 	-W [AUD] Translate audio file into English text.
 		 Set twice to get phrase-level timestamps. 
-	-z 	 Print last response JSON data."
+	-z 	 Print last response JSON data.
+	-Z 	 Run with Z-shell."
 
 MODELS=(
 	#COMPLETIONS
@@ -275,22 +277,22 @@ MODELS=(
 	text-curie-001            #  1
 	text-babbage-001          #  2
 	text-ada-001              #  3
-	#CHAT                     #
-	gpt-3.5-turbo             #  4
-	gpt-3.5-turbo-0301        # -5
+	davinci                   #  4
+	curie                     #  5
 	#MODERATIONS              #
 	text-moderation-latest    #  6
 	text-moderation-stable    #  7
 	#EDITS                    #
-	text-davinci-edit-001     #  8
+	text-davinci-edit-001     ## 8
 	code-davinci-edit-001     #  9
+	#CHAT                     #
+	gpt-3.5-turbo             ##10
 	#AUDIO                    #
-	whisper-1                 #-10
-	whisper-1                 # 11
+	whisper-1                 ##11
 	#GPT4                     #
 	gpt-4                     # 12
 	gpt-4-32k   #June 14      # 13
-)
+) ##also check $OPTM
 
 ENDPOINTS=(
 	completions               #0
@@ -484,6 +486,7 @@ function prompt_audiof
 
 function list_modelsf
 {
+	typeset i
 	if ((OPTL>1))
 	then 	__sysmsgf "Index  Model"
 		for ((i=0;i<${#MODELS[@]};i++))
@@ -543,7 +546,7 @@ function set_histf
 			((N_LOOP)) || ((OLD_TOTAL+=token))
 			H_TIME="${time}" MAX_PREV="${max_prev}"
 			string="${string##[\"]}" string="${string%%[\"]}"
-			string="${string##\\n}"  #;((OPTC)) && string="${string%%$SPC0}"
+			#string="${string##\\n}"  ##;((OPTC)) && string="${string%%$SPC0}"
 			stringc="${string##@("${q_type}"|"${a_type}"|":")}"
 
 			role_last=$role
@@ -1571,11 +1574,12 @@ then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
 	[[ -e $1 ]] && OPTII=1  #img edits and vars
 fi
 
+#map models
 [[ -n $OPTMARG ]] ||
 if ((OPTE))  #edits
 then 	OPTM=8 MOD="$MOD_EDIT"
 elif ((OPTC>1))  #chat
-then 	OPTM=4 MOD="$MOD_CHAT"
+then 	OPTM=10 MOD="$MOD_CHAT"
 elif ((OPTW)) && ((!OPTC))  #audio
 then 	OPTM=11 MOD="$MOD_AUDIO"
 fi
@@ -1696,7 +1700,8 @@ else               #text/chat completions
 		  break_sessionf
 		  INSTRUCTION="${INSTRUCTION:-Be a helpful assistant.}" INSTRUCTION_OLD="$INSTRUCTION"
 		  push_tohistf "$(escapef ":${INSTRUCTION##:$SPC}")"
-		  OPTV= __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:$SPC}" 2>&1 | foldf >&2
+		  OPTV=$((OPTV?OPTV-1:OPTV)) __sysmsgf 'Language Model:' "$MOD"
+		  OPTV=$((OPTV?OPTV-1:OPTV)) __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:$SPC}" 2>&1 | foldf >&2
 		} ;unset INSTRUCTION
 	elif [[ -n $INSTRUCTION ]]
 	then 	  OPTV= __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
@@ -1905,7 +1910,7 @@ else               #text/chat completions
 		#response prompt
 		prompt_printf
 		if ((OPTCLIP)) || [[ ! -t 1 ]]
-		then 	out=$(JQCOL2='def byellow:"";def reset:""' OPTV=1 prompt_printf)
+		then 	out=$(JQCOL2='def byellow:"";def reset:""' OPTV=2 prompt_printf)
 			((OPTCLIP)) && ${CLIP_CMD:-false} <<<"$out" &
 			[[ ! -t 1 ]] && printf "%s\\n" "$out" >&2
 		fi

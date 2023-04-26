@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.12.16 | General Commands Manual
+% CHATGPT.SH(1) v0.13 | General Commands Manual
 % mountaineerbr
 % April 2023
 
@@ -65,8 +65,9 @@ edits).
 `Option -S` sets an INSTRUCTION prompt (the initial prompt) for
 text cmpls, chat cmpls, and text/code edits. A text file path
 may be supplied as the single argument. If the argument to this
-option starts with a backslash such as "`-S` _/_linux_terminal",
+option starts with a backslash such as "`-S` _/linux_terminal_",
 start search for an awesome-chatgpt-prompts (by Fatih KA).
+Set _//_ to refresh cache.
 
 `Option -e` sets the **text edits** endpoint. That endpoint requires
 both INSTRUCTION and INPUT prompts. User may choose a model amongst
@@ -634,7 +635,9 @@ times when appropriate.
 
 **-S** _/_[_PROMPT_NAME_]
 
-: Set/search prompt from awesome-chatgpt-prompts.
+:     Set/search prompt from awesome-chatgpt-prompts.
+     
+      Set _//_ to refresh cache.
 
 
 **-t** \[_VAL_]
@@ -689,3 +692,10 @@ times when appropriate.
 **-z**
 
 : Print last response JSON data.
+
+
+
+**-Z**
+
+: Run with Z-shell.
+
