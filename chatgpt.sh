@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13  april/2023  by mountaineerbr  GPL+3
+# v0.13.1  april/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;set -o pipefail
@@ -253,7 +253,7 @@ Options
 		 Set an instruction prompt. It may be a text file.
 	-S /[PROMPT_NAME]
 		 Set or search prompt from awesome-chatgpt-prompts.
-		 Set _//_ to refresh cache.
+		 Set // to refresh cache.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
 	-TTT 	 Count input tokens with tiktoken, heeds options -ccm.
