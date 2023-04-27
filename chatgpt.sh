@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.2  april/2023  by mountaineerbr  GPL+3
+# v0.13.3  april/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;set -o pipefail
@@ -2006,14 +2006,14 @@ else               #text/chat completions
 			) )
 			ans=$(jq '.choices[0]|.text//.message.content' "$FILE")
 			ans="${ans##[\"]}" ans="${ans%%[\"]}"
-			if CKSUM=$(cksumf "$FILECHAT")
-				[[ $CKSUM != "${CKSUM_OLD:-$CKSUM}" ]]
-			then
-				COL1="${BRed}" __warmsgf 'Err:' 'History file changed'
-				BAD=1 session_createf || break
-				OPTV= COL1="$NC" __sysmsgf 'To resume this later: ' "export FILECHAT=\"$FILECHAT\""
-				unset CKSUM CKSUM_OLD
-			fi
+			#if CKSUM=$(cksumf "$FILECHAT")
+			#	[[ $CKSUM != "${CKSUM_OLD:-$CKSUM}" ]]
+			#then
+			#	COL1="${BRed}" __warmsgf 'Err:' 'History file changed'
+			#	BAD=1 session_createf || break
+			#	OPTV= COL1="$NC" __sysmsgf 'To resume this later: ' "export FILECHAT=\"$FILECHAT\""
+			#	unset CKSUM CKSUM_OLD
+			#fi
 			((${#tkn[@]}>2)) && ((${#ans}))
 		}
 		then
@@ -2022,7 +2022,7 @@ else               #text/chat completions
 			((OPTAWE)) || push_tohistf "$(escapef "${REC_OUT:-$*}")" "$((tkn[0]-OLD_TOTAL))" "${tkn[2]}"
 			push_tohistf "$ans" "${tkn[1]}" "${tkn[2]}"
 			((OLD_TOTAL=tkn[0]+tkn[1])) ;MAX_PREV="$OLD_TOTAL" H_TIME=
-			CKSUM_OLD=$(cksumf "$FILECHAT")
+			#CKSUM_OLD=$(cksumf "$FILECHAT")
 		elif ((OPTC+OPTRESUME))
 		then 	BAD_RESPONSE=1 SKIP=1 EDIT=1 ;set -- ;continue
 		fi
