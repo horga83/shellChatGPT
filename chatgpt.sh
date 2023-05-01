@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.3  april/2023  by mountaineerbr  GPL+3
+# v0.13.4  april/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
-else 	shopt -s extglob ;set -o pipefail
+else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
 fi
 
 # OpenAI API key
@@ -67,6 +67,7 @@ FILEOUT="${OUTDIR%/}/dalle_out.png"
 FILEIN="${CACHEDIR%/}/dalle_in.png"
 FILEINW="${CACHEDIR%/}/whisper_in.mp3"
 FILEAWE="${CACHEDIR%/}/awesome-prompts.csv"
+FILEFIFO="${CACHEDIR%/}/fifo.buff"
 USRLOG="${OUTDIR%/}/${FILETXT##*/}"
 HISTFILE="${CACHEDIR%/}/history_${BASH_VERSION:+bash}${ZSH_VERSION:+zsh}"
 HISTCONTROL=erasedups:ignoredups
@@ -91,18 +92,18 @@ HELP="Name
 
 
 Synopsis
-	${0##*/} [-m [MODEL_NAME|MODEL_INDEX]] [opt] [PROMPT|TXT_FILE]
-	${0##*/} [-m [MODEL_NAME|MODEL_INDEX]] [opt] [INSTRUCTION] [INPUT]
+	${0##*/} [opt] [-m [MOD_NAME|MOD_INDEX]] [PROMPT|TXT_FILE]
 	${0##*/} -e [opt] [INSTRUCTION] [INPUT]
 	${0##*/} -i [opt] [S|M|L] [PROMPT]
 	${0##*/} -i [opt] [S|M|L] [PNG_FILE]
 	${0##*/} -i [opt] [S|M|L] [PNG_FILE] [MASK_FILE] [PROPMT]
 	${0##*/} -w [opt] [AUDIO_FILE] [LANG] [PROMPT-LANG]
 	${0##*/} -W [opt] [AUDIO_FILE] [PROMPT-EN]
-	${0##*/} -T [-v] [-m[MODEL|ENCODING]] [TEXT|FILE]
+	${0##*/} -TTT [-v] [-m[MOD|ENC]] [TEXT|FILE]
 	${0##*/} -ccw [opt] [LANG]
 	${0##*/} -ccW [opt]
-	${0##*/} -ll [MODEL_NAME]
+	${0##*/} -HH [/|SESSION_NAME]
+	${0##*/} -ll [MOD_NAME]
 
 
 Description
@@ -119,6 +120,11 @@ Description
 
 	Option -CC (without -cc) starts a multi-turn and pure text com-
 	pletions session, and use restart and start sequences when defined.
+
+	With options -ccCCHH, if the first positional argument of the
+	script starts with the command operator, e.g. \`/[HIST_NAME]',
+	the session command \`/session [HIST_NAME]' to change to or create
+	a new history file is assumed.
 
 	Option -i generates or edits images. Option -w transcribes audio
 	and option -W tarnslates audio to English.
@@ -140,31 +146,40 @@ Chat Commands
 	either \`!', or \`/'.
 
 	  ------    ----------    ---------------------------------------
+	  --- Model Settings --------------------------------------------
 	   !NUM      !max          Set response tokens / model capacity.
 	     -a      !pre          Set presence pensalty.
 	     -A      !freq         Set frequency penalty.
-	     -c      !new          Start new session.
-	     -H      !hist         Edit history in editor.
-	     -L      !log          Save to log file.
 	     -m      !mod          Set model (by index or name).
-	     -o      !clip         Copy responses to clipboard.
 	     -p      !top          Set top_p.
 	     -r      !restart      Set restart sequence.
 	     -R      !start        Set start sequence.
-	     -s      !stop         Set stop sequences.
+	     -s      !stop         Set one stop sequence.
 	     -t      !temp         Set temperature.
+	     -w      !rec          Start audio record chat.
+	  --- Script Settings -------------------------------------------
+	     -o      !clip         Copy responses to clipboard.
 	     -u      !multi        Toggle multiline prompter.
 	     -v      !ver          Toggle verbose.
 	     -x      !ed           Toggle text editor interface.
-	     -w      !rec          Start audio record chat.
 	     !r      !regen        Renegerate last response.
 	     !q      !quit         Exit.
+		     !help         Print this help snippet.
+		     !models       Print language model names.
+	  --- Session Management ----------------------------------------
+	     -c      !new          Start new session (session break).
+	     -H      !hist         Edit raw history file in editor.
+	     -L      !log          Save to log file (pretty-print).
+	     !s      !session      Change to, search or create hist file.
+	    !!s     !!session      Same as !session, add session break.
+	     !c      !copy         Copy session from one hist file to another.
+		     !list         List history files.
 	  ------    ----------    ---------------------------------------
 	
-	E.g.: \`!temp 0.7', \`!mod1', and \`-p 0.2'.
+	E.g.: \`/temp 0.7', \`!mod1', \`-p 0.2', and \`/s hist_name'.
 
 	Change chat context at run time with the \`!hist' command to edit
-	the history file (delete or comment out entries).
+	the raw history file (delete or comment out entries).
 
 	To preview a prompt completion, append a forward slash \`/' to it
 	and press ENTER. Regenerate it again or press ENTER to accept it.
@@ -197,6 +212,7 @@ Long Options
 
 
 Options
+	Model Settings
 	-@ [[VAL%]COLOUR]
 		 Set transparent colour of image mask. Def=black.
 		 Fuzz intensity can be set with [VAL%]. Def=0%.
@@ -208,30 +224,6 @@ Options
 	-A [VAL] Set frequency penalty (cmpls/chat, -2.0 - 2.0).
 	-b [VAL] Set best of, must be greater than opt -n (cmpls). Def=1.
 	-B 	 Print log probabilities to stderr (cmpls, 0 - 5).
-	-c 	 Chat mode in text completions, new session.
-	-cc 	 Chat mode in chat completions, new session.
-	-C 	 Continue from last session (compls/chat).
-	-CC 	 Start new session of pure text compls (without -cc).
-	-e [INSTRUCTION] [INPUT]
-		 Set Edit mode. Model def=text-davinci-edit-001.
-	-f 	 Ignore user config file and environment.
-	-h 	 Print this help page.
-	-H 	 Edit history file with text editor or pipe to stdout.
-	-HH 	 Pretty print last history session to stdout.
-      		 With -cC, or -rR, prints the specified seqs.
-	-i [PROMPT]
-		 Generate images given a prompt.
-	-i [PNG]
-		 Create variations of a given image.
-	-i [PNG] [MASK] [PROMPT]
-		 Edit image with mask and prompt (required).
-	-j 	 Print raw JSON response (debug with -jVV).
-	-k 	 Disable colour output. Def=auto.
-	-K [KEY] Set API key (free).
-	-l [MOD] List models or print details of MODEL. Set twice
-		 to print model indexes instead.
-	-L [FILEPATH]
-		 Set log file. FILEPATH is required.
 	-m [MOD] Set model by NAME.
 	-m [IND] Set model by INDEX:
 		# COMPLETIONS               # EDITS
@@ -245,30 +237,61 @@ Options
 		6.  text-moderation-latest  12. gpt-4
 		7.  text-moderation-stable  13. gpt-4-32k
 	-n [NUM] Set number of results. Def=$OPTN.
-	-o 	 Copy response to clipboard.
 	-p [VAL] Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
 	-r [SEQ] Set restart sequence string (cmpls).
 	-R [SEQ] Set start sequence string (cmpls).
 	-s [SEQ] Set stop sequences, up to 4. Def=\"<|endoftext|>\".
 	-S [INSTRUCTION|FILE]
 		 Set an instruction prompt. It may be a text file.
-	-S /[PROMPT_NAME]
-		 Set or search prompt from awesome-chatgpt-prompts.
-		 Set // to refresh cache.
 	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
 		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
-	-TTT 	 Count input tokens with tiktoken, heeds options -ccm.
+
+	Script Modes
+	-c 	 Chat mode in text completions, session break.
+	-cc 	 Chat mode in chat completions, session break.
+	-C 	 Continue (resume) from last session (compls/chat).
+	-CC 	 Start new session of pure text compls (without -cc).
+	-e [INSTRUCTION] [INPUT]
+		 Set Edit mode. Model def=text-davinci-edit-001.
+	-i [PROMPT]
+		 Generate images given a prompt.
+	-i [PNG]
+		 Create variations of a given image.
+	-i [PNG] [MASK] [PROMPT]
+		 Edit image with mask and prompt (required).
+	-S /[AWESOME_PROMPT_NAME]
+		 Set or search an awesome-chatgpt-prompt.
+		 Set \`//' to refresh cache.
+	-TTT 	 Count input tokens with tiktoken, it heeds options -ccm.
 		 Set twice to print tokens, thrice to available encodings.
 		 Set model or encoding with option -m.
-	-u 	 Toggle multiline prompter.
-	-v 	 Less verbose. May set multiple times.
-	-V 	 Pretty-print context. Set twice to dump raw request.
-	-x 	 Edit prompt in text editor.
 	-w [AUD] [LANG]
 		 Transcribe audio file into text. LANG is optional.
 		 Set twice to get phrase-level timestamps. 
 	-W [AUD] Translate audio file into English text.
 		 Set twice to get phrase-level timestamps. 
+	
+	Script Settings
+	-f 	 Ignore user config file and environment.
+	-h 	 Print this help page.
+	-H /[HIST_FILE]
+		 Edit history file with text editor or pipe to stdout.
+		 A hist file name can be optionally set as argument.
+	-HH /[HIST_FILE]
+		 Pretty print last history session to stdout.
+		 With -cC, or -rR, prints the specified seqs.
+	-j 	 Print raw JSON response (debug with -jVV).
+	-k 	 Disable colour output. Def=auto.
+	-K [KEY] Set OpenAI API key.
+	-l [MOD] List models or print details of MODEL. Set twice
+		 to print model indexes instead.
+	-L [FILEPATH]
+		 Set log file. FILEPATH is required.
+	-o 	 Copy response to clipboard.
+	-u 	 Toggle multiline prompter.
+	-v 	 Less verbose. May set multiple times.
+	-V 	 Pretty-print context. Set twice to dump raw request.
+	-x 	 Edit prompt in text editor.
 	-z 	 Print last response JSON data.
 	-Z 	 Run with Z-shell."
 
@@ -355,7 +378,25 @@ function promptf
 		-o "$FILE" \
 	&& { 	((silence)) || __clr_lineupf ;}
 }
-function __clr_lineupf { 	printf '\e[A\e[K' >&2 ;} 
+#clear n lines up as needed (assumes one `new line').
+function __clr_lineupf
+{
+	typeset chars n
+	chars="${1:-1}" ;((COLUMNS))||COLUMNS=80
+	for ((n=0;n<((chars+(COLUMNS-1))/COLUMNS);++n))
+	do 	printf '\e[A\e[K' >&2
+	done
+} 
+#https://www.zsh.org/mla/workers//1999/msg01550.html
+#https://superchlorine.com/2013/08/kill-winch-to-fix-bash-prompt-wrapping-to-the-same-line/
+# spin.bash -- provide a `spinning wheel' to show progress
+#  Copyright 1997 Chester Ramey (adapted)
+BS=$'\b' SPIN_CHARS=("|${BS}" "\\${BS}" "-${BS}" "/${BS}")
+function __spinf
+{
+  printf -- "${SPIN_CHARS[SPIN_INDEX]}" >&2
+  ((++SPIN_INDEX)); ((SPIN_INDEX%=4))
+}
 
 #pretty print request body or dump and exit
 function block_printf
@@ -376,8 +417,8 @@ function new_prompt_confirmf
 {
 	typeset REPLY
 
-	OPTV=  __sysmsgf 'Confirm prompt?' '[Y]es, [n]o, [e]dit, [r]edo or [a]bort ' ''
-	REPLY=$(__read_charf) ;__clr_lineupf
+	_sysmsgf 'Confirm?' '[Y]es, [n]o, [e]dit, [r]edo or [a]bort ' ''
+	REPLY=$(__read_charf) ;__clr_lineupf 48 #!#
 	case "${REPLY}" in
 		[AaQq]|$'\e') 	return 201;;  #break
 		[Rr]) 	return 200;;  #continue
@@ -398,24 +439,33 @@ function __read_charf
 #print response
 function prompt_printf
 {
+	typeset out
 	if ((OPTJ)) #raw json
-	then 	cat -- "$FILE"
-	else 	((OPTV+OPTEMBED)) || jq -r '(.choices[].logprobs//empty),
-			(.model//"'"$MOD"'"//"?")+" ("+(.object//"?")+") ["
-			+(.usage.prompt_tokens//"?"|tostring)+" + "+(.usage.completion_tokens//"?"|tostring)+" = "
-			+(.usage.total_tokens//"?"|tostring)+" tkns]"' "$FILE" >&2
-
-		jq -r "def byellow: \"\"; def reset: \"\"; $JQCOL $JQCOL2
-		  .choices[1] as \$sep | .choices[] |
-		  (byellow + (
-		  (.text//.message.content) |
-		  if (${OPTC:-0}>0) then (gsub(\"^[\\\\n\\\\t ]\"; \"\") |  gsub(\"[\\\\n\\\\t ]+$\"; \"\")) else . end
-		  ) + reset,
-		  if \$sep != null then \"---\" else empty end)" "$FILE" 2>/dev/null | foldf ||
-
-		jq -r '.choices[]|.text//.message.content' "$FILE" 2>/dev/null ||
-		jq . "$FILE" 2>/dev/null || cat -- "$FILE"
+	then 	cat -- "$FILE" ;return
+	elif ((!RUN_OK)) && { 	((OPTCLIP)) || [[ ! -t 1 ]] ;}
+	then
+		out=$(RUN_OK=1 OPTV=2 JQCOL2='def byellow:"";def reset:""' \
+			prompt_printf)
+		((OPTCLIP)) && (${CLIP_CMD:-false} <<<"$out" &)
+		[[ ! -t 1 ]] && ((OPTV<3)) && printf "%s\\n" "$out" >&2
 	fi
+
+	((OPTV+OPTEMBED)) || jq -r '(.choices[].logprobs//empty),
+		(.model//"'"$MOD"'"//"?")+" ("+(.object//"?")+") ["
+		+(.usage.prompt_tokens//"?"|tostring)+" + "
+		+(.usage.completion_tokens//"?"|tostring)+" = "
+		+(.usage.total_tokens//"?"|tostring)+" tkns]"' "$FILE" >&2
+
+	jq -r "def byellow: \"\"; def reset: \"\"; $JQCOL $JQCOL2
+	  .choices[1] as \$sep | .choices[] |
+	  (byellow + (
+	  (.text//.message.content) |
+	  if (${OPTC:-0}>0) then (gsub(\"^[\\\\n\\\\t ]\"; \"\") |  gsub(\"[\\\\n\\\\t ]+$\"; \"\")) else . end
+	  ) + reset,
+	  if \$sep != null then \"---\" else empty end)" "$FILE" 2>/dev/null | foldf ||
+
+	jq -r '.choices[]|.text//.message.content' "$FILE" 2>/dev/null ||
+	jq . "$FILE" 2>/dev/null || cat -- "$FILE"
 }
 #https://stackoverflow.com/questions/57298373/print-colored-raw-output-with-jq-on-terminal
 #https://stackoverflow.com/questions/40321035/  #gsub(\"^[\\n\\t]\"; \"\")
@@ -518,22 +568,21 @@ function lastjsonf
 function token_prevf
 {
 	TKN_PREV=$(__tiktokenf "$@")
-	__sysmsgf "Prompt:" "~$TKN_PREV tokens"
 }
 
 #set up context from history file ($HIST and $HIST_C)
 function set_histf
 {
-	typeset time token string max_prev q_type a_type role role_last rest a_append n
+	typeset time token string max_prev q_type a_type role role_last rest a_append sub ind n
 	[[ -s "$FILECHAT" ]] || return
-	((OPTV>2)) || printf "Hist..\\r" >&2
 	unset HIST HIST_C
-	(($#)) && OPTV=1 token_prevf "$*"
+	(($#)) && token_prevf "$*"
 	{ 	((OPTC>1)) || ((EPN==6)) ;} && a_append=" "
 	q_type="${Q_TYPE##$SPC0}" a_type="${A_TYPE##$SPC0}"
 	
-	while IFS=$'\t' read -r time token string
-	do 	[[ ${time//[$IFS]}${token//[$IFS]} = \#* ]] && continue
+	while __spinf
+		IFS=$'\t' read -r time token string
+	do 	[[ ${time}${token} = *([$IFS])\#* ]] && continue
 		[[ -z $time$token$string ]] && continue
 		[[ ${time}${token} = *[Bb][Rr][Ee][Aa][Kk]* ]] && { 	((OPTHIST)) && continue || break ;}
 		if ((token<1))
@@ -547,8 +596,17 @@ function set_histf
 			((N_LOOP)) || ((OLD_TOTAL+=token))
 			H_TIME="${time}" MAX_PREV="${max_prev}"
 			string="${string##[\"]}" string="${string%%[\"]}"
-			#string="${string##\\n}"  ##;((OPTC)) && string="${string%%$SPC0}"
-			stringc="${string##@("${q_type}"|"${a_type}"|":")}"
+			
+			#use substring to improve bash globbing speed
+			sub="${string:0:30}" sub="${sub##@("${q_type}"|"${a_type}"|":")}"
+			((OPTC)) && sub="${sub##$SPC0}"
+			stringc="${sub}${string:30}"
+			
+			((OPTC)) && {
+			  ((ind = ${#stringc}-((${#stringc}/3)<30?(${#stringc}/3):30) ))
+			  sub="${stringc:$ind}" sub="${sub%%*(\\[ntrvf])}"
+			  stringc="${stringc:0:$ind}${sub}"
+			}
 
 			role_last=$role
 			unset role rest
@@ -576,15 +634,20 @@ function set_histf
 			fi
 
 			HIST="${rest}${stringc}${HIST}"
-			((EPN==6)) && HIST_C="$(fmt_ccf "${stringc##$SPC0}" "${role}")${HIST_C:+,}${HIST_C}"
+			((EPN==6)) && HIST_C="$(fmt_ccf "${stringc}" "${role}")${HIST_C:+,}${HIST_C}"
 		else 	break
 		fi
 	done < <(tac -- "$FILECHAT")
 	if [[ "$role" = system ]]  #1st sys/instruction msg extra newline 
 	then 	[[ ${role_last:=user} = @(user|assistant) ]] || unset role_last
-		HIST="${HIST##"$stringc"}" HIST="${HIST##\\n}" HIST="${stringc}${role_last:+\\n}\\n${HIST}"
-	fi ;HIST="${HIST##$SPC0}"
-	((OPTV>2)) || printf '\e[K' >&2
+		HIST="${HIST##"$stringc"?(\\n)}" HIST="${stringc}${role_last:+\\n}\\n${HIST}"
+	fi
+	sub="${HIST:0:30}" sub="${sub##\\[ntrvf]}" sub="${sub## }"
+	HIST="${sub}${HIST:30}"
+
+	((ind = ${#HIST}-((${#HIST}/3)<30?(${#HIST}/3):30) ))
+	sub="${HIST:$ind}" sub="${sub%%*(\\[ntrvf])}"
+	HIST="${HIST:0:$ind}${sub}"
 }
 #https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
 
@@ -594,9 +657,10 @@ function push_tohistf
 {
 	typeset string tkn_min tkn
 	[[ -n $1 ]] || return
+	unset CKSUM_OLD
 	string="$1" ;tkn_min=$(__tiktokenf "$string" "4")
 	((tkn = ${2:-tkn_min}>0 ? ${2:-tkn_min} : tkn_min ))
-	printf '%s\t%d\t"%s"\n' "${3:-$(date -Isec)}" "$tkn" "$string" >> "$FILECHAT"
+	printf '%.22s\t%d\t"%s"\n' "${3:-$(date -Isec)}" "$tkn" "$string" >> "$FILECHAT"
 }
 
 #poor man's tiktoken
@@ -685,11 +749,14 @@ function set_maxtknf
 }
 
 #check input and run a chat command
-function check_cmdf
+function cmd_runf
 {
-	typeset var
-	[[ ${*//[$IFS:]} = [/!-]* ]] || return $?
-	set -- "${*##*([$IFS:\/!])}"
+	typeset var args
+	[[ ${*} = *([$IFS:])[/!-]* ]] || return $?
+
+	set -- "${1##*([$IFS:\/!])}" "${@:2}"
+	args=("$@") ;set -- "$*"
+
 	case "$*" in
 		-[0-9]*|[0-9]*|max*)
 			set -- "${*%.*}" ;OPTMM="${*:-$OPTMM}"
@@ -708,13 +775,19 @@ function check_cmdf
 			fix_dotf OPTAA
 			__cmdmsgf 'Frequency penalty' "$OPTAA"
 			;;
-		-[Cc]|br|break|session|new)
+		-[Cc]|break|session|br|new)
 			break_sessionf
-			push_tohistf "$(escapef ":${INSTRUCTION_OLD}")"
-			OPTV= __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:$SPC}" 2>&1 | foldf >&2
+			[[ -n ${INSTRUCTION_OLD} ]] && {
+			  push_tohistf "$(escapef ":${INSTRUCTION_OLD}")"
+			  _sysmsgf 'INSTRUCTION:' "${INSTRUCTION_OLD##:$SPC}" 2>&1 | foldf >&2
+			} ;unset CKSUM CKSUM_OLD
 			;;
-		-[Hh]|history|hist)
+		-h|help*)
+			sed -n -e 's/^\t*//' -e '/^\s*------ /,/^\s*------ /p' <<<"$HELP" | less -S
+			;;
+		-H|history|hist)
 			__edf "$FILECHAT"
+			unset CKSUM CKSUM_OLD
 			;;
 		-L*|log*)
 			((++OPTLOG)) ;((OPTLOG%=2))
@@ -723,7 +796,10 @@ function check_cmdf
 			if [[ -d "$*" ]]
 			then 	USRLOG="${*%%/}/${USRLOG##*/}"
 			else 	USRLOG="${*:-${USRLOG}}"
-			fi ;OPTV= __cmdmsgf $'\nLog file' "\`\`$USRLOG''"
+			fi ;_cmdmsgf $'\nLog file' "\`\`$USRLOG''"
+			;;
+		models*)
+			list_modelsf "${*##models*(\ )}"
 			;;
 		-m*|model*|mod*)
 			set -- "${*##@(-m|model|mod)}"
@@ -742,16 +818,16 @@ function check_cmdf
 			;;
 		-r*|restart*)
 			((EPN==6)) || {
-				set -- "${*##@(-r|restart)$SPC}"
-				RESTART="$*"
-				__cmdmsgf 'Restart Sequence' "$RESTART"
+			  set -- "${*##@(-r|restart)$SPC}"
+			  RESTART="$*"
+			  __cmdmsgf 'Restart Sequence' "$RESTART"
 			}
 			;;
 		-R*|start*)
 			((EPN==6)) || {
-				set -- "${*##@(-R|start)$SPC}"
-				START="$*"
-				__cmdmsgf 'Start Sequence' "$START"
+			  set -- "${*##@(-R|start)$SPC}"
+			  START="$*"
+			  __cmdmsgf 'Start Sequence' "$START"
 			}
 			;;
 		-s*|stop*)
@@ -781,8 +857,7 @@ function check_cmdf
 				2) var='Much less';;
 				3) var='OFF';;
 				0) var='ON';;
-			esac
-			OPTV=  __cmdmsgf 'Verbose' "$var"
+			esac ;_cmdmsgf 'Verbose' "$var"
 			;;
 		-V|block|blk)
 			((OPTVV==1)) && unset OPTVV || OPTVV=1
@@ -803,8 +878,11 @@ function check_cmdf
 
 			INPUT_ORIG=("${@:-${INPUT_ORIG[@]}}")
 			;;
-		q|quit|exit|bye)
-			exit
+		change*|create*|search*|list*|s*)
+			session_mainf /"${args[@]}"
+			;;
+		copy*|c*)
+			session_mainf /"${args[@]}"
 			;;
 		r|regenerate|regen|[$IFS]|'')  #regenerate last response
 			REGEN=1 SKIP=1 EDIT=1
@@ -812,7 +890,11 @@ function check_cmdf
 			[[ "$(tail -n 2 "$FILECHAT")"$'\n' != *[Bb][Rr][Ee][Aa][Kk]$'\n'* ]]
 			then 	sed -i -e '$d' -- "$FILECHAT"
 				sed -i -e '$d' -- "$FILECHAT"
+				unset CKSUM CKSUM_OLD
 			fi
+			;;
+		q|quit|exit|bye)
+			exit
 			;;
 		*) 	return 1
 			;;
@@ -823,15 +905,20 @@ function check_cmdf
 #usage: __sysmsgf [string_one] [string_two] ['']
 function __sysmsgf
 {
-	((!OPTV)) || return
+	if ((OPTC+OPTRESUME))
+	then 	((OPTV-1<1)) || return
+	else 	((OPTV<1))   || return ;fi
 	COL1="${COL1:-${BWhite}}" COL2="${COL2}"
+	
 	printf "${COL1}%s${NC}${2:+ }${COL2}%s${NC}${3-\\n}" "$1" "$2" >&2
 	unset COL1 COL2
 }
+function _sysmsgf { 	OPTV=  __sysmsgf "$@" ;}
 
 function __warmsgf
 {
-	OPTV=  COL1="${COL1:-${Red}}" __sysmsgf "$*"
+	OPTV= COL1="${COL1:-${Red}}" COL2="${COL2:-${Red}}" \
+	__sysmsgf "$@"
 }
 
 #command run feedback
@@ -841,8 +928,10 @@ function __cmdmsgf
 	for ((c=${#1};c<13;c++))
 	do 	set -- "$1 " "${@:2}"
 	done
-	COL1="${COL1:-${White}}" __sysmsgf "$1 => ${2:-unset}"
+	COL1="${COL1:-${White}}" COL2="${COL2}" \
+	__sysmsgf "$1 => ${2:-unset}"
 }
+function _cmdmsgf { 	OPTV=  __cmdmsgf "$@" ;}
 
 #main plain text editor
 function __edf
@@ -888,7 +977,7 @@ function edf
 	printf "%s\\n" "$*" > "$FILETXT"
 
 	if ((OPTC+OPTRESUME))
-	then 	check_cmdf "${*#*:}" && return 200
+	then 	cmd_runf "${*#*:}" && return 200
 	fi ;return 0
 }
 
@@ -905,6 +994,7 @@ function escapef
 {
 	typeset var b c
 	var="$*" b='@#'
+	printf '%s' "$var" | jq -Rrs 'tojson[1:-1]' && return
 
 	#special chars
  	for c in "${JSON_CHARS[@]}"
@@ -923,8 +1013,9 @@ function escapef
 	var="${var//"\\\""/\"}"      #rm excess double quote escapes
  	var="${var//"\""/\\\"}"      #double quote marks
 
-	printf '%s\n' "$var"
+	printf '%s' "$var"
 }
+#
 
 function break_sessionf
 {
@@ -953,7 +1044,7 @@ function json_minif
 #usage: fmt_ccf [prompt] [role]
 function fmt_ccf
 {
-	[[ -n ${1//[$IFS]} ]] || return
+	[[ ${1} != *([$IFS]) ]] || return
 	printf '{"role": "%s", "content": "%s"}\n' "${2:-user}" "$1"
 }
 
@@ -1118,7 +1209,7 @@ function whisperf
 	fi ;[[ -e $1 ]] && shift  #get rid of eventual second filename
 	
 	#set a prompt
-	[[ -z ${*//[$IFS]} ]] || set -- -F prompt="$(escapef "$*")"
+	[[ ${*} = *([$IFS]) ]] || set -- -F prompt="$(escapef "$*")"
 
 	#response_format (timestamps) - testing
 	if ((OPTW>1||OPTWW>1)) && ((!OPTC))
@@ -1414,76 +1505,275 @@ function set_clipcmdf
 	fi >/dev/null 2>&1
 }
 
+#append to shell hist list
+function shell_histf
+{
+	[[ ${*} != *([$IFS]) ]] || return
+	if [[ -n $ZSH_VERSION ]]
+	then 	print -s -- "$*"
+	else 	history -s -- "$*"
+	fi
+}
+
 #print checksum
 function cksumf
 {
-	cksum -- "$@" 2>/dev/null || wc -c -- "$@"
+	[[ -f "$1" ]] && wc -l -- "$@"
 }
 
-function session_createf
+#list session files in cache dir
+function session_listf
 {
-	typeset REPLY fname fn time token string buff buff_end index n
-	fname="$1"
+	SESSION_LIST=1 session_globf "$@"
+}
+#pick session files by globbing cache dir
+function session_globf
+{
+	typeset file
+	[[ ! -f "$1" ]] || return
+	[[ "$1" != [Nn]ew ]] || return
+	[[ "$1" = [Cc]urrent ]] && set -- "${FILECHAT##*/}" "${@:2}"
+
+	cd -- "${CACHEDIR}"
+	glob="${1%%.[Tt][Ss][Vv]}" glob="${glob##*/}"
+	[[ -f "${glob}".tsv ]] || set -- *${glob}*.[Tt][Ss][Vv]
 	
-	while [[ -n ${fname//[$IFS]} ]] || {
-			OPTV= __sysmsgf 'New session name:'
+	if ((SESSION_LIST))
+	then 	ls -- "$@"
+		 __read_charf >/dev/null ; return
+	fi >&2
+
+	if ((${#} >1))
+	then 	printf '\n' >&2
+		select file in 'current' 'new' 'abort' "${@%%.[Tt][Ss][Vv]}"
+		do 	break
+		done
+		file="${file:-${CACHEDIR%%/}/${REPLY}}"
+	else 	file="${1}"
+	fi
+
+	case "$file" in
+		[Cc]urrent|.|'')
+			file="${FILECHAT##*/}"
+			;;
+		[Nn]ew) file="$(session_name_choosef)"
+			[[ -n $file ]] && printf '%s\n' "${file}"
+			return
+			;;
+		[Aa]bort)
+			printf 'abort'
+			return
+			;;
+		"${CACHEDIR%%/}/$REPLY")
+			[[ -n $file ]] && printf '%s\n' "${file}"
+			return
+			;;
+	esac
+
+	file="${CACHEDIR%%/}/${file:-${*:$#}}"
+	file="${file%%.[Tt][Ss][Vv]}.tsv"
+	[[ -f $file ]] && printf '%s\n' "${file}"
+}
+#set tsv filename based on input
+function session_name_choosef
+{
+	typeset fname dir new print_name
+	fname="$1"
+	while
+		fname="${fname%%\/}"
+		fname="${fname%%.[Tt][Ss][Vv]}"
+		fname="${fname/\~\//"$HOME"\/}"
+		
+		if [[ -d "$fname" ]]
+		then 	__warmsgf 'Err:' 'Is a directory'
+			fname="${fname%%/}"
+		( 	cd "$fname" &&
+			ls -- "${fname}"/*.[Tt][Ss][Vv] ) >&2 2>/dev/null
+			shell_histf "${fname}${fname:+/}"
+			unset fname
+		fi
+
+		if [[ ${fname} = *([$IFS]) ]]
+		then 	_sysmsgf 'New session name:'
 			if [[ -n $ZSH_VERSION ]]
 			then 	vared -c -e fname
-			else 	read -r -e fname
+			else 	read -r ${fname:+-i "$fname"} -e fname
 			fi
-		}
-		[[ $fname = \~\/* ]] && fname="${fname/"~"/"$HOME"}"
-		[[ $fname = *\/ ]] && fname="${fname%%\/}"
-		[[ $fname = *.??? ]] && fname="${fname%%????}"
-		if [[ $fname != */* ]]
-		then 	fname="${FILECHAT%/*}/${fname:-x}"
-		fi ;fname="${fname}.tsv"
+		fi
 
-		OPTV= __sysmsgf "Confirm [${fname/"$HOME"/"~"}]? (Y/n) " '' ''
-		case "$(__read_charf)" in [NnQqAa]) 	unset fname;; *) 	false;; esac || {
-			if [[ -d "$fname" ]]
-			then 	__warmsgf 'Err:' 'Is a directory'
-				unset fname
-			elif [[ -e "$fname" ]]
-			then 	__warmsgf 'Overwrite?' '[Y/n] ' ''
-				case "$(__read_charf)" in [NnQqAa]|$'\e') 	unset fname;; *) 	! true >>"$fname" && unset fname;; esac
-			else
-				! true >>"$fname" && unset fname
-			fi
-		}
-	do 	:
+		if [[ -d "$fname" ]]
+		then 	unset fname
+			continue
+		fi
+
+		if [[ $fname != *?/?* ]] && [[ ! -e "$fname" ]]
+		then 	fname="${CACHEDIR%%/}/${fname:-x}"
+		fi
+		fname="${fname:-x}"
+		if [[ ! -f "$fname" ]]
+		then 	fname="${fname}.tsv"
+			new="${new} ${new}"
+		fi
+
+		if [[ $fname = $FILECHAT ]]
+		then 	print_name=current
+		else 	print_name="${fname/"$HOME"/"~"}"
+		fi
+		_sysmsgf "Confirm$new? [Y/n]:" "${print_name} " '' ''
+		case "$(__read_charf)" in [NnQqAa]|$'\e') 	:;; *) 	false;; esac
+	do 	unset fname new print_name
 	done
+	
+	[[ -e ${fname} ]] || printf '(new hist file)\n' >&2
+	[[ ${fname} != *([$IFS]) ]] && printf '%s\n' "$fname"
+}
+#pick and print a session from hist file
+function session_sub_printf
+{
+	typeset REPLY file time token string buff buff_end index n
+	file="${1}" ;[[ -s $file ]] || return
 
 	while IFS= read -r
-	do
-		if [[ ${REPLY} = *[Bb][Rr][Ee][Aa][Kk]*([$IFS]) ]]
+	do 	if [[ ${REPLY} = *([$IFS])\#* ]]
+		then 	continue
+		elif [[ ${REPLY} = *[Bb][Rr][Ee][Aa][Kk]*([$IFS]) ]]
 		then
-			if ((BAD))
-			then 	unset BAD REPLY buff buff_end time token string index
-				continue
-			fi
-			while IFS=$'\t' read -r time token string || break
-			do
-				((n<10)) || break ;((++n))
+			for ((n=0;n<10;++n))
+			do 	IFS=$'\t' read -r time token string || break
 				string="${string##[\"]}" string="${string%%[\"]}"
 				buff_end="${buff_end}"${buff_end:+$'\n'}"${string}"
 			done <<<"${buff}"
 			
-			((${#buff_end}>640)) && ((index=${#buff_end}-640)) || index=0
-			printf -- '---\n%.640s\n---\n' "$(unescapef "${buff_end:$index}")"
-			
-			OPTV= __sysmsgf 'Is this the end of the right conversation?' '[Y/n] ' ''
-			case "$(__read_charf </dev/tty)" in [NnQqAa]|$'\e') 	false;; *) 	break;; esac
+			[[ -n $buff ]] && {
+			  
+			  ((${#buff_end}>640)) && ((index=${#buff_end}-640)) || index=0
+			  printf -- '---\n%.640s\n---\n' "$(unescapef "${buff_end:${index:-0}}")" >&2
+		
+			  ((OPTPRINT)) && break
+			  _sysmsgf 'Is this the end of the right conversation?' '[Y/n] ' ''
+			  case "$(__read_charf </dev/tty)" in [NnQqAa]|$'\e') 	false;; *) 	break;; esac
+			}
 
-			unset REPLY buff buff_end time token string index
+			unset REPLY time token string buff buff_end index n
 			continue
 		fi
-		buff="${REPLY}"${buff:+$'\n'}"${buff}"
-	done < <(tac -- "$FILECHAT")
+		buff="${REPLY##\#}"${buff:+$'\n'}"${buff}"
+	done < <(tac -- "$file")
 
-	printf "%s${buff:+\\n}" "$buff"  >"$fname" && FILECHAT="$fname"
+	[[ -n $REPLY ]] || ((OPTHH+OPTPRINT)) || __warmsgf 'End of file reached.'
+	[[ -n ${buff} ]] && printf '%s\n' "$buff"
 }
+#copy session to another session file, print destination filename
+function session_copyf
+{
+	typeset src dest buff
+	
+	(($#==1)) && [[ ${1} = +([!\ ])[\ ]+([!\ ]) ]] && set -- $@
+	_sysmsgf 'Source hist file: ' '' ''
+	if (($#==1))
+	then 	src="$(session_globf "$@" || session_name_choosef "$@")"; echo "${src:-err}" >&2
+		_sysmsgf 'Destination hist file:' "current"
+	else
+		src="$(session_globf "${@:1:1}" || session_name_choosef "${@:1:1}")"; echo "${src:-err}" >&2
+		_sysmsgf 'Destination hist file: ' '' ''
+		dest="$(session_globf "${@:2:1}" || session_name_choosef "${@:2:1}")"; echo "${src:-err}" >&2
+	fi
+	dest="${dest:-$FILECHAT}" 
 
+	buff=$(session_sub_printf "$src") \
+	&& if [[ -f "$dest" ]] ;then 	[[ "$(<"$dest")" != *"${buff}" ]] || return 0 ;fi \
+	&& FILECHAT="${dest}" cmd_runf /break \
+	&& printf '%s\n' "$buff" >> "$dest" \
+	&& printf '%s\n' "$dest"
+}
+#create or copy a session, search for and change to a session file.
+function session_mainf
+{
+	typeset name file files optsession args arg
+	name="${1}${2}"
+	[[ $name = [/!]* ]] || return
+	name="${name##?([/!])*(\ )}"
+
+	case "${name}" in
+		#list hist files? operator: /list
+		list*)
+			__cmdmsgf 'Session' 'list files'
+			session_listf "${name##list*(\ )}"
+			return
+			;;
+		#copy session from hist option? operator: /copy
+		copy*|c*)
+			__cmdmsgf 'Session' 'copy'
+			optsession=3
+			set -- "${1##*([/!])@(copy|c)*(\ )}" "${@:2}" #two args
+			set -- "${@/\~\//"$HOME"\/}"
+			unset fname
+			;;
+		#change to, or create a hist file
+		#break session? operator: //
+		[/!]*)
+			if [[ "$name" != /[!/]*/* ]] \
+				|| [[ "$name" = [/!]/*/* ]]
+			then 	__cmdmsgf 'Session' 'change/create + break session'
+				optsession=2
+				name="${name##[/!]}"
+			fi
+			;;
+		*) 	__cmdmsgf 'Session' 'change/create'
+			;;
+	esac
+	
+	optsession=${optsession:-1} 
+	name="${name##@(create|change|search|s)*(\ )}"
+	name="${name/\~\//"$HOME"\/}"
+
+	#del unused positional args
+	args=("$@") ;set --
+	for arg in "${args[@]}"
+	do 	[[ ${arg} != *([$IFS]) ]] && set -- "$@" "$arg"
+	done ;unset args arg
+
+	#print hist option
+	if ((OPTHH))
+	then 	if [[ -f "$name" ]]
+		then 	session_sub_printf "${name}"
+		else 	session_sub_printf "$(session_globf "${name:-*}")"
+		fi  >"$FILEFIFO"
+		FILECHAT="$FILEFIFO"
+		return
+	#copy session to destination
+	elif ((optsession>2))
+	then
+		session_copyf "$@" >/dev/null || unset file
+	else
+		#set source session file
+		if [[ -f $name ]]
+		then 	file="$name"
+		elif [[ $name = */* ]] ||
+			! file=$(session_globf "$name")
+		then
+			file=$(session_name_choosef "${name}")
+		fi
+
+		if [[ $file = [Cc]urrent ]]
+		then 	file="${FILECHAT}"
+		elif [[ $file = [Aa]bort ]]
+		then 	return 2
+		fi
+
+		#break session?
+		if { 	((OPTC+OPTRESUME)) && [[ -f "${file}" ]] && ((optsession<3)) ;} && {
+			_sysmsgf 'Break session?' '[N/ys] ' ''
+			case "$(__read_charf)" in [YySs]) 	:;; *) 	false ;;esac
+		}
+		then 	FILECHAT="${file}" cmd_runf /break
+		fi
+		((optsession>2)) || OPTPRINT=1 session_sub_printf "${file:-$FILECHAT}" >/dev/null
+	fi
+
+	[[ ${file:-$FILECHAT} = "${FILECHAT}" ]] || _sysmsgf 'Changed to:' "${file:-$FILECHAT}"
+	FILECHAT="${file:-$FILECHAT}"
+}
 
 #parse opts
 optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:r:R:s:S:t:TouvVxwWzZ0123456789@:/,.+-:"
@@ -1553,7 +1843,7 @@ do
 		c) 	((++OPTC));;
 		C) 	((++OPTRESUME));;
 		e) 	OPTE=1 EPN=2;;
-		f$OPTF) unset EPN MOD MOD_CHAT MOD_EDIT MOD_AUDIO MODMAX INSTRUCTION CHATINSTR OPTC OPTE OPTI OPTJ OPTLOG USRLOG OPTRESUME OPTHH OPTL OPTMARG OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTN OPTP OPTT OPTV OPTVV OPTW OPTWW OPTZ OPTCLIP OPTMULTI MULTI OPT_AT_PC OPT_AT Q_TYPE A_TYPE RESTART START STOPS
+		f$OPTF) unset EPN MOD MOD_CHAT MOD_EDIT MOD_AUDIO MODMAX INSTRUCTION CHATINSTR OPTC OPTE OPTI OPTJ OPTLOG USRLOG OPTRESUME OPTHH OPTL OPTMARG OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTN OPTP OPTT OPTV OPTVV OPTW OPTWW OPTZ OPTZZ OPTCLIP OPTMULTI MULTI OPT_AT_PC OPT_AT Q_TYPE A_TYPE RESTART START STOPS
 			OPTF=1 OPTIND=1 OPTARG= ;. "$0" "$@" ;exit;;
 		h) 	while read
 			do 	[[ $REPLY = \#\ v* ]] && break
@@ -1568,7 +1858,7 @@ do
 			if [[ -d "$OPTARG" ]]
 			then 	USRLOG="${OPTARG%%/}/${USRLOG##*/}"
 			else 	USRLOG="${OPTARG:-${USRLOG}}"
-			fi ;OPTV= __cmdmsgf 'Log file' "\`\`$USRLOG''";;
+			fi ;_cmdmsgf 'Log file' "\`\`$USRLOG''";;
 		m) 	OPTMARG="${OPTARG:-0}"
 			if [[ $OPTARG = *[a-zA-Z]* ]]
 			then 	MOD="$OPTARG"  #model name
@@ -1655,7 +1945,7 @@ fi
 
 MOD="${MOD:-${MODELS[OPTM]}}"
 [[ -n $EPN ]] || set_model_epnf "$MOD"
-[[ -n ${INSTRUCTION//[$IFS]} ]] || unset INSTRUCTION
+[[ ${INSTRUCTION} != *([$IFS]) ]] || unset INSTRUCTION
 
 #auto set ``model capacity''
 ((MODMAX)) ||
@@ -1680,10 +1970,22 @@ set_optsf
 ((OPTX)) && ((OPTE+OPTEMBED+OPTI+OPTII+OPTTIK)) &&
 edf "$@" && set -- "$(<"$FILETXT")"  #editor
 
-if ((!(OPTHH+OPTI+OPTL+OPTZ+OPTW+OPTTIK) ))
-then 	__sysmsgf 'Language Model:' "$MOD"
-	__sysmsgf "Max Input / Response:" "$MODMAX / $OPTMAX tokens"
-     	((!$#)) || token_prevf "$*"
+if ((!(OPTI+OPTII+OPTL+OPTW+OPTZ+OPTTIK) ))
+then 	#session cmds
+	if ((!(OPTE+OPTEMBED) )) &&
+		[[ "${1}" = *(\ )/* ]]
+	then 	session_mainf "$@"
+		set --
+	fi
+
+	((OPTHH>1)) && __sysmsgf 'Language Model:' "$MOD"
+	((!OPTHH)) && {
+		__sysmsgf "Max Input / Response:" "$MODMAX / $OPTMAX tokens"
+     		if (($#))
+		then 	token_prevf "$*"
+	  	__sysmsgf "Prompt:" "~$TKN_PREV tokens"
+		fi
+	}
 fi
 
 ((OPTTIK)) ||
@@ -1703,6 +2005,7 @@ then 	if ((OPTHH>1))
 		Q_TYPE="\\n${Q_TYPE}" A_TYPE="\\n${A_TYPE}" \
 		MODMAX=65536 set_histf
 		usr_logf "$(unescapef "$HIST")"
+		[[ ! -e $FILEFIFO ]] || rm -- "$FILEFIFO"
 	elif [[ -t 1 ]]
 	then 	__edf "$FILECHAT"
 	else 	cat -- "$FILECHAT"
@@ -1746,7 +2049,7 @@ else               #text/chat completions
 	((OPTW)) && { 	INPUT_ORIG=("$@") ;unset OPTX ;set -- ;}  #whisper input
 	if ((OPTC))
 	then 	__sysmsgf 'Chat Completions'
-		#chatbot must sound like a human, shouldn't be lobotomised
+		#chatbot must sound like a human, shouldnt be lobotomised
 		#presencePenalty:0.6 temp:0.9 maxTkns:150 :The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.
 		#frequencyPenalty:0.5 temp:0.5 top_p:0.3 maxTkns:60 :Marv is a chatbot that reluctantly answers questions with sarcastic responses:
 		OPTA="${OPTA:-0.4}" OPTT="${OPTT:-0.6}"  #!#
@@ -1755,7 +2058,7 @@ else               #text/chat completions
 	fi
 	if ((OPTCMPL))
 	then 	((++OPTMULTI)); ((OPTMULTI%=2)) &&
-		((OPTCMPL==1)) || OPTV= __cmdmsgf 'Multiline' 'ON'
+		((OPTCMPL==1)) || _cmdmsgf 'Multiline' 'ON'
 	fi
 	((EPN!=6)) || unset RESTART START
 
@@ -1770,11 +2073,11 @@ else               #text/chat completions
 		  break_sessionf
 		  INSTRUCTION="${INSTRUCTION:-Be a helpful assistant.}" INSTRUCTION_OLD="$INSTRUCTION"
 		  push_tohistf "$(escapef ":${INSTRUCTION##:$SPC}")"
-		  OPTV=$((OPTV?OPTV-1:OPTV)) __sysmsgf 'Language Model:' "$MOD"
-		  OPTV=$((OPTV?OPTV-1:OPTV)) __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:$SPC}" 2>&1 | foldf >&2
+		  __sysmsgf 'Language Model:' "$MOD"
+		  _sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:$SPC}" 2>&1 | foldf >&2
 		} ;unset INSTRUCTION
 	elif [[ -n $INSTRUCTION ]]
-	then 	  OPTV= __sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
+	then 	  _sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
 		  INSTRUCTION_OLD="$INSTRUCTION"
 	fi
 
@@ -1787,19 +2090,15 @@ else               #text/chat completions
 				EPN= OPTV= OPTC= RESTART= START= \
 				MODMAX=8192 OPTHIST=1 N_MAX=40 set_histf
 				while IFS= read -r
-				do 	[[ -n ${REPLY//[$IFS]} ]] || continue
+				do 	[[ ${REPLY} = *([$IFS]) ]] && continue
 					print -s -- "$(unescapef "$REPLY")"
 				done <<<"$HIST" ;unset HIST REPLY n
 			fi
 		else 	set -o history ;history -c ;history -r
 		fi
-		if check_cmdf "$*"
+		if cmd_runf "$*"
 		then 	set --
-		elif [[ -n ${*//[$IFS]} ]]
-		then 	if [[ -n $ZSH_VERSION ]]
-			then 	print -s -- "$*"
-			else 	history -s -- "$*"
-			fi
+		else 	shell_histf "$*"
 		fi
 	fi
 
@@ -1830,7 +2129,7 @@ else               #text/chat completions
 		#defaults prompter
 		if [[ "$* " = @("${Q_TYPE##$SPC0}"|"${RESTART##$SPC1}")$SPC ]] || [[ "$*" = $SPC ]]
 		then 	((OPTC)) && Q="${RESTART:-${Q_TYPE}}" || Q="${RESTART}"
-			Q="$(unescapef "${Q}")" ;[[ -n "${Q//[$IFS]}" ]] || Q=">"
+			Q="$(unescapef "${Q}")" ;[[ -n "${Q}" ]] || Q=">"
 			while { 	((SKIP)) && printf "${BCyan}" >&2 ;} ||
 				printf "${Cyan}%s${NC}${Purple}%s${NC}\\r${BCyan}" "${Q}" "${OPTW:+VOICE}" >&2
 			do
@@ -1877,12 +2176,12 @@ else               #text/chat completions
 				fi
 				((OPTK)) || printf "${NC}" >&2
 				
-				if check_cmdf "$REPLY"
+				if cmd_runf "$REPLY"
 				then 	unset EDIT
 					REPLY="${REPLY_OLD:-$REPLY}" SKIP=1 #regen cmd integration
 					set --
 					continue 2
-				elif [[ ${REPLY//[$IFS]} = */ ]] && ((!OPTW)) #regen cmd
+				elif [[ ${REPLY} = */*([$IFS]) ]] && ((!OPTW)) #regen cmd
 				then
 					[[ $REPLY = /* ]] && REPLY="${REPLY_OLD:-$REPLY}"  #regen cmd integration
 					REPLY="${REPLY%/*}" REPLY_OLD="$REPLY"
@@ -1916,8 +2215,8 @@ else               #text/chat completions
 		fi
 
 		if ((!OPTCMPL)) && [[ -z "${INSTRUCTION}${*}" ]]
-		then 	__warmsgf "Err:" "PROMPT is empty!"
-			__read_charf -t 1 ;set -- ; continue
+		then 	__warmsgf "Err:" "PROMPT is empty!" #;__read_charf -t 1
+			set -- ; continue
 		fi
 		if ((!OPTCMPL))
 		then 	set -- "${*##$SPC1}" #!#
@@ -1938,9 +2237,9 @@ else               #text/chat completions
 			if [[ ${*} = $SPC:* ]]
 			then 	push_tohistf "$(escapef ":${*##$SPC:}")"
 				if ((OPTV<3)) && ((EPN==6))
-				then 	OPTV=  __sysmsgf "System message added"
+				then 	_sysmsgf "System message added"
 				elif ((OPTV<3))
-				then 	OPTV=  __sysmsgf "Text appended"
+				then 	_sysmsgf "Text appended"
 				fi ;INSTRUCTION_OLD="${INSTRUCTION_OLD:-$INSTRUCTION}"
 				set -- ;continue
 			fi
@@ -1958,7 +2257,7 @@ else               #text/chat completions
 			
 			if ((EPN==6))
 			then 	#chat cmpls
-				[[ ${*//[$IFS]} = :* ]] && role=system || role=user
+				[[ ${*} = *([$IFS]):* ]] && role=system || role=user
 				set -- "$(fmt_ccf "$(escapef "$INSTRUCTION")" system)${INSTRUCTION:+,}${HIST_C}${HIST_C:+,}$(fmt_ccf "$(escapef "$*")" "$role")"
 			else 	#text compls
 				if ((OPTC)) || [[ -n "${START}" ]]
@@ -1990,11 +2289,6 @@ else               #text/chat completions
 		fi
 		#response prompt
 		prompt_printf
-		if ((OPTCLIP)) || [[ ! -t 1 ]]
-		then 	out=$(JQCOL2='def byellow:"";def reset:""' OPTV=2 prompt_printf)
-			((OPTCLIP)) && (${CLIP_CMD:-false} <<<"$out" &)
-			[[ ! -t 1 ]] && printf "%s\\n" "$out" >&2
-		fi
 		
 		((RETRY==1)) && { 	SKIP=1 EDIT=1 ;set -- ;continue ;}
 
@@ -2006,31 +2300,31 @@ else               #text/chat completions
 			) )
 			ans=$(jq '.choices[0]|.text//.message.content' "$FILE")
 			ans="${ans##[\"]}" ans="${ans%%[\"]}"
-			#if CKSUM=$(cksumf "$FILECHAT")
-			#	[[ $CKSUM != "${CKSUM_OLD:-$CKSUM}" ]]
-			#then
-			#	COL1="${BRed}" __warmsgf 'Err:' 'History file changed'
-			#	BAD=1 session_createf || break
-			#	OPTV= COL1="$NC" __sysmsgf 'To resume this later: ' "export FILECHAT=\"$FILECHAT\""
-			#	unset CKSUM CKSUM_OLD
-			#fi
+			if CKSUM=$(cksumf "$FILECHAT") ;[[ $CKSUM != "${CKSUM_OLD:-$CKSUM}" ]]
+			then 	COL2=${NC} __warmsgf 'Err: History file changed'$'\n' 'Copy to new? [N]o/[y]es/[i]gnore all ' ''
+				case "$(__read_charf)" in
+					[IiGg]) 	unset CKSUM CKSUM_OLD ;function cksumf { 	: ;};;
+					[QqNnAa]|$'\e') :;;
+					*) 		session_mainf /copy "$FILECHAT" || break;;
+				esac
+			fi
 			((${#tkn[@]}>2)) && ((${#ans}))
 		}
 		then
 			ans="${A_TYPE##$SPC0}${ans}"
 			((OPTB>1)) && tkn[1]=$(__tiktokenf "$ans" "4") #tkn sum will compensate later
 			((OPTAWE)) || push_tohistf "$(escapef "${REC_OUT:-$*}")" "$((tkn[0]-OLD_TOTAL))" "${tkn[2]}"
-			push_tohistf "$ans" "${tkn[1]}" "${tkn[2]}"
+			push_tohistf "$ans" "${tkn[1]}" "${tkn[2]}" || unset OPTC OPTRESUME
 			((OLD_TOTAL=tkn[0]+tkn[1])) ;MAX_PREV="$OLD_TOTAL" H_TIME=
-			#CKSUM_OLD=$(cksumf "$FILECHAT")
+			CKSUM_OLD=$(cksumf "$FILECHAT")
 		elif ((OPTC+OPTRESUME))
-		then 	BAD_RESPONSE=1 SKIP=1 EDIT=1 ;set -- ;continue
-		fi
-		((OPTLOG)) && usr_logf "$(unescapef "$ESC\\n${ans}")" > "$USRLOG" &
-		SLEEP="${tkn[1]}"
+		then 	BAD_RESPONSE=1 SKIP=1 EDIT=1 CKSUM_OLD= ;set -- ;continue
+		fi ;SLEEP="${tkn[1]}"
+		((OPTLOG)) && (usr_logf "$(unescapef "$ESC\\n${ans}")" > "$USRLOG" &)
 
 		((++N_LOOP)) ;set --
-		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC CMPLOK Q P optv_save role rest tkn arg ans glob out s n
+		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC CMPLOK Q P optv_save role rest tkn arg ans glob out var s n
 		((OPTC+OPTRESUME)) || break
-	done ;unset OLD_TOTAL SLEEP N_LOOP SPC SPC0 SPC1 TYPE_GLOB
+	done ;unset OLD_TOTAL SLEEP N_LOOP SPC SPC0 SPC1 CKSUM CKSUM_OLD INSTRUCTION_OLD
 fi
+# vim=syntax sync minlines=2400

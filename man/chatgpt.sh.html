@@ -5,7 +5,7 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="mountaineerbr" />
-  <title>CHATGPT.SH(1) v0.13.2 | General Commands Manual</title>
+  <title>CHATGPT.SH(1) v0.13.4 | General Commands Manual</title>
   <style>
     html {
       color: #1a1a1a;
@@ -167,7 +167,7 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">CHATGPT.SH(1) v0.13.2 | General Commands Manual</h1>
+<h1 class="title">CHATGPT.SH(1) v0.13.4 | General Commands Manual</h1>
 <p class="author">mountaineerbr</p>
 <p class="date">April 2023</p>
 </header>
@@ -175,12 +175,10 @@
 <div class="line-block">   chatgpt.sh – ChatGPT / DALL-E / Whisper Shell
 Wrapper</div>
 <h3 id="synopsis">SYNOPSIS</h3>
-<div class="line-block">   <strong>chatgpt.sh</strong> [<code>-m</code>
-[<em>MODEL_NAME</em>|<em>MODEL_INDEX</em>]] [<code>opt</code>]
+<div class="line-block">   <strong>chatgpt.sh</strong>
+[<code>opt</code>] [<code>-m</code>
+[<em>MODEL_NAME</em>|<em>MODEL_INDEX</em>]]
 [<em>PROMPT|TXT_FILE</em>]<br />
-   <strong>chatgpt.sh</strong> [<code>-m</code>
-[<em>MODEL_NAME</em>|<em>MODEL_INDEX</em>]] [<code>opt</code>]
-[<em>INSTRUCTION</em>] [<em>INPUT</em>]<br />
    <strong>chatgpt.sh</strong> <code>-e</code> [<code>opt</code>]
 [<em>INSTRUCTION</em>] [<em>INPUT</em>]<br />
    <strong>chatgpt.sh</strong> <code>-i</code> [<code>opt</code>]
@@ -194,13 +192,15 @@ Wrapper</div>
 [<em>AUDIO_FILE</em>] [<em>LANG</em>] [<em>PROMPT-LANG</em>]<br />
    <strong>chatgpt.sh</strong> <code>-W</code> [<code>opt</code>]
 [<em>AUDIO_FILE</em>] [<em>PROMPT-EN</em>]<br />
-   <strong>chatgpt.sh</strong> <code>-T</code> [-v]
+   <strong>chatgpt.sh</strong> <code>-TTT</code> [-v]
 [<code>-m</code>[<em>MODEL</em>|<em>ENCODING</em>]]
 [<em>TEXT</em>|<em>FILE</em>]<br />
    <strong>chatgpt.sh</strong> <code>-ccw</code> [<code>opt</code>]
 [<em>LANG</em>]<br />
    <strong>chatgpt.sh</strong> <code>-ccW</code>
 [<code>opt</code>]<br />
+   <strong>chatgpt.sh</strong> <code>-HH</code>
+[<code>/</code><em>SESSION_NAME</em>]<br />
    <strong>chatgpt.sh</strong> <code>-ll</code>
 [<em>MODEL_NAME</em>]</div>
 <h3 id="description">DESCRIPTION</h3>
@@ -221,6 +221,11 @@ options are automatically set to un-lobotomise the bot.</p>
 history session. Setting only <code>option -CC</code> (without -cc)
 starts a multi-turn session in <strong>pure text completions</strong>,
 and use restart and start sequences when defined.</p>
+<p>With <code>options -ccCCHH</code>, if the first positional argument
+of the script starts with the command operator,
+e.g. “<code>/</code>[<em>HIST_NAME</em>]”, the session command
+“<code>/session</code> [<em>HIST_NAME</em>]” to change to an existing
+history file, or create a new one, is assumed.</p>
 <p>Set model with “<code>-m</code> [<em>NAME</em>]” (full model name).
 Some models have an equivalent <em>INDEX</em> as short-hand, so
 “<code>-m</code><em>text-davinci-003</em>” and
@@ -240,8 +245,9 @@ loaded as text PROMPT (text cmpls, chat cmpls, and text/code edits).</p>
 prompt) for text cmpls, chat cmpls, and text/code edits. A text file
 path may be supplied as the single argument. If the argument to this
 option starts with a backslash such as “<code>-S</code>
-<em>/linux_terminal</em>”, start search for an awesome-chatgpt-prompts
-(by Fatih KA). Set <em>//</em> to refresh cache.</p>
+<code>/</code><em>linux_terminal</em>”, start search for an
+<em>awesome-chatgpt-prompt</em> (by Fatih KA). Set “<code>//</code>” to
+refresh cache.</p>
 <p><code>Option -e</code> sets the <strong>text edits</strong> endpoint.
 That endpoint requires both INSTRUCTION and INPUT prompts. User may
 choose a model amongst the <em>edit model family</em>.</p>
@@ -321,113 +327,178 @@ the last (response) prompt text.</p>
 prompt to set a new parameter. The command operator may be either
 “<code>!</code>”, or “<code>/</code>”.</p>
 <table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Model</th>
+<th style="text-align: left;">Settings</th>
+<th></th>
+</tr>
+</thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: right;"><code>!NUM</code></td>
+<td style="text-align: left;"><code>!NUM</code></td>
 <td style="text-align: left;"><code>!max</code></td>
-<td style="text-align: left;">Set response tokens / model capacity.</td>
+<td>Set response tokens / model capacity.</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;"><code>-a</code></td>
+<td style="text-align: left;"><code>-a</code></td>
 <td style="text-align: left;"><code>!pre</code></td>
-<td style="text-align: left;">Set presence pensalty.</td>
+<td>Set presence pensalty.</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;"><code>-A</code></td>
+<td style="text-align: left;"><code>-A</code></td>
 <td style="text-align: left;"><code>!freq</code></td>
-<td style="text-align: left;">Set frequency penalty.</td>
+<td>Set frequency penalty.</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;"><code>-c</code></td>
-<td style="text-align: left;"><code>!new</code></td>
-<td style="text-align: left;">Start new session.</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;"><code>-H</code></td>
-<td style="text-align: left;"><code>!hist</code></td>
-<td style="text-align: left;">Edit history in editor.</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;"><code>-L</code></td>
-<td style="text-align: left;"><code>!log</code></td>
-<td style="text-align: left;">Save to log file.</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;"><code>-m</code></td>
+<td style="text-align: left;"><code>-m</code></td>
 <td style="text-align: left;"><code>!mod</code></td>
-<td style="text-align: left;">Set model (by index or name).</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;"><code>-o</code></td>
-<td style="text-align: left;"><code>!clip</code></td>
-<td style="text-align: left;">Copy responses to clipboard.</td>
+<td>Set model (by index or name).</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;"><code>-p</code></td>
+<td style="text-align: left;"><code>-p</code></td>
 <td style="text-align: left;"><code>!top</code></td>
-<td style="text-align: left;">Set top_p.</td>
+<td>Set top_p.</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;"><code>-r</code></td>
+<td style="text-align: left;"><code>-r</code></td>
 <td style="text-align: left;"><code>!restart</code></td>
-<td style="text-align: left;">Set restart sequence.</td>
+<td>Set restart sequence.</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;"><code>-R</code></td>
+<td style="text-align: left;"><code>-R</code></td>
 <td style="text-align: left;"><code>!start</code></td>
-<td style="text-align: left;">Set start sequence.</td>
+<td>Set start sequence.</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;"><code>-s</code></td>
+<td style="text-align: left;"><code>-s</code></td>
 <td style="text-align: left;"><code>!stop</code></td>
-<td style="text-align: left;">Set stop sequences.</td>
+<td>Set one stop sequence.</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;"><code>-t</code></td>
+<td style="text-align: left;"><code>-t</code></td>
 <td style="text-align: left;"><code>!temp</code></td>
-<td style="text-align: left;">Set temperature.</td>
+<td>Set temperature.</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;"><code>-u</code></td>
-<td style="text-align: left;"><code>!multi</code></td>
-<td style="text-align: left;">Toggle multiline prompter.</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;"><code>-v</code></td>
-<td style="text-align: left;"><code>!ver</code></td>
-<td style="text-align: left;">Toggle verbose.</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;"><code>-x</code></td>
-<td style="text-align: left;"><code>!ed</code></td>
-<td style="text-align: left;">Toggle text editor interface.</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;"><code>-w</code></td>
+<td style="text-align: left;"><code>-w</code></td>
 <td style="text-align: left;"><code>!rec</code></td>
-<td style="text-align: left;">Start audio record chat.</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;"><code>!r</code></td>
-<td style="text-align: left;"><code>!regen</code></td>
-<td style="text-align: left;">Renegerate last response.</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;"><code>!q</code></td>
-<td style="text-align: left;"><code>!quit</code></td>
-<td style="text-align: left;">Exit.</td>
+<td>Start audio record chat.</td>
 </tr>
 </tbody>
 </table>
-<div class="line-block">E.g.: “<code>!temp</code> <em>0.7</em>”,
-“<code>!mod</code><em>1</em>”, and “<code>-p</code> <em>0.2</em>”.</div>
-<p>To change the chat context at run time, the history file must be
-edited with “<code>!hist</code>”. Delete history entries or comment them
-out with “<code>#</code>”.</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Script</th>
+<th style="text-align: left;">Settings</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>-o</code></td>
+<td style="text-align: left;"><code>!clip</code></td>
+<td>Copy responses to clipboard.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>-u</code></td>
+<td style="text-align: left;"><code>!multi</code></td>
+<td>Toggle multiline prompter.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>-v</code></td>
+<td style="text-align: left;"><code>!ver</code></td>
+<td>Toggle verbose.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>-x</code></td>
+<td style="text-align: left;"><code>!ed</code></td>
+<td>Toggle text editor interface.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>!r</code></td>
+<td style="text-align: left;"><code>!regen</code></td>
+<td>Renegerate last response.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>!q</code></td>
+<td style="text-align: left;"><code>!quit</code></td>
+<td>Exit.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Session</th>
+<th>Management</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>-c</code></td>
+<td><code>!new</code></td>
+<td>Start new session.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>-H</code></td>
+<td><code>!hist</code></td>
+<td>Edit history in editor.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>-L</code></td>
+<td><code>!log</code></td>
+<td>Save to log file.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>!s</code></td>
+<td><code>!session</code></td>
+<td>Change to, search or create hist file.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>!!s</code></td>
+<td><code>!!session</code></td>
+<td>Same as <code>!session</code>, add session break.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>!c</code></td>
+<td><code>!copy</code></td>
+<td>Copy session from one hist file to another.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td><code>!list</code></td>
+<td>List history files.</td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">E.g.: “<code>/temp</code> <em>0.7</em>”,
+“<code>!mod</code><em>1</em>”, “<code>-p</code> <em>0.2</em>”, and
+“<code>/s</code> <em>hist_name</em>”.</div>
+<h6 id="session-management">Session Management</h6>
+<p>The script uses a <em>TSV file</em> to record entries, which is kept
+at the script cache directory. A new history file can be created, or an
+existing one changed to with command “<code>/session</code>
+[<em>HIST_FILE</em>]”, in which <em>HIST_FILE</em> is the file name of,
+or path to a tsv file with or without the <em>.tsv</em> extension.</p>
+<p>A history file can contain many sessions. The last one (the tail
+session) is always read if the resume <code>option -C</code> is set. To
+continue a previous session than the tail session of history file, run
+chat command “<code>/copy</code> [<em>SRC_HIST_FILE</em>]
+[<em>DEST_HIST_FILE</em>]”.</p>
+<p>It is also possible to copy a session of a history file to another
+one.</p>
+<p>If “<code>/copy</code> <em>current</em>” is run, select a session to
+copy to the tail of the current history file and resume.</p>
+<p>In order to change the chat context at run time, the history file may
+be edited with the “<code>!hist</code>” command. Delete history entries
+or comment them out with “<code>#</code>”.</p>
 <h5 id="completion-preview-regeneration">2.5 Completion Preview /
 Regeneration</h5>
 <p>To preview a prompt completion before commiting it to history, append
-a forward slash “<em>/</em>” to the prompt as the last character.
+a forward slash “<code>/</code>” to the prompt as the last character.
 Regenerate it again or press ENTER to accept it.</p>
 <p>After a response has been written to the history file,
 <strong>regenerate</strong> it with command “<code>!regen</code>” or
@@ -568,6 +639,10 @@ g. <strong>Latex syntax</strong>), type in an extra backslash such as
 <p>Path to user chatgpt.sh configuration.</p>
 <p>Defaults="<em>~/.chatgpt.conf</em>"</p>
 </dd>
+<dt><strong>FILECHAT</strong></dt>
+<dd>
+<p>Path to a script-formatted TSV history file to read from.</p>
+</dd>
 <dt><strong>INSTRUCTION</strong></dt>
 <dd>
 <p>Initial instruction set for the chatbot.</p>
@@ -647,6 +722,7 @@ when appropriate.</p>
 “<code>--max</code>=<em>1024,128</em>”, and
 “<code>--presence-penalty</code> <em>0.6</em>”.</div>
 <h3 id="options">OPTIONS</h3>
+<h4 id="model-settings">Model Settings</h4>
 <dl>
 <dt><strong>-@</strong> [[<em>VAL%</em>]<em>COLOUR</em>]</dt>
 <dd>
@@ -658,9 +734,8 @@ when appropriate.</p>
 <dl>
 <dt><strong>-M</strong> [<em>NUM</em>[<em>-NUM</em>]]</dt>
 <dd>
-<p>Set maximum number of <code>response tokens</code>.
-Def=<em>256</em>.</p>
-<p><code>Model capacity</code> can be set with a second number.
+<p>Set maximum number of <em>response tokens</em>. Def=<em>256</em>.</p>
+<p><em>Model capacity</em> can be set with a second number.
 Def=<em>auto-256</em>.</p>
 </dd>
 <dt><strong>-a</strong> [<em>VAL</em>]</dt>
@@ -679,78 +754,6 @@ Def=<em>1</em>.</p>
 <dt><strong>-B</strong></dt>
 <dd>
 <p>Print log probabilities to stderr (cmpls, 0 - 5).</p>
-</dd>
-<dt><strong>-c</strong></dt>
-<dd>
-<p>Chat mode in text completions, new session.</p>
-</dd>
-<dt><strong>-cc</strong></dt>
-<dd>
-<p>Chat mode in chat completions, new session.</p>
-</dd>
-<dt><strong>-C</strong></dt>
-<dd>
-<p>Continue from last session (compls/chat).</p>
-</dd>
-<dt><strong>-CC</strong></dt>
-<dd>
-<p>Start new session of pure text compls (without -cc).</p>
-</dd>
-<dt><strong>-e</strong> [<em>INSTRUCTION</em>] [<em>INPUT</em>]</dt>
-<dd>
-<p>Set Edit mode. Model def=<em>text-davinci-edit-001</em>.</p>
-</dd>
-<dt><strong>-f</strong></dt>
-<dd>
-<p>Ignore user config file and environment.</p>
-</dd>
-<dt><strong>-h</strong></dt>
-<dd>
-<p>Print this help page.</p>
-</dd>
-<dt><strong>-H</strong></dt>
-<dd>
-<p>Edit history file with text editor or pipe to stdout.</p>
-</dd>
-<dt><strong>-HH</strong></dt>
-<dd>
-<p>Pretty print last history session to stdout.</p>
-<p>With <code>-cC</code>, or <code>-rR</code>, prints with the specified
-restart and start sequences.</p>
-</dd>
-<dt><strong>-i</strong> [<em>PROMPT</em>]</dt>
-<dd>
-<p>Generate images given a prompt.</p>
-</dd>
-<dt><strong>-i</strong> [<em>PNG</em>]</dt>
-<dd>
-<p>Create variations of a given image.</p>
-</dd>
-<dt><strong>-i</strong> [<em>PNG</em>] [<em>MASK</em>]
-[<em>PROMPT</em>]</dt>
-<dd>
-<p>Edit image with mask and prompt (required).</p>
-</dd>
-<dt><strong>-j</strong></dt>
-<dd>
-<p>Print raw JSON response (debug with -jVV).</p>
-</dd>
-<dt><strong>-k</strong></dt>
-<dd>
-<p>Disable colour output. Def=<em>auto</em>.</p>
-</dd>
-<dt><strong>-K</strong> [<em>KEY</em>]</dt>
-<dd>
-<p>Set API key (free).</p>
-</dd>
-<dt><strong>-l</strong> [<em>MOD</em>]</dt>
-<dd>
-<p>List models or print details of MODEL.</p>
-<p>Set twice to print model indexes instead.</p>
-</dd>
-<dt><strong>-L</strong> [<em>FILEPATH</em>]</dt>
-<dd>
-<p>Set log file. <em>FILEPATH</em> is required.</p>
 </dd>
 <dt><strong>-m</strong> [<em>MOD</em>]</dt>
 <dd>
@@ -781,37 +784,37 @@ restart and start sequences.</p>
 <tr class="even">
 <td></td>
 <td style="text-align: left;"><em>2</em>. text-babbage-001</td>
-<td style="text-align: left;"><strong>AUDIO</strong></td>
+<td style="text-align: left;"><strong>CHAT</strong></td>
 </tr>
 <tr class="odd">
 <td></td>
 <td style="text-align: left;"><em>3</em>. text-ada-001</td>
+<td style="text-align: left;"><em>10</em>. gpt-3.5-turbo</td>
+</tr>
+<tr class="even">
+<td></td>
+<td style="text-align: left;"><em>4</em>. davinci</td>
+<td style="text-align: left;"><strong>AUDIO</strong></td>
+</tr>
+<tr class="odd">
+<td></td>
+<td style="text-align: left;"><em>5</em>. curie</td>
 <td style="text-align: left;"><em>11</em>. whisper-1</td>
 </tr>
 <tr class="even">
 <td></td>
-<td style="text-align: left;"><strong>CHAT</strong></td>
+<td style="text-align: left;"><strong>MODERATION</strong></td>
 <td style="text-align: left;"><strong>GPT-4</strong></td>
 </tr>
 <tr class="odd">
 <td></td>
-<td style="text-align: left;"><em>4</em>. gpt-3.5-turbo</td>
+<td style="text-align: left;"><em>6</em>. text-moderation-latest</td>
 <td style="text-align: left;"><em>12</em>. gpt-4</td>
 </tr>
 <tr class="even">
 <td></td>
-<td style="text-align: left;"><strong>MODERATION</strong></td>
-<td style="text-align: left;"><em>13</em>. gpt-4-32k</td>
-</tr>
-<tr class="odd">
-<td></td>
-<td style="text-align: left;"><em>6</em>. text-moderation-latest</td>
-<td style="text-align: left;"></td>
-</tr>
-<tr class="even">
-<td></td>
 <td style="text-align: left;"><em>7</em>. text-moderation-stable</td>
-<td style="text-align: left;"></td>
+<td style="text-align: left;"><em>13</em>. gpt-4-32k</td>
 </tr>
 </tbody>
 </table>
@@ -819,10 +822,6 @@ restart and start sequences.</p>
 <dt><strong>-n</strong> [<em>NUM</em>]</dt>
 <dd>
 <p>Set number of results. Def=<em>1</em>.</p>
-</dd>
-<dt><strong>-o</strong></dt>
-<dd>
-<p>Copy response to clipboard.</p>
 </dd>
 <dt><strong>-p</strong> [<em>VAL</em>]</dt>
 <dd>
@@ -844,22 +843,116 @@ restart and start sequences.</p>
 <dd>
 <p>Set an instruction prompt. It may be a text file.</p>
 </dd>
-<dt><strong>-S</strong> <em>/</em>[<em>PROMPT_NAME</em>]</dt>
-<dd>
-<p>Set/search prompt from awesome-chatgpt-prompts.</p>
-<p>Set <em>//</em> to refresh cache.</p>
-</dd>
 <dt><strong>-t</strong> [<em>VAL</em>]</dt>
 <dd>
 <p>Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper
 0.0 - 1.0). Def=<em>0</em>.</p>
 </dd>
-<dt><strong>-T</strong></dt>
+</dl>
+<h4 id="script-modes">Script Modes</h4>
+<dl>
+<dt><strong>-c</strong></dt>
 <dd>
-<p>Count input tokens with python tiktoken, heeds
-<code>options -ccm</code>.</p>
+<p>Chat mode in text completions, session break.</p>
+</dd>
+<dt><strong>-cc</strong></dt>
+<dd>
+<p>Chat mode in chat completions, session break.</p>
+</dd>
+<dt><strong>-C</strong></dt>
+<dd>
+<p>Continue (resume) from last session (compls/chat).</p>
+</dd>
+<dt><strong>-CC</strong></dt>
+<dd>
+<p>Start new session of pure text compls (<code>without -cc</code>).</p>
+</dd>
+<dt><strong>-e</strong> [<em>INSTRUCTION</em>] [<em>INPUT</em>]</dt>
+<dd>
+<p>Set Edit mode. Model def=<em>text-davinci-edit-001</em>.</p>
+</dd>
+<dt><strong>-i</strong> [<em>PROMPT</em>]</dt>
+<dd>
+<p>Generate images given a prompt.</p>
+</dd>
+<dt><strong>-i</strong> [<em>PNG</em>]</dt>
+<dd>
+<p>Create variations of a given image.</p>
+</dd>
+<dt><strong>-i</strong> [<em>PNG</em>] [<em>MASK</em>]
+[<em>PROMPT</em>]</dt>
+<dd>
+<p>Edit image with mask and prompt (required).</p>
+</dd>
+<dt><strong>-S</strong>
+<code>/</code>[<em>AWESOME_PROMPT_NAME</em>]</dt>
+<dd>
+<p>Set or search an <em>awesome-chatgpt-prompt</em>.</p>
+<p>Set <code>//</code> instead to refresh cache.</p>
+</dd>
+<dt><strong>-TTT</strong></dt>
+<dd>
+<p>Count input tokens with python tiktoken (ignores special tokens). It
+heeds <code>options -ccm</code>.</p>
 <p>Set twice to print tokens, thrice to available encodings.</p>
 <p>Set model or encoding with <code>option -m</code>.</p>
+</dd>
+<dt><strong>-w</strong> [<em>AUD</em>] [<em>LANG</em>]</dt>
+<dd>
+<p>Transcribe audio file into text. LANG is optional.</p>
+<p>Set twice to get phrase-level timestamps.</p>
+</dd>
+<dt><strong>-W</strong> [<em>AUD</em>]</dt>
+<dd>
+<p>Translate audio file into English text.</p>
+<p>Set twice to get phrase-level timestamps.</p>
+</dd>
+</dl>
+<h3 id="script-settings">Script Settings</h3>
+<dl>
+<dt><strong>-f</strong></dt>
+<dd>
+<p>Ignore user config file and environment.</p>
+</dd>
+<dt><strong>-h</strong></dt>
+<dd>
+<p>Print the help page.</p>
+</dd>
+<dt><strong>-H</strong> <code>/</code>[<em>HIST_FILE</em>]</dt>
+<dd>
+<p>Edit history file with text editor or pipe to stdout.</p>
+<p>A history file name can be optionally set as argument.</p>
+</dd>
+<dt><strong>-HH</strong> <code>/</code>[<em>HIST_FILE</em>]</dt>
+<dd>
+<p>Pretty print last history session to stdout.</p>
+<p>With <code>-cC</code>, or <code>-rR</code>, prints with the specified
+restart and start sequences.</p>
+</dd>
+<dt><strong>-j</strong></dt>
+<dd>
+<p>Print raw JSON response (debug with <code>-jVV</code>).</p>
+</dd>
+<dt><strong>-k</strong></dt>
+<dd>
+<p>Disable colour output. Def=<em>auto</em>.</p>
+</dd>
+<dt><strong>-K</strong> [<em>KEY</em>]</dt>
+<dd>
+<p>Set OpenAI API key.</p>
+</dd>
+<dt><strong>-l</strong> [<em>MOD</em>]</dt>
+<dd>
+<p>List models or print details of <em>MODEL</em>.</p>
+<p>Set twice to print script model indexes instead.</p>
+</dd>
+<dt><strong>-L</strong> [<em>FILEPATH</em>]</dt>
+<dd>
+<p>Set log file. <em>FILEPATH</em> is required.</p>
+</dd>
+<dt><strong>-o</strong></dt>
+<dd>
+<p>Copy response to clipboard.</p>
 </dd>
 <dt><strong>-u</strong></dt>
 <dd>
@@ -877,16 +970,6 @@ restart and start sequences.</p>
 <dt><strong>-x</strong></dt>
 <dd>
 <p>Edit prompt in text editor.</p>
-</dd>
-<dt><strong>-w</strong> [<em>AUD</em>] [<em>LANG</em>]</dt>
-<dd>
-<p>Transcribe audio file into text. LANG is optional.</p>
-<p>Set twice to get phrase-level timestamps.</p>
-</dd>
-<dt><strong>-W</strong> [<em>AUD</em>]</dt>
-<dd>
-<p>Translate audio file into English text.</p>
-<p>Set twice to get phrase-level timestamps.</p>
 </dd>
 <dt><strong>-z</strong></dt>
 <dd>

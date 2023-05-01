@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.13.2 | General Commands Manual
+% CHATGPT.SH(1) v0.13.4 | General Commands Manual
 % mountaineerbr
 % April 2023
 
@@ -10,17 +10,17 @@
 
 ### SYNOPSIS
 
-|    **chatgpt.sh** \[`-m` \[_MODEL_NAME_|_MODEL_INDEX_]] \[`opt`] \[_PROMPT|TXT_FILE_]
-|    **chatgpt.sh** \[`-m` \[_MODEL_NAME_|_MODEL_INDEX_]] \[`opt`] \[_INSTRUCTION_] \[_INPUT_]
+|    **chatgpt.sh** \[`opt`] \[`-m` \[_MODEL_NAME_|_MODEL_INDEX_]] \[_PROMPT|TXT_FILE_]
 |    **chatgpt.sh** `-e` \[`opt`] \[_INSTRUCTION_] \[_INPUT_]
 |    **chatgpt.sh** `-i` \[`opt`] \[_S_|_M_|_L_] \[_PROMPT_]
 |    **chatgpt.sh** `-i` \[`opt`] \[_S_|_M_|_L_] \[_PNG_FILE_]
 |    **chatgpt.sh** `-i` \[`opt`] \[_S_|_M_|_L_] \[_PNG_FILE_] \[_MASK_FILE_] \[_PROPMT_]
 |    **chatgpt.sh** `-w` \[`opt`] \[_AUDIO_FILE_] \[_LANG_] \[_PROMPT-LANG_]
 |    **chatgpt.sh** `-W` \[`opt`] \[_AUDIO_FILE_] \[_PROMPT-EN_]
-|    **chatgpt.sh** `-T` \[-v] \[`-m`\[_MODEL_|_ENCODING_]] \[_TEXT_|_FILE_]
+|    **chatgpt.sh** `-TTT` \[-v] \[`-m`\[_MODEL_|_ENCODING_]] \[_TEXT_|_FILE_]
 |    **chatgpt.sh** `-ccw` \[`opt`] \[_LANG_]
 |    **chatgpt.sh** `-ccW` \[`opt`]
+|    **chatgpt.sh** `-HH` \[`/`_SESSION_NAME_]
 |    **chatgpt.sh** `-ll` \[_MODEL_NAME_]
 
 
@@ -46,6 +46,11 @@ Set `option -C` to **resume** from last history session. Setting only
 `option -CC` (without -cc) starts a multi-turn session in
 **pure text completions**, and use restart and start sequences when defined.
 
+With `options -ccCCHH`, if the first positional argument of the
+script starts with the command operator, e.g. "`/`\[_HIST_NAME_]",
+the session command "`/session` \[_HIST_NAME_]" to change to
+an existing history file, or create a new one, is assumed.
+
 Set model with "`-m` \[_NAME_]" (full model name). Some models have an
 equivalent _INDEX_ as short-hand, so "`-m`_text-davinci-003_" and
 "`-m`_0_" set the same model (list model by _NAME_ with `option -l` or
@@ -65,9 +70,9 @@ edits).
 `Option -S` sets an INSTRUCTION prompt (the initial prompt) for
 text cmpls, chat cmpls, and text/code edits. A text file path
 may be supplied as the single argument. If the argument to this
-option starts with a backslash such as "`-S` _/linux_terminal_",
-start search for an awesome-chatgpt-prompts (by Fatih KA).
-Set _//_ to refresh cache.
+option starts with a backslash such as "`-S` `/`_linux_terminal_",
+start search for an *awesome-chatgpt-prompt* (by Fatih KA).
+Set "`//`" to refresh cache.
 
 `Option -e` sets the **text edits** endpoint. That endpoint requires
 both INSTRUCTION and INPUT prompts. User may choose a model amongst
@@ -168,38 +173,72 @@ While in chat mode, the following commands can be typed in the
 new prompt to set a new parameter. The command operator
 may be either "`!`", or "`/`".
 
-  --------    ----------    --------------------------------------
+
+  Model       Settings
+  --------    ----------    -------------------------------------------
     `!NUM`    `!max`        Set response tokens / model capacity.
       `-a`    `!pre`        Set presence pensalty.
       `-A`    `!freq`       Set frequency penalty.
-      `-c`    `!new`        Start new session.
-      `-H`    `!hist`       Edit history in editor.
-      `-L`    `!log`        Save to log file.
       `-m`    `!mod`        Set model (by index or name).
-      `-o`    `!clip`       Copy responses to clipboard.
       `-p`    `!top`        Set top_p.
       `-r`    `!restart`    Set restart sequence.
       `-R`    `!start`      Set start sequence.
-      `-s`    `!stop`       Set stop sequences.
+      `-s`    `!stop`       Set one stop sequence.
       `-t`    `!temp`       Set temperature.
+      `-w`    `!rec`        Start audio record chat.
+  --------    ----------    -------------------------------------------
+
+  Script      Settings
+  --------    ----------    -------------------------------------------
+      `-o`    `!clip`       Copy responses to clipboard.
       `-u`    `!multi`      Toggle multiline prompter.
       `-v`    `!ver`        Toggle verbose.
       `-x`    `!ed`         Toggle text editor interface.
-      `-w`    `!rec`        Start audio record chat.
       `!r`    `!regen`      Renegerate last response.
       `!q`    `!quit`       Exit.
-  --------    ----------    --------------------------------------
+  --------    ----------    -------------------------------------------
 
-| E.g.: "`!temp` _0.7_", "`!mod`_1_", and "`-p` _0.2_".
+  Session     Management
+  --------    ----------    -------------------------------------------
+      `-c`    `!new`        Start new session.
+      `-H`    `!hist`       Edit history in editor.
+      `-L`    `!log`        Save to log file.
+      `!s`    `!session`    Change to, search or create hist file.
+      `!!s`   `!!session`   Same as `!session`, add session break.
+      `!c`    `!copy`       Copy session from one hist file to another.
+              `!list`       List history files.
+  --------    ----------    -------------------------------------------
 
-To change the chat context at run time, the history file must be
-edited with "`!hist`". Delete history entries or comment them out with "`#`".
+
+| E.g.: "`/temp` _0.7_", "`!mod`_1_", "`-p` _0.2_", and "`/s` _hist_name_".
+
+
+###### Session Management
+
+The script uses a _TSV file_ to record entries, which is kept at the script
+cache directory. A new history file can be created, or an existing one
+changed to with command "`/session` \[_HIST_FILE_]", in which _HIST_FILE_
+is the file name of, or path to a tsv file with or without the _.tsv_ extension.
+
+A history file can contain many sessions. The last one (the tail session)
+is always read if the resume `option -C` is set. To continue a previous
+session than the tail session of history file, run chat command
+"`/copy` \[_SRC_HIST_FILE_] \[_DEST_HIST_FILE_]".
+
+It is also possible to copy a session of a history file to another one.
+
+If "`/copy` _current_" is run, select a session to copy to the tail
+of the current history file and resume.
+
+In order to change the chat context at run time, the history file may be
+edited with the "`!hist`" command. Delete history entries
+or comment them out with "`#`".
 
 
 ##### 2.5 Completion Preview / Regeneration
 
 To preview a prompt completion before commiting it to history,
-append a forward slash "_/_" to the prompt as the last character. Regenerate
+append a forward slash "`/`" to the prompt as the last character. Regenerate
 it again or press ENTER to accept it.
 
 After a response has been written to the history file, **regenerate**
@@ -356,7 +395,7 @@ Setting **temperature** has an effect, the higher the more random.
 
 
 ### QUOTING AND SPECIAL SYMBOLS
-	
+
 The special sequences (`\b`, `\f`, `\n`, `\r`, `\t` and `\uHEX`)
 are interpreted as quoted _backspace_, _form feed_, _new line_, _return_,
 _tab_ and _unicode hex_. To preserve these symbols as literals instead
@@ -370,6 +409,11 @@ _tab_ and _unicode hex_. To preserve these symbols as literals instead
 :   Path to user chatgpt.sh configuration.
 
     Defaults=\"_~/.chatgpt.conf_\"
+
+
+**FILECHAT**
+
+: Path to a script-formatted TSV history file to read from.
 
 
 **INSTRUCTION**
@@ -432,7 +476,7 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 
 
 ### LONG OPTIONS
-	
+
 The following options can be set with an argument, or multiple
 times when appropriate.
 
@@ -452,6 +496,7 @@ times when appropriate.
 
 ### OPTIONS
 
+#### Model Settings
 
 **-\@** \[\[_VAL%_]_COLOUR_]
 
@@ -464,9 +509,9 @@ times when appropriate.
 
 **-M** \[_NUM_[_-NUM_]]
 
-:     Set maximum number of `response tokens`. Def=_256_.
+:     Set maximum number of _response tokens_. Def=_256_.
 
-      `Model capacity` can be set with a second number. Def=_auto-256_.
+      _Model capacity_ can be set with a second number. Def=_auto-256_.
 
 
 **-a** \[_VAL_]
@@ -489,96 +534,9 @@ times when appropriate.
 : Print log probabilities to stderr (cmpls, 0 - 5).
 
 
-**-c**
-
-: Chat mode in text completions, new session.
-
-
-**-cc**
-
-: Chat mode in chat completions, new session.
-
-
-**-C**
-
-:     Continue from last session (compls/chat).
- 
-**-CC**
-
-: Start new session of pure text compls (without -cc).
-
-
-**-e** \[_INSTRUCTION_] \[_INPUT_]
-
-: Set Edit mode. Model def=_text-davinci-edit-001_.
-
-
-**-f**
-
-: Ignore user config file and environment.
-
-**-h**
-
-: Print this help page.
-
-
-**-H**
-
-: Edit history file with text editor or pipe to stdout.
-
-**-HH**
-
-:     Pretty print last history session to stdout.
-
-      With `-cC`, or `-rR`, prints with the specified restart and start sequences.
-
-
-**-i** \[_PROMPT_]
-
-: Generate images given a prompt.
-
-
-**-i** \[_PNG_]
-
-: Create variations of a given image.
-
-
-**-i** \[_PNG_] \[_MASK_] \[_PROMPT_]
-
-: Edit image with mask and prompt (required).
-
-
-**-j**
-
-: Print raw JSON response (debug with -jVV).
-
-
-**-k**
-
-: Disable colour output. Def=_auto_.
-
-
-**-K** \[_KEY_]
-
-: Set API key (free).
-
-
-**-l** \[_MOD_]
-
-:     List models or print details of MODEL.
-  
-      Set twice to print model indexes instead.
-
-
-**-L** \[_FILEPATH_]
-
-: Set log file. _FILEPATH_ is required.
-
-
 **-m** \[_MOD_]
 
 : Set model by _NAME_.
-
 
 
 **-m** \[_IND_]
@@ -587,26 +545,21 @@ times when appropriate.
 
   ----  ----------------------------  ------------------------------
         **COMPLETIONS**               **EDITS**
-        _0_.  text-davinci-003          _8_.  text-davinci-edit-001
-        _1_.  text-curie-001            _9_.  code-davinci-edit-001
-        _2_.  text-babbage-001          **AUDIO**
-        _3_.  text-ada-001              _11_. whisper-1
-        **CHAT**                        **GPT-4**
-        _4_. gpt-3.5-turbo              _12_. gpt-4
-        **MODERATION**                  _13_. gpt-4-32k
-        _6_.  text-moderation-latest
-        _7_.  text-moderation-stable
+        _0_.  text-davinci-003        _8_.  text-davinci-edit-001
+        _1_.  text-curie-001          _9_.  code-davinci-edit-001
+        _2_.  text-babbage-001        **CHAT**
+        _3_.  text-ada-001            _10_. gpt-3.5-turbo
+        _4_.  davinci                 **AUDIO**
+        _5_.  curie                   _11_. whisper-1
+        **MODERATION**                **GPT-4**
+        _6_.  text-moderation-latest  _12_. gpt-4
+        _7_.  text-moderation-stable  _13_. gpt-4-32k
   ----  ----------------------------  ------------------------------
 
 
 **-n** \[_NUM_]
 
 : Set number of results. Def=_1_.
-
-
-**-o**
-
-: Copy response to clipboard.
 
 
 **-p** \[_VAL_]
@@ -633,25 +586,139 @@ times when appropriate.
 
 : Set an instruction prompt. It may be a text file.
 
-**-S** _/_[_PROMPT_NAME_]
-
-:     Set/search prompt from awesome-chatgpt-prompts.
-     
-      Set _//_ to refresh cache.
-
 
 **-t** \[_VAL_]
 
 : Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper 0.0 - 1.0). Def=_0_.
 
 
-**-T**
+#### Script Modes
 
-:     Count input tokens with python tiktoken, heeds `options -ccm`.
+**-c**
+
+: Chat mode in text completions, session break.
+
+
+**-cc**
+
+: Chat mode in chat completions, session break.
+
+
+**-C**
+
+: Continue (resume) from last session (compls/chat).
+ 
+**-CC**
+
+: Start new session of pure text compls (`without -cc`).
+
+
+**-e** \[_INSTRUCTION_] \[_INPUT_]
+
+: Set Edit mode. Model def=_text-davinci-edit-001_.
+
+
+**-i** \[_PROMPT_]
+
+: Generate images given a prompt.
+
+
+**-i** \[_PNG_]
+
+: Create variations of a given image.
+
+
+**-i** \[_PNG_] \[_MASK_] \[_PROMPT_]
+
+: Edit image with mask and prompt (required).
+
+
+**-S** `/`[_AWESOME_PROMPT_NAME_]
+
+:     Set or search an *awesome-chatgpt-prompt*.
+      
+      Set `//` instead to refresh cache.
+
+
+**-TTT**
+
+:     Count input tokens with python tiktoken (ignores special tokens). It heeds `options -ccm`.
 
       Set twice to print tokens, thrice to available encodings.
       
       Set model or encoding with `option -m`.
+
+
+**-w** \[_AUD_] \[_LANG_]
+
+:     Transcribe audio file into text. LANG is optional.
+      
+      Set twice to get phrase-level timestamps.
+
+
+**-W** \[_AUD_]
+
+:     Translate audio file into English text.
+      
+      Set twice to get phrase-level timestamps.
+
+
+### Script Settings
+
+**-f**
+
+: Ignore user config file and environment.
+
+**-h**
+
+: Print the help page.
+
+
+**-H** `/`\[_HIST_FILE_]
+
+:     Edit history file with text editor or pipe to stdout.
+      
+      A history file name can be optionally set as argument.
+
+
+**-HH** `/`\[_HIST_FILE_]
+
+:     Pretty print last history session to stdout.
+      
+      With `-cC`, or `-rR`, prints with the specified restart and start sequences.
+
+
+**-j**
+
+: Print raw JSON response (debug with `-jVV`).
+
+
+**-k**
+
+: Disable colour output. Def=_auto_.
+
+
+**-K** \[_KEY_]
+
+: Set OpenAI API key.
+
+
+**-l** \[_MOD_]
+
+:     List models or print details of _MODEL_.
+      
+      Set twice to print script model indexes instead.
+
+
+**-L** \[_FILEPATH_]
+
+: Set log file. _FILEPATH_ is required.
+
+
+**-o**
+
+: Copy response to clipboard.
+
 
 **-u**
 
@@ -666,7 +733,7 @@ times when appropriate.
 **-V**
 
 :     Pretty-print context.
-
+      
       Set twice to dump raw request.
 
 
@@ -675,24 +742,9 @@ times when appropriate.
 : Edit prompt in text editor.
 
 
-**-w** \[_AUD_] \[_LANG_]
-
-:     Transcribe audio file into text. LANG is optional.
-  
-      Set twice to get phrase-level timestamps. 
-
-
-**-W** \[_AUD_]
-
-:     Translate audio file into English text.
-  
-      Set twice to get phrase-level timestamps. 
-
-
 **-z**
 
 : Print last response JSON data.
-
 
 
 **-Z**

@@ -15,22 +15,16 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.13.2" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "April 2023" "v0.13.4" "General Commands Manual"
 .hy
 .SS NAME
 .PP
 \ \ \ chatgpt.sh \[en] ChatGPT / DALL-E / Whisper Shell Wrapper
 .SS SYNOPSIS
 .PP
-\ \ \ \f[B]chatgpt.sh\f[R] [\f[V]-m\f[R]
-[\f[I]MODEL_NAME\f[R]|\f[I]MODEL_INDEX\f[R]]] [\f[V]opt\f[R]]
+\ \ \ \f[B]chatgpt.sh\f[R] [\f[V]opt\f[R]] [\f[V]-m\f[R]
+[\f[I]MODEL_NAME\f[R]|\f[I]MODEL_INDEX\f[R]]]
 [\f[I]PROMPT|TXT_FILE\f[R]]
-.PD 0
-.P
-.PD
-\ \ \ \f[B]chatgpt.sh\f[R] [\f[V]-m\f[R]
-[\f[I]MODEL_NAME\f[R]|\f[I]MODEL_INDEX\f[R]]] [\f[V]opt\f[R]]
-[\f[I]INSTRUCTION\f[R]] [\f[I]INPUT\f[R]]
 .PD 0
 .P
 .PD
@@ -65,7 +59,7 @@
 .PD 0
 .P
 .PD
-\ \ \ \f[B]chatgpt.sh\f[R] \f[V]-T\f[R] [-v]
+\ \ \ \f[B]chatgpt.sh\f[R] \f[V]-TTT\f[R] [-v]
 [\f[V]-m\f[R][\f[I]MODEL\f[R]|\f[I]ENCODING\f[R]]]
 [\f[I]TEXT\f[R]|\f[I]FILE\f[R]]
 .PD 0
@@ -77,6 +71,11 @@
 .P
 .PD
 \ \ \ \f[B]chatgpt.sh\f[R] \f[V]-ccW\f[R] [\f[V]opt\f[R]]
+.PD 0
+.P
+.PD
+\ \ \ \f[B]chatgpt.sh\f[R] \f[V]-HH\f[R]
+[\f[V]/\f[R]\f[I]SESSION_NAME\f[R]]
 .PD 0
 .P
 .PD
@@ -107,6 +106,12 @@ Setting only \f[V]option -CC\f[R] (without -cc) starts a multi-turn
 session in \f[B]pure text completions\f[R], and use restart and start
 sequences when defined.
 .PP
+With \f[V]options -ccCCHH\f[R], if the first positional argument of the
+script starts with the command operator,
+e.g.\ \[lq]\f[V]/\f[R][\f[I]HIST_NAME\f[R]]\[rq], the session command
+\[lq]\f[V]/session\f[R] [\f[I]HIST_NAME\f[R]]\[rq] to change to an
+existing history file, or create a new one, is assumed.
+.PP
 Set model with \[lq]\f[V]-m\f[R] [\f[I]NAME\f[R]]\[rq] (full model
 name).
 Some models have an equivalent \f[I]INDEX\f[R] as short-hand, so
@@ -131,9 +136,9 @@ loaded as text PROMPT (text cmpls, chat cmpls, and text/code edits).
 text cmpls, chat cmpls, and text/code edits.
 A text file path may be supplied as the single argument.
 If the argument to this option starts with a backslash such as
-\[lq]\f[V]-S\f[R] \f[I]/linux_terminal\f[R]\[rq], start search for an
-awesome-chatgpt-prompts (by Fatih KA).
-Set \f[I]//\f[R] to refresh cache.
+\[lq]\f[V]-S\f[R] \f[V]/\f[R]\f[I]linux_terminal\f[R]\[rq], start search
+for an \f[I]awesome-chatgpt-prompt\f[R] (by Fatih KA).
+Set \[lq]\f[V]//\f[R]\[rq] to refresh cache.
 .PP
 \f[V]Option -e\f[R] sets the \f[B]text edits\f[R] endpoint.
 That endpoint requires both INSTRUCTION and INPUT prompts.
@@ -239,7 +244,14 @@ The command operator may be either \[lq]\f[V]!\f[R]\[rq], or
 .PP
 .TS
 tab(@);
-r l l.
+l l l.
+T{
+Model
+T}@T{
+Settings
+T}@T{
+T}
+_
 T{
 \f[V]!NUM\f[R]
 T}@T{
@@ -262,39 +274,11 @@ T}@T{
 Set frequency penalty.
 T}
 T{
-\f[V]-c\f[R]
-T}@T{
-\f[V]!new\f[R]
-T}@T{
-Start new session.
-T}
-T{
-\f[V]-H\f[R]
-T}@T{
-\f[V]!hist\f[R]
-T}@T{
-Edit history in editor.
-T}
-T{
-\f[V]-L\f[R]
-T}@T{
-\f[V]!log\f[R]
-T}@T{
-Save to log file.
-T}
-T{
 \f[V]-m\f[R]
 T}@T{
 \f[V]!mod\f[R]
 T}@T{
 Set model (by index or name).
-T}
-T{
-\f[V]-o\f[R]
-T}@T{
-\f[V]!clip\f[R]
-T}@T{
-Copy responses to clipboard.
 T}
 T{
 \f[V]-p\f[R]
@@ -322,7 +306,7 @@ T{
 T}@T{
 \f[V]!stop\f[R]
 T}@T{
-Set stop sequences.
+Set one stop sequence.
 T}
 T{
 \f[V]-t\f[R]
@@ -330,6 +314,32 @@ T}@T{
 \f[V]!temp\f[R]
 T}@T{
 Set temperature.
+T}
+T{
+\f[V]-w\f[R]
+T}@T{
+\f[V]!rec\f[R]
+T}@T{
+Start audio record chat.
+T}
+.TE
+.PP
+.TS
+tab(@);
+l l l.
+T{
+Script
+T}@T{
+Settings
+T}@T{
+T}
+_
+T{
+\f[V]-o\f[R]
+T}@T{
+\f[V]!clip\f[R]
+T}@T{
+Copy responses to clipboard.
 T}
 T{
 \f[V]-u\f[R]
@@ -353,13 +363,6 @@ T}@T{
 Toggle text editor interface.
 T}
 T{
-\f[V]-w\f[R]
-T}@T{
-\f[V]!rec\f[R]
-T}@T{
-Start audio record chat.
-T}
-T{
 \f[V]!r\f[R]
 T}@T{
 \f[V]!regen\f[R]
@@ -375,17 +378,97 @@ Exit.
 T}
 .TE
 .PP
-E.g.: \[lq]\f[V]!temp\f[R] \f[I]0.7\f[R]\[rq],
-\[lq]\f[V]!mod\f[R]\f[I]1\f[R]\[rq], and \[lq]\f[V]-p\f[R]
-\f[I]0.2\f[R]\[rq].
+.TS
+tab(@);
+l l l.
+T{
+Session
+T}@T{
+Management
+T}@T{
+T}
+_
+T{
+\f[V]-c\f[R]
+T}@T{
+\f[V]!new\f[R]
+T}@T{
+Start new session.
+T}
+T{
+\f[V]-H\f[R]
+T}@T{
+\f[V]!hist\f[R]
+T}@T{
+Edit history in editor.
+T}
+T{
+\f[V]-L\f[R]
+T}@T{
+\f[V]!log\f[R]
+T}@T{
+Save to log file.
+T}
+T{
+\f[V]!s\f[R]
+T}@T{
+\f[V]!session\f[R]
+T}@T{
+Change to, search or create hist file.
+T}
+T{
+\f[V]!!s\f[R]
+T}@T{
+\f[V]!!session\f[R]
+T}@T{
+Same as \f[V]!session\f[R], add session break.
+T}
+T{
+\f[V]!c\f[R]
+T}@T{
+\f[V]!copy\f[R]
+T}@T{
+Copy session from one hist file to another.
+T}
+T{
+T}@T{
+\f[V]!list\f[R]
+T}@T{
+List history files.
+T}
+.TE
 .PP
-To change the chat context at run time, the history file must be edited
-with \[lq]\f[V]!hist\f[R]\[rq].
+E.g.: \[lq]\f[V]/temp\f[R] \f[I]0.7\f[R]\[rq],
+\[lq]\f[V]!mod\f[R]\f[I]1\f[R]\[rq], \[lq]\f[V]-p\f[R]
+\f[I]0.2\f[R]\[rq], and \[lq]\f[V]/s\f[R] \f[I]hist_name\f[R]\[rq].
+.SS Session Management
+.PP
+The script uses a \f[I]TSV file\f[R] to record entries, which is kept at
+the script cache directory.
+A new history file can be created, or an existing one changed to with
+command \[lq]\f[V]/session\f[R] [\f[I]HIST_FILE\f[R]]\[rq], in which
+\f[I]HIST_FILE\f[R] is the file name of, or path to a tsv file with or
+without the \f[I].tsv\f[R] extension.
+.PP
+A history file can contain many sessions.
+The last one (the tail session) is always read if the resume
+\f[V]option -C\f[R] is set.
+To continue a previous session than the tail session of history file,
+run chat command \[lq]\f[V]/copy\f[R] [\f[I]SRC_HIST_FILE\f[R]]
+[\f[I]DEST_HIST_FILE\f[R]]\[rq].
+.PP
+It is also possible to copy a session of a history file to another one.
+.PP
+If \[lq]\f[V]/copy\f[R] \f[I]current\f[R]\[rq] is run, select a session
+to copy to the tail of the current history file and resume.
+.PP
+In order to change the chat context at run time, the history file may be
+edited with the \[lq]\f[V]!hist\f[R]\[rq] command.
 Delete history entries or comment them out with \[lq]\f[V]#\f[R]\[rq].
 .SS 2.5 Completion Preview / Regeneration
 .PP
 To preview a prompt completion before commiting it to history, append a
-forward slash \[lq]\f[I]/\f[R]\[rq] to the prompt as the last character.
+forward slash \[lq]\f[V]/\f[R]\[rq] to the prompt as the last character.
 Regenerate it again or press ENTER to accept it.
 .PP
 After a response has been written to the history file,
@@ -555,6 +638,9 @@ Path to user chatgpt.sh configuration.
 Defaults=\[dq]\f[I]\[ti]/.chatgpt.conf\f[R]\[dq]
 .RE
 .TP
+\f[B]FILECHAT\f[R]
+Path to a script-formatted TSV history file to read from.
+.TP
 \f[B]INSTRUCTION\f[R]
 Initial instruction set for the chatbot.
 .PP
@@ -626,6 +712,7 @@ E.g.: \[lq]\f[V]--chat\f[R]\[rq],
 \[lq]\f[V]--max\f[R]=\f[I]1024,128\f[R]\[rq], and
 \[lq]\f[V]--presence-penalty\f[R] \f[I]0.6\f[R]\[rq].
 .SS OPTIONS
+.SS Model Settings
 .TP
 \f[B]-\[at]\f[R] [[\f[I]VAL%\f[R]]\f[I]COLOUR\f[R]]
 Set transparent colour of image mask.
@@ -639,11 +726,11 @@ Def=\f[I]0%\f[R].
 \f[B]-NUM\f[R]
 .TP
 \f[B]-M\f[R] [\f[I]NUM\f[R][\f[I]-NUM\f[R]]]
-Set maximum number of \f[V]response tokens\f[R].
+Set maximum number of \f[I]response tokens\f[R].
 Def=\f[I]256\f[R].
 .RS
 .PP
-\f[V]Model capacity\f[R] can be set with a second number.
+\f[I]Model capacity\f[R] can be set with a second number.
 Def=\f[I]auto-256\f[R].
 .RE
 .TP
@@ -659,69 +746,6 @@ Def=\f[I]1\f[R].
 .TP
 \f[B]-B\f[R]
 Print log probabilities to stderr (cmpls, 0 - 5).
-.TP
-\f[B]-c\f[R]
-Chat mode in text completions, new session.
-.TP
-\f[B]-cc\f[R]
-Chat mode in chat completions, new session.
-.TP
-\f[B]-C\f[R]
-Continue from last session (compls/chat).
-.TP
-\f[B]-CC\f[R]
-Start new session of pure text compls (without -cc).
-.TP
-\f[B]-e\f[R] [\f[I]INSTRUCTION\f[R]] [\f[I]INPUT\f[R]]
-Set Edit mode.
-Model def=\f[I]text-davinci-edit-001\f[R].
-.TP
-\f[B]-f\f[R]
-Ignore user config file and environment.
-.TP
-\f[B]-h\f[R]
-Print this help page.
-.TP
-\f[B]-H\f[R]
-Edit history file with text editor or pipe to stdout.
-.TP
-\f[B]-HH\f[R]
-Pretty print last history session to stdout.
-.RS
-.PP
-With \f[V]-cC\f[R], or \f[V]-rR\f[R], prints with the specified restart
-and start sequences.
-.RE
-.TP
-\f[B]-i\f[R] [\f[I]PROMPT\f[R]]
-Generate images given a prompt.
-.TP
-\f[B]-i\f[R] [\f[I]PNG\f[R]]
-Create variations of a given image.
-.TP
-\f[B]-i\f[R] [\f[I]PNG\f[R]] [\f[I]MASK\f[R]] [\f[I]PROMPT\f[R]]
-Edit image with mask and prompt (required).
-.TP
-\f[B]-j\f[R]
-Print raw JSON response (debug with -jVV).
-.TP
-\f[B]-k\f[R]
-Disable colour output.
-Def=\f[I]auto\f[R].
-.TP
-\f[B]-K\f[R] [\f[I]KEY\f[R]]
-Set API key (free).
-.TP
-\f[B]-l\f[R] [\f[I]MOD\f[R]]
-List models or print details of MODEL.
-.RS
-.PP
-Set twice to print model indexes instead.
-.RE
-.TP
-\f[B]-L\f[R] [\f[I]FILEPATH\f[R]]
-Set log file.
-\f[I]FILEPATH\f[R] is required.
 .TP
 \f[B]-m\f[R] [\f[I]MOD\f[R]]
 Set model by \f[I]NAME\f[R].
@@ -759,57 +783,58 @@ T}@T{
 \f[I]2\f[R].
 text-babbage-001
 T}@T{
-\f[B]AUDIO\f[R]
+\f[B]CHAT\f[R]
 T}
 T{
 T}@T{
 \f[I]3\f[R].
 text-ada-001
 T}@T{
+\f[I]10\f[R].
+gpt-3.5-turbo
+T}
+T{
+T}@T{
+\f[I]4\f[R].
+davinci
+T}@T{
+\f[B]AUDIO\f[R]
+T}
+T{
+T}@T{
+\f[I]5\f[R].
+curie
+T}@T{
 \f[I]11\f[R].
 whisper-1
 T}
 T{
 T}@T{
-\f[B]CHAT\f[R]
-T}@T{
-\f[B]GPT-4\f[R]
-T}
-T{
-T}@T{
-\f[I]4\f[R].
-gpt-3.5-turbo
-T}@T{
-\f[I]12\f[R].
-gpt-4
-T}
-T{
-T}@T{
 \f[B]MODERATION\f[R]
 T}@T{
-\f[I]13\f[R].
-gpt-4-32k
+\f[B]GPT-4\f[R]
 T}
 T{
 T}@T{
 \f[I]6\f[R].
 text-moderation-latest
 T}@T{
+\f[I]12\f[R].
+gpt-4
 T}
 T{
 T}@T{
 \f[I]7\f[R].
 text-moderation-stable
 T}@T{
+\f[I]13\f[R].
+gpt-4-32k
 T}
 .TE
 .TP
 \f[B]-n\f[R] [\f[I]NUM\f[R]]
 Set number of results.
 Def=\f[I]1\f[R].
-.TP
-\f[B]-o\f[R]
-Copy response to clipboard.
 .TP
 \f[B]-p\f[R] [\f[I]VAL\f[R]]
 Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
@@ -828,26 +853,114 @@ Def=\[dq]\f[I]<|endoftext|>\f[R]\[dq].
 Set an instruction prompt.
 It may be a text file.
 .TP
-\f[B]-S\f[R] \f[I]/\f[R][\f[I]PROMPT_NAME\f[R]]
-Set/search prompt from awesome-chatgpt-prompts.
-.RS
-.PP
-Set \f[I]//\f[R] to refresh cache.
-.RE
-.TP
 \f[B]-t\f[R] [\f[I]VAL\f[R]]
 Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper 0.0
 - 1.0).
 Def=\f[I]0\f[R].
+.SS Script Modes
 .TP
-\f[B]-T\f[R]
-Count input tokens with python tiktoken, heeds \f[V]options -ccm\f[R].
+\f[B]-c\f[R]
+Chat mode in text completions, session break.
+.TP
+\f[B]-cc\f[R]
+Chat mode in chat completions, session break.
+.TP
+\f[B]-C\f[R]
+Continue (resume) from last session (compls/chat).
+.TP
+\f[B]-CC\f[R]
+Start new session of pure text compls (\f[V]without -cc\f[R]).
+.TP
+\f[B]-e\f[R] [\f[I]INSTRUCTION\f[R]] [\f[I]INPUT\f[R]]
+Set Edit mode.
+Model def=\f[I]text-davinci-edit-001\f[R].
+.TP
+\f[B]-i\f[R] [\f[I]PROMPT\f[R]]
+Generate images given a prompt.
+.TP
+\f[B]-i\f[R] [\f[I]PNG\f[R]]
+Create variations of a given image.
+.TP
+\f[B]-i\f[R] [\f[I]PNG\f[R]] [\f[I]MASK\f[R]] [\f[I]PROMPT\f[R]]
+Edit image with mask and prompt (required).
+.TP
+\f[B]-S\f[R] \f[V]/\f[R][\f[I]AWESOME_PROMPT_NAME\f[R]]
+Set or search an \f[I]awesome-chatgpt-prompt\f[R].
+.RS
+.PP
+Set \f[V]//\f[R] instead to refresh cache.
+.RE
+.TP
+\f[B]-TTT\f[R]
+Count input tokens with python tiktoken (ignores special tokens).
+It heeds \f[V]options -ccm\f[R].
 .RS
 .PP
 Set twice to print tokens, thrice to available encodings.
 .PP
 Set model or encoding with \f[V]option -m\f[R].
 .RE
+.TP
+\f[B]-w\f[R] [\f[I]AUD\f[R]] [\f[I]LANG\f[R]]
+Transcribe audio file into text.
+LANG is optional.
+.RS
+.PP
+Set twice to get phrase-level timestamps.
+.RE
+.TP
+\f[B]-W\f[R] [\f[I]AUD\f[R]]
+Translate audio file into English text.
+.RS
+.PP
+Set twice to get phrase-level timestamps.
+.RE
+.SS Script Settings
+.TP
+\f[B]-f\f[R]
+Ignore user config file and environment.
+.TP
+\f[B]-h\f[R]
+Print the help page.
+.TP
+\f[B]-H\f[R] \f[V]/\f[R][\f[I]HIST_FILE\f[R]]
+Edit history file with text editor or pipe to stdout.
+.RS
+.PP
+A history file name can be optionally set as argument.
+.RE
+.TP
+\f[B]-HH\f[R] \f[V]/\f[R][\f[I]HIST_FILE\f[R]]
+Pretty print last history session to stdout.
+.RS
+.PP
+With \f[V]-cC\f[R], or \f[V]-rR\f[R], prints with the specified restart
+and start sequences.
+.RE
+.TP
+\f[B]-j\f[R]
+Print raw JSON response (debug with \f[V]-jVV\f[R]).
+.TP
+\f[B]-k\f[R]
+Disable colour output.
+Def=\f[I]auto\f[R].
+.TP
+\f[B]-K\f[R] [\f[I]KEY\f[R]]
+Set OpenAI API key.
+.TP
+\f[B]-l\f[R] [\f[I]MOD\f[R]]
+List models or print details of \f[I]MODEL\f[R].
+.RS
+.PP
+Set twice to print script model indexes instead.
+.RE
+.TP
+\f[B]-L\f[R] [\f[I]FILEPATH\f[R]]
+Set log file.
+\f[I]FILEPATH\f[R] is required.
+.TP
+\f[B]-o\f[R]
+Copy response to clipboard.
 .TP
 \f[B]-u\f[R]
 Toggle multiline prompter.
@@ -865,21 +978,6 @@ Set twice to dump raw request.
 .TP
 \f[B]-x\f[R]
 Edit prompt in text editor.
-.TP
-\f[B]-w\f[R] [\f[I]AUD\f[R]] [\f[I]LANG\f[R]]
-Transcribe audio file into text.
-LANG is optional.
-.RS
-.PP
-Set twice to get phrase-level timestamps.
-.RE
-.TP
-\f[B]-W\f[R] [\f[I]AUD\f[R]]
-Translate audio file into English text.
-.RS
-.PP
-Set twice to get phrase-level timestamps.
-.RE
 .TP
 \f[B]-z\f[R]
 Print last response JSON data.
