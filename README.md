@@ -9,6 +9,7 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 
 - GPT chat from the command line
 - Follow up conversations, preview/regenerate responses
+- Manage sessions, continue from last session, print last session.
 - Integration with [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts)
 - Generate images from text input
 - Generate variations of images
@@ -299,6 +300,7 @@ ln -s /data/data/com.termux/files/usr/bin/zsh /data/data/com.termux/files/usr/bi
 
 - Run as **single** or **multi-turn**.
 - **Text editor** *interface*, and **single** and **multiline** *prompters*. 
+- Manage **sessions** and history files.
 - Run chat commands with _operator_ `!` or `/`.
 - In chat mode, edit live history entries with command `!hist`.
 - Add operator forward slash `/` to the end of prompt to trigger completions **preview mode**.
