@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.4  april/2023  by mountaineerbr  GPL+3
+# v0.13.5  april/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -456,15 +456,16 @@ function prompt_printf
 		+(.usage.completion_tokens//"?"|tostring)+" = "
 		+(.usage.total_tokens//"?"|tostring)+" tkns]"' "$FILE" >&2
 
-	jq -r "def byellow: \"\"; def reset: \"\"; $JQCOL $JQCOL2
-	  .choices[1] as \$sep | .choices[] |
+	jq -r "def byellow: \"\"; def red: \"\" ;def reset: \"\"; $JQCOL $JQCOL2
+	  (.choices[1] as \$sep | .choices[] |
 	  (byellow + (
 	  (.text//.message.content) |
 	  if (${OPTC:-0}>0) then (gsub(\"^[\\\\n\\\\t ]\"; \"\") |  gsub(\"[\\\\n\\\\t ]+$\"; \"\")) else . end
 	  ) + reset,
-	  if \$sep != null then \"---\" else empty end)" "$FILE" 2>/dev/null | foldf ||
+	  if \$sep != null then \"---\" else empty end),
+	  if .finish_reason != \"stop\" then red+.finish_reason+reset else empty end)" "$FILE" 2>/dev/null | foldf ||
 
-	jq -r '.choices[]|.text//.message.content' "$FILE" 2>/dev/null ||
+	jq -r '(.choices[]|(.text//.message.content),.finish_reason)' "$FILE" 2>/dev/null ||
 	jq . "$FILE" 2>/dev/null || cat -- "$FILE"
 }
 #https://stackoverflow.com/questions/57298373/print-colored-raw-output-with-jq-on-terminal
@@ -604,7 +605,7 @@ function set_histf
 			
 			((OPTC)) && {
 			  ((ind = ${#stringc}-((${#stringc}/3)<30?(${#stringc}/3):30) ))
-			  sub="${stringc:$ind}" sub="${sub%%*(\\[ntrvf])}"
+			  sub="${stringc:$ind}" sub="${sub%%?(\\)?(\\)*(\\[ntrvf])}"
 			  stringc="${stringc:0:$ind}${sub}"
 			}
 
@@ -984,17 +985,11 @@ function edf
 #special json chars
 JSON_CHARS=(\" / b f n r t u)  #\\ uHEX
 
-#unescape text
-[[ -n $ZSH_VERSION ]] &&
-function unescapef { 	printf -- "${${*//\%/%%}//\\\"/\"}" ;} ||
-function unescapef { 	printf -- "${*//\%/%%}" ;}
-
-#escape text to json format
+#(un)escape from/to json
 function escapef
 {
 	typeset var b c
 	var="$*" b='@#'
-	printf '%s' "$var" | jq -Rrs 'tojson[1:-1]' && return
 
 	#special chars
  	for c in "${JSON_CHARS[@]}"
@@ -1015,7 +1010,14 @@ function escapef
 
 	printf '%s' "$var"
 }
+[[ -n $ZSH_VERSION ]] \
+&& function unescapef { 	printf -- "${${*//\%/%%}//\\\"/\"}" ;} \
+|| function unescapef { 	printf -- "${*//\%/%%}" ;}
 #
+#function _unescapef {  	jq -Rr '"\"" + . + "\"" | fromjson' <<<"$*" ;}
+#function _escapef { 	printf '%s' "$*" | jq -Rrs 'tojson[1:-1]' ;}
+#^ jq escapes already escaped new lines (maybe unescape before escaping).
+
 
 function break_sessionf
 {
