@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.6  april/2023  by mountaineerbr  GPL+3
+# v0.13.7  april/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -447,7 +447,7 @@ function prompt_printf
 	then 	cat -- "$FILE" ;return
 	elif ((!RUN_OK)) && { 	((OPTCLIP)) || [[ ! -t 1 ]] ;}
 	then
-		out=$(RUN_OK=1 OPTV=2 JQCOL2='def byellow:"";def red:"";def reset:""' \
+		out=$(RUN_OK=1 OPTV=2 JQCOL2='def byellow:null;def red:null;def reset:null;' \
 			prompt_printf)
 		((OPTCLIP)) && (${CLIP_CMD:-false} <<<"$out" &)
 		[[ ! -t 1 ]] && ((OPTV<3)) && printf "%s\\n" "$out" >&2
@@ -462,13 +462,11 @@ function prompt_printf
 	jq -r --arg suffix "$(unescapef "$SUFFIX")" \
 	  "def byellow: null; def red: null ;def reset: null; $JQCOL $JQCOL2
 	  (.choices[1] as \$sep | .choices[] |
-	  (byellow + (
-	  (.text//(.message.content)) |
-	  if (${OPTC:-0}>0) then (gsub(\"^[\\\\n\\\\t ]\"; null) |  gsub(\"[\\\\n\\\\t ]+$\"; null)) else . end
-	  ) + \$suffix + reset,
-	  if \$sep != null then \"---\" else empty end) +
-	  if .finish_reason != \"stop\" then red+\"(\"+.finish_reason+\")\"+reset else null end
-	  )" "$FILE" | foldf ||
+	  byellow + ( (.text//(.message.content)) |
+	  if (${OPTC:-0}>0) then (gsub(\"^[\\\\n\\\\t ]\"; null) |  gsub(\"[\\\\n\\\\t ]+$\"; null)) else . end)
+	  + \$suffix + reset
+	  + if .finish_reason != \"stop\" then (if .finish_reason != null then red+\"(\"+.finish_reason+\")\"+reset else null end) else null end,
+	  if \$sep != null then \"---\" else empty end)" "$FILE" | foldf ||
 
 	jq -r '(.choices[]|.text//(.message.content))' "$FILE" 2>/dev/null ||
 	jq . "$FILE" 2>/dev/null || cat -- "$FILE"
