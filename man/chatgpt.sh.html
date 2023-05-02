@@ -5,7 +5,7 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="mountaineerbr" />
-  <title>CHATGPT.SH(1) v0.13.5 | General Commands Manual</title>
+  <title>CHATGPT.SH(1) v0.13.6 | General Commands Manual</title>
   <style>
     html {
       color: #1a1a1a;
@@ -167,7 +167,7 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">CHATGPT.SH(1) v0.13.5 | General Commands Manual</h1>
+<h1 class="title">CHATGPT.SH(1) v0.13.6 | General Commands Manual</h1>
 <p class="author">mountaineerbr</p>
 <p class="date">April 2023</p>
 </header>
@@ -221,11 +221,10 @@ options are automatically set to un-lobotomise the bot.</p>
 history session. Setting only <code>option -CC</code> (without -cc)
 starts a multi-turn session in <strong>pure text completions</strong>,
 and use restart and start sequences when defined.</p>
-<p>With <code>options -ccCCHH</code>, if the first positional argument
-of the script starts with the command operator,
-e.g. “<code>/</code>[<em>HIST_NAME</em>]”, the session command
-“<code>/session</code> [<em>HIST_NAME</em>]” to change to an existing
-history file, or create a new one, is assumed.</p>
+<p>If the first positional argument of the script starts with the
+command operator, the command “<code>/session</code>
+[<em>HIST_NAME</em>]” to change to or create a new history file is
+assumed (with <code>options -ccCCHH</code>).</p>
 <p>Set model with “<code>-m</code> [<em>NAME</em>]” (full model name).
 Some models have an equivalent <em>INDEX</em> as short-hand, so
 “<code>-m</code><em>text-davinci-003</em>” and
@@ -506,8 +505,8 @@ type in a single forward slash in the new empty prompt.</p>
 <h4 id="prompt-engineering-and-design">3. Prompt Engineering and
 Design</h4>
 <p>Very short <strong>INSTRUCTION</strong> to behave like a chatbot are
-given with <code>options -ccCC</code>, unless otherwise explicitly set
-by the user.</p>
+given with chat <code>options -cc</code>, unless otherwise explicitly
+set by the user.</p>
 <p>On chat mode, if no INSTRUCTION is set, a short one is given, and
 some options auto set, such as increasing temp and presence penalty, in
 order to un-lobotomise the bot. With cheap and fast models of text
@@ -525,6 +524,9 @@ output. This is because the API already incorporates trailing spaces in
 its dictionary of tokens.</p>
 <p>Note that the model’s steering and capabilities require prompt
 engineering to even know that it should answer the questions.</p>
+<p>It is also worth trying to sample 3 - 5 times (setting
+<code>best_of</code>, for example) in order to obtain a good
+response.</p>
 <p>For more on prompt design, see:</p>
 <ul>
 <li><a
@@ -701,14 +703,14 @@ when appropriate.</p>
 <code>--clip</code>, <code>--cont</code>, <code>--continue</code>,
 <code>--edit</code>, <code>--editor</code>, <code>--frequency</code>,
 <code>--frequency-penalty</code>, <code>--help</code>,
-<code>--hist</code>, <code>--image</code>, <code>--instruction</code>,
-<code>--last</code>, <code>--list-model</code>,
-<code>--list-models</code>, <code>--log</code>, <code>--log-prob</code>,
-<code>--max</code>, <code>--max-tokens</code>, <code>--mod</code>,
-<code>--model</code>, <code>--no-colour</code>,
-<code>--no-config</code>, <code>--presence</code>,
-<code>--presence-penalty</code>, <code>--prob</code>,
-<code>--raw</code>, <code>--restart-seq</code>,
+<code>--hist</code>, <code>--image</code>, <code>--insert</code>,
+<code>--instruction</code>, <code>--last</code>,
+<code>--list-model</code>, <code>--list-models</code>,
+<code>--log</code>, <code>--log-prob</code>, <code>--max</code>,
+<code>--max-tokens</code>, <code>--mod</code>, <code>--model</code>,
+<code>--no-colour</code>, <code>--no-config</code>,
+<code>--presence</code>, <code>--presence-penalty</code>,
+<code>--prob</code>, <code>--raw</code>, <code>--restart-seq</code>,
 <code>--restart-sequence</code>, <code>--results</code>,
 <code>--resume</code>, <code>--start-seq</code>,
 <code>--start-sequence</code>, <code>--stop</code>, <code>--temp</code>,
@@ -884,6 +886,12 @@ Def=<em>1</em>.</p>
 <dd>
 <p>Edit image with mask and prompt (required).</p>
 </dd>
+<dt><strong>-q</strong></dt>
+<dd>
+<p>Insert text rather than completing only.</p>
+<p>Use “<em>[insert]</em>” to indicate where the language model should
+insert text (cmpls).</p>
+</dd>
 <dt><strong>-S</strong>
 <code>/</code>[<em>AWESOME_PROMPT_NAME</em>]</dt>
 <dd>
@@ -926,8 +934,8 @@ heeds <code>options -ccm</code>.</p>
 <dt><strong>-HH</strong> <code>/</code>[<em>HIST_FILE</em>]</dt>
 <dd>
 <p>Pretty print last history session to stdout.</p>
-<p>With <code>-cC</code>, or <code>-rR</code>, prints with the specified
-restart and start sequences.</p>
+<p>With <code>-ccC</code>, or <code>-rR</code>, prints with the
+specified restart and start sequences.</p>
 </dd>
 <dt><strong>-j</strong></dt>
 <dd>

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.5  april/2023  by mountaineerbr  GPL+3
+# v0.13.6  april/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -77,6 +77,7 @@ SAVEHIST=512
 # Def hist, txt chat types
 Q_TYPE="\\nQ: "
 A_TYPE="\\nA:"
+I_TYPE='[insert]'
 
 # Base API URL
 APIURL="https://api.openai.com/v1"
@@ -121,10 +122,9 @@ Description
 	Option -CC (without -cc) starts a multi-turn and pure text com-
 	pletions session, and use restart and start sequences when defined.
 
-	With options -ccCCHH, if the first positional argument of the
-	script starts with the command operator, e.g. \`/[HIST_NAME]',
-	the session command \`/session [HIST_NAME]' to change to or create
-	a new history file is assumed.
+	If the first positional argument of the script starts with the
+	command operator, the command \`/session [HIST_NAME]' to change
+	to or create a new history file is assumed (with options -ccCCHH).
 
 	Option -i generates or edits images. Option -w transcribes audio
 	and option -W tarnslates audio to English.
@@ -199,14 +199,14 @@ Long Options
 
 	--alpha, --api-key, --best, --best-of, --chat, --clipboard,
 	--clip, --cont, --continue, --edit, --editor, --frequency,
-	--frequency-penalty, --help, --hist, --image, --instruction,
-	--last, --list-model, --list-models, --log, --log-prob, --max,
-	--max-tokens, --mod, --model, --no-colour, --no-config,
-	--presence, --presence-penalty, --prob, --raw, --restart-seq,
-	--restart-sequence, --results, --resume, --start-seq,
-	--start-sequence, --stop, --temp, --temperature, --tiktoken,
-	--top, --top-p, --transcribe, --translate, --multi, --multiline,
-	and --verbose.
+	--frequency-penalty, --help, --hist, --image, --insert,
+	--instruction, --last, --list-model, --list-models, --log,
+	--log-prob, --max, --max-tokens, --mod, --model, --no-colour,
+	--no-config, --presence, --presence-penalty, --prob, --raw,
+	--restart-seq, --restart-sequence, --results, --resume,
+	--start-seq, --start-sequence, --stop, --temp, --temperature,
+	--tiktoken, --top, --top-p, --transcribe, --translate, --multi,
+	--multiline, and --verbose.
 
 	E.g.: \`--chat', \`--temp=0.9', \`--max=1024,128', and \`--presence-penalty 0.6'.
 
@@ -259,6 +259,8 @@ Options
 		 Create variations of a given image.
 	-i [PNG] [MASK] [PROMPT]
 		 Edit image with mask and prompt (required).
+	-q 	 Insert text rather than completing only. Use \`[insert]'
+		 to indicate where the model should insert text (cmpls).
 	-S /[AWESOME_PROMPT_NAME]
 		 Set or search an awesome-chatgpt-prompt.
 		 Set \`//' to refresh cache.
@@ -279,7 +281,7 @@ Options
 		 A hist file name can be optionally set as argument.
 	-HH /[HIST_FILE]
 		 Pretty print last history session to stdout.
-		 With -cC, or -rR, prints the specified seqs.
+		 With -ccC, or -rR, prints the specified seqs.
 	-j 	 Print raw JSON response (debug with -jVV).
 	-k 	 Disable colour output. Def=auto.
 	-K [KEY] Set OpenAI API key.
@@ -290,7 +292,8 @@ Options
 	-o 	 Copy response to clipboard.
 	-u 	 Toggle multiline prompter.
 	-v 	 Less verbose. May set multiple times.
-	-V 	 Pretty-print context. Set twice to dump raw request.
+	-V 	 Pretty-print context (request).
+	-VV 	 Dump raw request block to stderr.
 	-x 	 Edit prompt in text editor.
 	-z 	 Print last response JSON data.
 	-Z 	 Run with Z-shell."
@@ -444,7 +447,7 @@ function prompt_printf
 	then 	cat -- "$FILE" ;return
 	elif ((!RUN_OK)) && { 	((OPTCLIP)) || [[ ! -t 1 ]] ;}
 	then
-		out=$(RUN_OK=1 OPTV=2 JQCOL2='def byellow:"";def reset:""' \
+		out=$(RUN_OK=1 OPTV=2 JQCOL2='def byellow:"";def red:"";def reset:""' \
 			prompt_printf)
 		((OPTCLIP)) && (${CLIP_CMD:-false} <<<"$out" &)
 		[[ ! -t 1 ]] && ((OPTV<3)) && printf "%s\\n" "$out" >&2
@@ -456,16 +459,18 @@ function prompt_printf
 		+(.usage.completion_tokens//"?"|tostring)+" = "
 		+(.usage.total_tokens//"?"|tostring)+" tkns]"' "$FILE" >&2
 
-	jq -r "def byellow: \"\"; def red: \"\" ;def reset: \"\"; $JQCOL $JQCOL2
+	jq -r --arg suffix "$(unescapef "$SUFFIX")" \
+	  "def byellow: null; def red: null ;def reset: null; $JQCOL $JQCOL2
 	  (.choices[1] as \$sep | .choices[] |
 	  (byellow + (
-	  (.text//.message.content) |
-	  if (${OPTC:-0}>0) then (gsub(\"^[\\\\n\\\\t ]\"; \"\") |  gsub(\"[\\\\n\\\\t ]+$\"; \"\")) else . end
-	  ) + reset,
-	  if \$sep != null then \"---\" else empty end),
-	  if .finish_reason != \"stop\" then red+.finish_reason+reset else empty end)" "$FILE" 2>/dev/null | foldf ||
+	  (.text//(.message.content)) |
+	  if (${OPTC:-0}>0) then (gsub(\"^[\\\\n\\\\t ]\"; null) |  gsub(\"[\\\\n\\\\t ]+$\"; null)) else . end
+	  ) + \$suffix + reset,
+	  if \$sep != null then \"---\" else empty end) +
+	  if .finish_reason != \"stop\" then red+\"(\"+.finish_reason+\")\"+reset else null end
+	  )" "$FILE" | foldf ||
 
-	jq -r '(.choices[]|(.text//.message.content),.finish_reason)' "$FILE" 2>/dev/null ||
+	jq -r '(.choices[]|.text//(.message.content))' "$FILE" 2>/dev/null ||
 	jq . "$FILE" 2>/dev/null || cat -- "$FILE"
 }
 #https://stackoverflow.com/questions/57298373/print-colored-raw-output-with-jq-on-terminal
@@ -605,7 +610,7 @@ function set_histf
 			
 			((OPTC)) && {
 			  ((ind = ${#stringc}-((${#stringc}/3)<30?(${#stringc}/3):30) ))
-			  sub="${stringc:$ind}" sub="${sub%%?(\\)?(\\)*(\\[ntrvf])}"
+			  sub="${stringc:$ind}" sub="${sub%%*(\\[ntrvf])}"
 			  stringc="${stringc:0:$ind}${sub}"
 			}
 
@@ -759,9 +764,9 @@ function cmd_runf
 	args=("$@") ;set -- "$*"
 
 	case "$*" in
-		-[0-9]*|[0-9]*|max*)
-			set -- "${*%.*}" ;OPTMM="${*:-$OPTMM}"
-			set_maxtknf $OPTMM
+		-[0-9]*|[0-9]*|-M*|[Mm]ax*)
+			set -- "${*##@([Mm]ax|-M)*([$IFS])}"
+			OPTMM="${*:-$OPTMM}" ;set_maxtknf $OPTMM
 			__cmdmsgf 'Max model / response' "$MODMAX / $OPTMAX tkns"
 			;;
 		-a*|presence*|pre*)
@@ -846,6 +851,10 @@ function cmd_runf
 			((++OPTCLIP)) ;((OPTCLIP%=2))
 			set_clipcmdf
 			__cmdmsgf 'Clipboard' $( ((OPTCLIP)) && echo ON || echo OFF)
+			;;
+		-q|insert)
+			((++OPTSUFFIX)) ;((OPTSUFFIX%=2))
+			__cmdmsgf 'Insert mode' $( ((OPTSUFFIX)) && echo ON || echo OFF)
 			;;
 		-u|multiline|multi)
 			((++OPTMULTI)) ;((OPTMULTI%=2)) ;MULTI="$OPTMULTI"
@@ -1105,6 +1114,7 @@ function set_optsf
 	[[ -n $OPTB ]] && OPTB_OPT="\"best_of\": $OPTB," || unset OPTB_OPT
 	[[ -n $OPTBB ]] && OPTBB_OPT="\"logprobs\": $OPTBB," || unset OPTBB_OPT
 	[[ -n $OPTP ]] && OPTP_OPT="\"top_p\": $OPTP," || unset OPTP_OPT
+	[[ -n $SUFFIX ]] && OPTSUFFIX_OPT="\"suffix\": \"$(escapef "$SUFFIX")\"," || unset OPTSUFFIX_OPT
 	((OPTV<1)) && unset OPTV
 	
 	if ((${#STOPS[@]}))
@@ -1220,8 +1230,8 @@ function whisperf
 		[[ -n $OPTW_FMT ]] && set -- -F response_format="$OPTW_FMT" "$@"
 
 		prompt_audiof "$file" $LANGW "$@"
-		jq -r "def yellow: \"\"; def bpurple: \"\"; def reset: \"\"; $JQCOL
-			def pad(x): tostring | (length | if . >= x then \"\" else \"0\" * (x - .) end) as \$padding | \"\(\$padding)\(.)\";
+		jq -r "def yellow: null; def bpurple: null; def reset: null; $JQCOL
+			def pad(x): tostring | (length | if . >= x then null else \"0\" * (x - .) end) as \$padding | \"\(\$padding)\(.)\";
 			def seconds_to_time_string:
 			def nonzero: floor | if . > 0 then . else empty end;
 			if . == 0 then \"00\"
@@ -1241,7 +1251,7 @@ function whisperf
 			#https://stackoverflow.com/questions/64957982/how-to-pad-numbers-with-jq
 	else
 		prompt_audiof "$file" $LANGW "$@"
-		jq -r "def bpurple: \"\"; def reset: \"\"; $JQCOL
+		jq -r "def bpurple: null; def reset: null; $JQCOL
 		bpurple + .text + reset" "$FILE" || cat -- "$FILE"
 	fi
 }
@@ -1579,7 +1589,7 @@ function session_globf
 #set tsv filename based on input
 function session_name_choosef
 {
-	typeset fname dir new print_name
+	typeset fname new print_name
 	fname="$1"
 	while
 		fname="${fname%%\/}"
@@ -1691,7 +1701,7 @@ function session_copyf
 #create or copy a session, search for and change to a session file.
 function session_mainf
 {
-	typeset name file files optsession args arg
+	typeset name file optsession args arg
 	name="${1}${2}"
 	[[ $name = [/!]* ]] || return
 	name="${name##?([/!])*(\ )}"
@@ -1778,11 +1788,11 @@ function session_mainf
 }
 
 #parse opts
-optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:r:R:s:S:t:TouvVxwWzZ0123456789@:/,.+-:"
+optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:qr:R:s:S:t:TouvVxwWzZ0123456789@:/,.+-:"
 while getopts "$optstring" opt
 do
 	if [[ $opt = - ]]  #long options
-	then 	for opt in   @:alpha  M:max-tokens  M:max \
+	then 	for opt in   @:alpha  M:max-tokens  'M:[Mm]ax' \
 			a:presence-penalty      a:presence \
 			A:frequency-penalty     A:frequency \
 			b:best-of   b:best      B:log-prob  B:prob \
@@ -1792,7 +1802,7 @@ do
 			K:api-key   l:list-model   l:list-models \
 			L:log       m:model        m:mod \
 			n:results  o:clipboard  o:clip  p:top-p \
-			p:top  r:restart-sequence  r:restart-seq \
+			p:top  q:insert  r:restart-sequence  r:restart-seq \
 			R:start-sequence           R:start-seq \
 			s:stop      S:instruction  t:temperature \
 			t:temp      T:tiktoken  u:multiline   u:multi \
@@ -1845,7 +1855,7 @@ do
 		c) 	((++OPTC));;
 		C) 	((++OPTRESUME));;
 		e) 	OPTE=1 EPN=2;;
-		f$OPTF) unset EPN MOD MOD_CHAT MOD_EDIT MOD_AUDIO MODMAX INSTRUCTION CHATINSTR OPTC OPTE OPTI OPTJ OPTLOG USRLOG OPTRESUME OPTHH OPTL OPTMARG OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTN OPTP OPTT OPTV OPTVV OPTW OPTWW OPTZ OPTZZ OPTCLIP OPTMULTI MULTI OPT_AT_PC OPT_AT Q_TYPE A_TYPE RESTART START STOPS
+		f$OPTF) unset EPN MOD MOD_CHAT MOD_EDIT MOD_AUDIO MODMAX INSTRUCTION CHATINSTR OPTC OPTE OPTI OPTJ OPTLOG USRLOG OPTRESUME OPTHH OPTL OPTMARG OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTN OPTP OPTT OPTV OPTVV OPTW OPTWW OPTZ OPTZZ OPTCLIP OPTMULTI MULTI OPT_AT_PC OPT_AT Q_TYPE A_TYPE RESTART START STOPS OPTSUFFIX SUFFIX
 			OPTF=1 OPTIND=1 OPTARG= ;. "$0" "$@" ;exit;;
 		h) 	while read
 			do 	[[ $REPLY = \#\ v* ]] && break
@@ -1871,6 +1881,7 @@ do
 		K) 	OPENAI_API_KEY="$OPTARG";;
 		o) 	OPTCLIP=1;;
 		p) 	OPTP="$OPTARG";;
+		q) 	OPTSUFFIX=1;;
 		r) 	RESTART="$OPTARG";;
 		R) 	START="$OPTARG";;
 		s) 	((${#STOPS[@]})) && STOPS=("$OPTARG" "${STOPS[@]}") \
@@ -2070,17 +2081,22 @@ else               #text/chat completions
 		awesomef || exit
 	fi
 	#model instruction
+	__sysmsgf 'Language Model:' "$MOD"
 	if ((OPTC+OPTRESUME))
-	then 	{ 	((OPTC)) && ((OPTRESUME)) ;} || ((OPTRESUME==1)) || {
-		  break_sessionf
-		  INSTRUCTION="${INSTRUCTION:-Be a helpful assistant.}" INSTRUCTION_OLD="$INSTRUCTION"
-		  push_tohistf "$(escapef ":${INSTRUCTION##:$SPC}")"
-		  __sysmsgf 'Language Model:' "$MOD"
-		  _sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:$SPC}" 2>&1 | foldf >&2
-		} ;unset INSTRUCTION
-	elif [[ -n $INSTRUCTION ]]
-	then 	  _sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
-		  INSTRUCTION_OLD="$INSTRUCTION"
+	then 	INSTRUCTION="${INSTRUCTION##:$SPC}"
+		if { 	((OPTC)) && ((OPTRESUME)) ;} || ((OPTRESUME==1))
+		then 	unset INSTRUCTION
+		else 	break_sessionf
+			((OPTC)) && INSTRUCTION="${INSTRUCTION:-Be a helpful assistant.}"
+			[[ ${INSTRUCTION} != ?(:)*([$IFS]) ]] \
+			&& push_tohistf "$(escapef ":${INSTRUCTION}")"
+		fi ;[[ ${INSTRUCTION} != ?(:)*([$IFS]) ]] \
+		|| _sysmsgf 'INSTRUCTION:' "${INSTRUCTION}" 2>&1 | foldf >&2
+		INSTRUCTION_OLD="$INSTRUCTION" ;unset INSTRUCTION
+	elif [[ ${INSTRUCTION} != ?(:)*([$IFS]) ]]
+	then 	_sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
+		INSTRUCTION_OLD="$INSTRUCTION"
+	else 	unset INSTRUCTION
 	fi
 
 	if ((OPTC+OPTRESUME))  #chat mode
@@ -2217,7 +2233,7 @@ else               #text/chat completions
 		fi
 
 		if ((!OPTCMPL)) && [[ -z "${INSTRUCTION}${*}" ]]
-		then 	__warmsgf "Err:" "PROMPT is empty!" #;__read_charf -t 1
+		then 	__warmsgf "(empty)" #;__read_charf -t 1
 			set -- ; continue
 		fi
 		if ((!OPTCMPL))
@@ -2248,6 +2264,12 @@ else               #text/chat completions
 			REC_OUT="${Q_TYPE##$SPC0}${*}" PROMPT_LAST="${*}"
 		fi
 
+		#insert mode option
+		if ((OPTSUFFIX)) && [[ "$*" = *"${I_TYPE}"* ]]
+		then 	SUFFIX="${*##*"${I_TYPE}"}"
+			set -- "${*%%"${I_TYPE}"*}"
+		fi
+
 		if ((RETRY<2))
 		then 	((OPTC+OPTRESUME)) && set_histf "${@}"
 			if ((OPTC)) || [[ -n "${RESTART}" ]]
@@ -2274,7 +2296,7 @@ else               #text/chat completions
 		then 	BLOCK="\"messages\": [${*%,}],"
 		else 	BLOCK="\"prompt\": \"${*}\","
 		fi
-		BLOCK="{ $BLOCK
+		BLOCK="{ $BLOCK $OPTSUFFIX_OPT
 			\"model\": \"$MOD\",
 			\"temperature\": $OPTT, $OPTA_OPT $OPTAA_OPT $OPTP_OPT
 			\"max_tokens\": $OPTMAX, $OPTB_OPT $OPTBB_OPT $OPTSTOP
@@ -2300,8 +2322,9 @@ else               #text/chat completions
 				.usage.completion_tokens//"0",
 				(.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"
 			) )
-			ans=$(jq '.choices[0]|.text//.message.content' "$FILE")
+			ans=$(jq '.choices[0]|.text//(.message.content)' "$FILE")
 			ans="${ans##[\"]}" ans="${ans%%[\"]}"
+			[[ -n "$ans" ]] || __warmsgf "(response empty)"
 			if CKSUM=$(cksumf "$FILECHAT") ;[[ $CKSUM != "${CKSUM_OLD:-$CKSUM}" ]]
 			then 	COL2=${NC} __warmsgf 'Err: History file changed'$'\n' 'Copy to new? [N]o/[y]es/[i]gnore all ' ''
 				case "$(__read_charf)" in
@@ -2325,7 +2348,7 @@ else               #text/chat completions
 		((OPTLOG)) && (usr_logf "$(unescapef "$ESC\\n${ans}")" > "$USRLOG" &)
 
 		((++N_LOOP)) ;set --
-		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC CMPLOK Q P optv_save role rest tkn arg ans glob out var s n
+		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSUFFIX_OPT SUFFIX OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC CMPLOK Q P optv_save role rest tkn arg ans glob out var s n
 		((OPTC+OPTRESUME)) || break
 	done ;unset OLD_TOTAL SLEEP N_LOOP SPC SPC0 SPC1 CKSUM CKSUM_OLD INSTRUCTION_OLD
 fi

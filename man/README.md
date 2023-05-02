@@ -2,7 +2,7 @@
 author:
 - mountaineerbr
 date: April 2023
-title: CHATGPT.SH(1) v0.13.5 \| General Commands Manual
+title: CHATGPT.SH(1) v0.13.6 \| General Commands Manual
 ---
 
 ### NAME
@@ -51,10 +51,9 @@ Set `option -C` to **resume** from last history session. Setting only
 `option -CC` (without -cc) starts a multi-turn session in **pure text
 completions**, and use restart and start sequences when defined.
 
-With `options -ccCCHH`, if the first positional argument of the script
-starts with the command operator, e.g. “`/`\[*HIST_NAME*\]”, the session
-command “`/session` \[*HIST_NAME*\]” to change to an existing history
-file, or create a new one, is assumed.
+If the first positional argument of the script starts with the command
+operator, the command “`/session` \[*HIST_NAME*\]” to change to or
+create a new history file is assumed (with `options -ccCCHH`).
 
 Set model with “`-m` \[*NAME*\]” (full model name). Some models have an
 equivalent *INDEX* as short-hand, so “`-m`*text-davinci-003*” and
@@ -239,8 +238,8 @@ empty prompt.
 
 #### 3. Prompt Engineering and Design
 
-Very short **INSTRUCTION** to behave like a chatbot are given with
-`options -ccCC`, unless otherwise explicitly set by the user.
+Very short **INSTRUCTION** to behave like a chatbot are given with chat
+`options -cc`, unless otherwise explicitly set by the user.
 
 On chat mode, if no INSTRUCTION is set, a short one is given, and some
 options auto set, such as increasing temp and presence penalty, in order
@@ -261,6 +260,9 @@ its dictionary of tokens.
 
 Note that the model’s steering and capabilities require prompt
 engineering to even know that it should answer the questions.
+
+It is also worth trying to sample 3 - 5 times (setting `best_of`, for
+example) in order to obtain a good response.
 
 For more on prompt design, see:
 
@@ -446,13 +448,14 @@ when appropriate.
 > `--alpha`, `--api-key`, `--best`, `--best-of`, `--chat`,
 > `--clipboard`, `--clip`, `--cont`, `--continue`, `--edit`, `--editor`,
 > `--frequency`, `--frequency-penalty`, `--help`, `--hist`, `--image`,
-> `--instruction`, `--last`, `--list-model`, `--list-models`, `--log`,
-> `--log-prob`, `--max`, `--max-tokens`, `--mod`, `--model`,
-> `--no-colour`, `--no-config`, `--presence`, `--presence-penalty`,
-> `--prob`, `--raw`, `--restart-seq`, `--restart-sequence`, `--results`,
-> `--resume`, `--start-seq`, `--start-sequence`, `--stop`, `--temp`,
-> `--temperature`, `--tiktoken`, `--top`, `--top-p`, `--transcribe`,
-> `--translate`, `--multi`, `--multiline`, and `--verbose`.
+> `--insert`, `--instruction`, `--last`, `--list-model`,
+> `--list-models`, `--log`, `--log-prob`, `--max`, `--max-tokens`,
+> `--mod`, `--model`, `--no-colour`, `--no-config`, `--presence`,
+> `--presence-penalty`, `--prob`, `--raw`, `--restart-seq`,
+> `--restart-sequence`, `--results`, `--resume`, `--start-seq`,
+> `--start-sequence`, `--stop`, `--temp`, `--temperature`, `--tiktoken`,
+> `--top`, `--top-p`, `--transcribe`, `--translate`, `--multi`,
+> `--multiline`, and `--verbose`.
 
 E.g.: “`--chat`”, “`--temp`=*0.9*”, “`--max`=*1024,128*”, and
 “`--presence-penalty` *0.6*”.
@@ -552,6 +555,12 @@ Create variations of a given image.
 **-i** \[*PNG*\] \[*MASK*\] \[*PROMPT*\]  
 Edit image with mask and prompt (required).
 
+**-q**  
+Insert text rather than completing only.
+
+Use “*\[insert\]*” to indicate where the language model should insert
+text (cmpls).
+
 **-S** `/`\[*AWESOME_PROMPT_NAME*\]  
 Set or search an *awesome-chatgpt-prompt*.
 
@@ -591,7 +600,7 @@ A history file name can be optionally set as argument.
 **-HH** `/`\[*HIST_FILE*\]  
 Pretty print last history session to stdout.
 
-With `-cC`, or `-rR`, prints with the specified restart and start
+With `-ccC`, or `-rR`, prints with the specified restart and start
 sequences.
 
 **-j**  

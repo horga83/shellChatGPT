@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.13.5" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "April 2023" "v0.13.6" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -106,11 +106,10 @@ Setting only \f[V]option -CC\f[R] (without -cc) starts a multi-turn
 session in \f[B]pure text completions\f[R], and use restart and start
 sequences when defined.
 .PP
-With \f[V]options -ccCCHH\f[R], if the first positional argument of the
-script starts with the command operator,
-e.g.\ \[lq]\f[V]/\f[R][\f[I]HIST_NAME\f[R]]\[rq], the session command
-\[lq]\f[V]/session\f[R] [\f[I]HIST_NAME\f[R]]\[rq] to change to an
-existing history file, or create a new one, is assumed.
+If the first positional argument of the script starts with the command
+operator, the command \[lq]\f[V]/session\f[R] [\f[I]HIST_NAME\f[R]]\[rq]
+to change to or create a new history file is assumed (with
+\f[V]options -ccCCHH\f[R]).
 .PP
 Set model with \[lq]\f[V]-m\f[R] [\f[I]NAME\f[R]]\[rq] (full model
 name).
@@ -477,7 +476,7 @@ in a single forward slash in the new empty prompt.
 .SS 3. Prompt Engineering and Design
 .PP
 Very short \f[B]INSTRUCTION\f[R] to behave like a chatbot are given with
-\f[V]options -ccCC\f[R], unless otherwise explicitly set by the user.
+chat \f[V]options -cc\f[R], unless otherwise explicitly set by the user.
 .PP
 On chat mode, if no INSTRUCTION is set, a short one is given, and some
 options auto set, such as increasing temp and presence penalty, in order
@@ -502,6 +501,9 @@ dictionary of tokens.
 .PP
 Note that the model\[cq]s steering and capabilities require prompt
 engineering to even know that it should answer the questions.
+.PP
+It is also worth trying to sample 3 - 5 times (setting
+\f[V]best_of\f[R], for example) in order to obtain a good response.
 .PP
 For more on prompt design, see:
 .IP \[bu] 2
@@ -693,11 +695,11 @@ when appropriate.
 \f[V]--clip\f[R], \f[V]--cont\f[R], \f[V]--continue\f[R],
 \f[V]--edit\f[R], \f[V]--editor\f[R], \f[V]--frequency\f[R],
 \f[V]--frequency-penalty\f[R], \f[V]--help\f[R], \f[V]--hist\f[R],
-\f[V]--image\f[R], \f[V]--instruction\f[R], \f[V]--last\f[R],
-\f[V]--list-model\f[R], \f[V]--list-models\f[R], \f[V]--log\f[R],
-\f[V]--log-prob\f[R], \f[V]--max\f[R], \f[V]--max-tokens\f[R],
-\f[V]--mod\f[R], \f[V]--model\f[R], \f[V]--no-colour\f[R],
-\f[V]--no-config\f[R], \f[V]--presence\f[R],
+\f[V]--image\f[R], \f[V]--insert\f[R], \f[V]--instruction\f[R],
+\f[V]--last\f[R], \f[V]--list-model\f[R], \f[V]--list-models\f[R],
+\f[V]--log\f[R], \f[V]--log-prob\f[R], \f[V]--max\f[R],
+\f[V]--max-tokens\f[R], \f[V]--mod\f[R], \f[V]--model\f[R],
+\f[V]--no-colour\f[R], \f[V]--no-config\f[R], \f[V]--presence\f[R],
 \f[V]--presence-penalty\f[R], \f[V]--prob\f[R], \f[V]--raw\f[R],
 \f[V]--restart-seq\f[R], \f[V]--restart-sequence\f[R],
 \f[V]--results\f[R], \f[V]--resume\f[R], \f[V]--start-seq\f[R],
@@ -884,6 +886,14 @@ Create variations of a given image.
 \f[B]-i\f[R] [\f[I]PNG\f[R]] [\f[I]MASK\f[R]] [\f[I]PROMPT\f[R]]
 Edit image with mask and prompt (required).
 .TP
+\f[B]-q\f[R]
+Insert text rather than completing only.
+.RS
+.PP
+Use \[lq]\f[I][insert]\f[R]\[rq] to indicate where the language model
+should insert text (cmpls).
+.RE
+.TP
 \f[B]-S\f[R] \f[V]/\f[R][\f[I]AWESOME_PROMPT_NAME\f[R]]
 Set or search an \f[I]awesome-chatgpt-prompt\f[R].
 .RS
@@ -934,7 +944,7 @@ A history file name can be optionally set as argument.
 Pretty print last history session to stdout.
 .RS
 .PP
-With \f[V]-cC\f[R], or \f[V]-rR\f[R], prints with the specified restart
+With \f[V]-ccC\f[R], or \f[V]-rR\f[R], prints with the specified restart
 and start sequences.
 .RE
 .TP

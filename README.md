@@ -7,15 +7,16 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 
 ## Features
 
-- GPT chat from the command line
-- Follow up conversations, preview/regenerate responses
-- Manage sessions, continue from last session, print last session.
+- Text and chat completions.
+- _Insert mode_ of text completions.
+- _Follow up_ conversations, _preview/regenerate_ responses
+- Manage _sessions_, _continue_ from last session, print last session.
 - Integration with [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts)
-- Generate images from text input
-- Generate variations of images
-- Edit images, easily generate an alpha mask
-- Transcribe audio from various languages
-- Translate audio into English text
+- _Generate images_ from text input
+- _Generate variations_ of images
+- _Edit images_, easily generate an alpha mask
+- _Transcribe audio_ from various languages
+- _Translate audio_ into English text
 - Record prompt voice, hear the answer back from the AI
 - Choose amongst available models
 - Lots of command line options
@@ -77,6 +78,18 @@ Text completion with Curie model:
 _For better results,_ ***set an instruction/system prompt***:
     
     chatgpt.sh -S'You are an AI assistant.'  "List biggest cities in the world."
+
+
+### Insert Mode of Text Completions
+
+
+Set options `-q` to enable insert mode and add the
+string `[insert]` where the model should insert text:
+
+    chatgpt.sh -q 'It was raining when [insert] tomorrow.'
+
+[Insert mode](https://openai.com/blog/gpt-3-edit-insert)
+works with `davinci`, `text-davinci-002`, and `text-davinci-003`.
 
 
 ## Chat Mode of Text Completions
