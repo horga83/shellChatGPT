@@ -17,7 +17,7 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 - _Edit images_, easily generate an alpha mask
 - _Transcribe audio_ from various languages
 - _Translate audio_ into English text
-- Record prompt voice, hear the answer back from the AI
+- Record prompt voice, hear the answer back from the AI (pipe to voice synthesiser)
 - Choose amongst available models
 - Lots of command line options
 - Converts base64 JSON data to PNG image
@@ -56,7 +56,7 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 ## Environment
 
 - Set `$OPENAI_API_KEY` with your OpenAI API key.
-- Optionally, set `$CHATGPTRC` with path to the configuration file. Defaults = `~/.chatgptsh.conf`.
+- Optionally, set `$CHATGPTRC` with path to the configuration file. Defaults = `~/.chatgpt.conf`.
 
 
 ## Examples

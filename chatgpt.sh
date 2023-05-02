@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.7  april/2023  by mountaineerbr  GPL+3
+# v0.13.8  april/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -2089,7 +2089,7 @@ else               #text/chat completions
 			[[ ${INSTRUCTION} != ?(:)*([$IFS]) ]] \
 			&& push_tohistf "$(escapef ":${INSTRUCTION}")"
 		fi ;[[ ${INSTRUCTION} != ?(:)*([$IFS]) ]] \
-		|| _sysmsgf 'INSTRUCTION:' "${INSTRUCTION}" 2>&1 | foldf >&2
+		&& _sysmsgf 'INSTRUCTION:' "${INSTRUCTION}" 2>&1 | foldf >&2
 		INSTRUCTION_OLD="$INSTRUCTION" ;unset INSTRUCTION
 	elif [[ ${INSTRUCTION} != ?(:)*([$IFS]) ]]
 	then 	_sysmsgf 'INSTRUCTION:' "${INSTRUCTION##:}" 2>&1 | foldf >&2
