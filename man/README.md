@@ -604,7 +604,7 @@ With `-ccC`, or `-rR`, prints with the specified restart and start
 sequences.
 
 **-j**  
-Print raw JSON response (debug with `-jVV`).
+Print raw JSON response (debug with `-jVVz`).
 
 **-k**  
 Disable colour output. Def=*auto*.

@@ -282,7 +282,7 @@ Options
 	-HH /[HIST_FILE]
 		 Pretty print last history session to stdout.
 		 With -ccC, or -rR, prints the specified seqs.
-	-j 	 Print raw JSON response (debug with -jVV).
+	-j 	 Print raw JSON response (debug with -jVVz).
 	-k 	 Disable colour output. Def=auto.
 	-K [KEY] Set OpenAI API key.
 	-l [MOD] List models or print details of MODEL. Set twice
@@ -1365,7 +1365,7 @@ function img_convf
 	typeset REPLY
 	if ((!OPTV))
 	then 	[[ $ARGS = *-transparent* ]] &&
-		printf "${BWhite}%-12s -- %s${NC}\\n" "Alpha colour" "${OPT_AT:-black}" "Fuzz" "${OPT_AT_PC:-2}%" >&2
+		printf "${BWhite}%-12s -- %s${NC}\\n" "Transparent colour" "${OPT_AT:-black}" "Fuzz" "${OPT_AT_PC:-2}%" >&2
 		__sysmsgf 'Edit with ImageMagick?' '[Y/n] ' ''
 		case "$(__read_charf)" in [AaNnQq]|$'\e') 	return 2;; esac
 	fi
