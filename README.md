@@ -141,7 +141,7 @@ Some other good prompts to start a chat with include:
 
 
 *Obs: in this case, instructions (or system prompt) may refer to both
-**user** and **assistant** roles, so behave like one.
+**user** and **assistant** roles, so write like one.
 
 
 <!--
