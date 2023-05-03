@@ -332,7 +332,7 @@ ln -s /data/data/com.termux/files/usr/bin/zsh /data/data/com.termux/files/usr/bi
 - Manage **sessions** and history files.
 - Run chat commands with _operator_ `!` or `/`.
 - In chat mode, edit live history entries with command `!hist`.
-- Add operator forward slash `/` to the end of prompt to trigger completions **preview mode**.
+- Add operator forward slash `/` to the end of prompt to trigger **preview mode**.
 - One can regenerate a response typing in a new prompt a single slash `/`.
 - Set or search prompts from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts) with `-S /prompt_name`
 - Set clipboard with the latest response with `option -o`.
