@@ -137,7 +137,7 @@ Some other good prompts to start a chat with include:
 
     chatgpt.sh -cc -S'You are a professional software programmer.'
 
-    chatgpt.sh -cc -S'You are a pos-graduation teacher and will do various activities related to preparing and elaborating a Philosophy course.'
+    chatgpt.sh -cc -S'You are a post-graduation teacher and will do various activities related to preparing and elaborating a Philosophy course.'
 
 
 *Obs: in this case, instructions (or system prompt) may refer to both

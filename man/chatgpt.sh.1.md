@@ -699,7 +699,7 @@ times when appropriate.
 
 **-j**
 
-: Print raw JSON response (debug with `-jVV`).
+: Print raw JSON response (debug with `-jVVz`).
 
 
 **-k**
