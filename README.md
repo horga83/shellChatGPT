@@ -83,7 +83,7 @@ _For better results,_ ***set an instruction/system prompt***:
 ### Insert Mode of Text Completions
 
 
-Set options `-q` to enable insert mode and add the
+Set option `-q` to enable insert mode and add the
 string `[insert]` where the model should insert text:
 
     chatgpt.sh -q 'It was raining when [insert] tomorrow.'
