@@ -128,6 +128,22 @@ Set a prompt from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt
 
     chatgpt.sh -cc -S /linux_terminal
 
+
+
+Some other good prompts to start a chat with include:
+
+
+    chatgpt.sh -cc -S'You are a professional psicologist.' 
+
+    chatgpt.sh -cc -S'You are a professional software programmer.'
+
+    chatgpt.sh -cc -S'You are a pos-graduation teacher and will do various activities related to preparing and elaborating a Philosophy course.'
+
+
+*Obs: in this case, instructions (or system prompt) may refer to both
+**user** and **assistant** roles, so behave like one.
+
+
 <!--
 _TIP:_ When using Ksh, press the up arrow key once to edit the _full prompt_
 (see note on [shell interpreters](#shell-interpreters)).
