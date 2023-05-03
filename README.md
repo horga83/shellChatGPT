@@ -259,7 +259,7 @@ The script can be run with either Bash, or Zsh.
 
 There should be equivalency of features under Bash, and Zsh.
 
-Zsh is much faster than Bash in respect to some features.
+Zsh is faster than Bash in respect to some features.
 
 <!--
 Although it should be noted that I test the script under Ksh and Zsh,
