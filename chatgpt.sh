@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.8  april/2023  by mountaineerbr  GPL+3
+# v0.13.9  april/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -98,9 +98,9 @@ Synopsis
 	${0##*/} -i [opt] [S|M|L] [PROMPT]
 	${0##*/} -i [opt] [S|M|L] [PNG_FILE]
 	${0##*/} -i [opt] [S|M|L] [PNG_FILE] [MASK_FILE] [PROPMT]
+	${0##*/} -TTT [-v] [-m[MOD|ENC]] [TEXT|FILE]
 	${0##*/} -w [opt] [AUDIO_FILE] [LANG] [PROMPT-LANG]
 	${0##*/} -W [opt] [AUDIO_FILE] [PROMPT-EN]
-	${0##*/} -TTT [-v] [-m[MOD|ENC]] [TEXT|FILE]
 	${0##*/} -ccw [opt] [LANG]
 	${0##*/} -ccW [opt]
 	${0##*/} -HH [/|SESSION_NAME]
@@ -267,10 +267,11 @@ Options
 	-TTT 	 Count input tokens with tiktoken, it heeds options -ccm.
 		 Set twice to print tokens, thrice to available encodings.
 		 Set model or encoding with option -m.
-	-w [AUD] [LANG]
+	-w [AUD] [LANG] [PROMPT-LANG]
 		 Transcribe audio file into text. LANG is optional.
 		 Set twice to get phrase-level timestamps. 
-	-W [AUD] Translate audio file into English text.
+	-W [AUD] [PROMPT-EN]
+		 Translate audio file into English text.
 		 Set twice to get phrase-level timestamps. 
 	
 	Script Settings
@@ -2151,7 +2152,7 @@ else               #text/chat completions
 			do
 				if ((OPTW)) && ((!EDIT))
 				then 	((OPTV)) && ((!WSKIP)) && [[ -t 1 ]] \
-					&& __read_charf -t $((SLEEP/4))  #3-6 (words/tokens)/sec
+					&& __read_charf -t $(($(wc -w <<<"${ANS_LAST}")/3))  #3-6 (words/tokens)/sec
 
 					if recordf "$FILEINW"
 					then 	REPLY=$(
@@ -2324,7 +2325,7 @@ else               #text/chat completions
 			ans="${ans##[\"]}" ans="${ans%%[\"]}"
 			[[ -n "$ans" ]] || __warmsgf "(response empty)"
 			if CKSUM=$(cksumf "$FILECHAT") ;[[ $CKSUM != "${CKSUM_OLD:-$CKSUM}" ]]
-			then 	COL2=${NC} __warmsgf 'Err: History file changed'$'\n' 'Copy to new? [N]o/[y]es/[i]gnore all ' ''
+			then 	COL2=${NC} __warmsgf 'Err: History file changed'$'\n' 'Copy to new? [Y]es/[n]o/[i]gnore all ' ''
 				case "$(__read_charf)" in
 					[IiGg]) 	unset CKSUM CKSUM_OLD ;function cksumf { 	: ;};;
 					[QqNnAa]|$'\e') :;;
@@ -2342,12 +2343,12 @@ else               #text/chat completions
 			CKSUM_OLD=$(cksumf "$FILECHAT")
 		elif ((OPTC+OPTRESUME))
 		then 	BAD_RESPONSE=1 SKIP=1 EDIT=1 CKSUM_OLD= ;set -- ;continue
-		fi ;SLEEP="${tkn[1]}"
+		fi ;ANS_LAST="$ans"
 		((OPTLOG)) && (usr_logf "$(unescapef "$ESC\\n${ans}")" > "$USRLOG" &)
 
 		((++N_LOOP)) ;set --
 		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSUFFIX_OPT SUFFIX OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC CMPLOK Q P optv_save role rest tkn arg ans glob out var s n
 		((OPTC+OPTRESUME)) || break
-	done ;unset OLD_TOTAL SLEEP N_LOOP SPC SPC0 SPC1 CKSUM CKSUM_OLD INSTRUCTION_OLD
+	done ;unset OLD_TOTAL ANS_LAST N_LOOP SPC SPC0 SPC1 CKSUM CKSUM_OLD INSTRUCTION_OLD
 fi
 # vim=syntax sync minlines=2400

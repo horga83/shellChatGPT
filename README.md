@@ -346,12 +346,12 @@ OpenAI **API v1** is the focus of the present project implementation.
 New versions of the API may not be implemented. I would rather fix bugs
 of existing features than incorporate new ones.
 
-See also BUGS section in the script [help page](man/README.md).
+See also BUGS section in the [man page](man/README.md).
 
 
 ## HELP PAGE 
 
-Read the markdown [**help page here**](man/README.md).
+Read the markdown [**man page here**](man/README.md).
 
-Alternatively, an updated help page can be printed with `chatgpt.sh -h`.
+Alternatively, an help page snippet can be printed with `chatgpt.sh -h`.
 

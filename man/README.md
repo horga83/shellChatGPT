@@ -2,7 +2,7 @@
 author:
 - mountaineerbr
 date: April 2023
-title: CHATGPT.SH(1) v0.13.8 \| General Commands Manual
+title: CHATGPT.SH(1) v0.13.9 \| General Commands Manual
 ---
 
 ### NAME
@@ -18,11 +18,11 @@ title: CHATGPT.SH(1) v0.13.8 \| General Commands Manual
    **chatgpt.sh** `-i` \[`opt`\] \[*S*\|*M*\|*L*\] \[*PNG_FILE*\]  
    **chatgpt.sh** `-i` \[`opt`\] \[*S*\|*M*\|*L*\] \[*PNG_FILE*\]
 \[*MASK_FILE*\] \[*PROPMT*\]  
+   **chatgpt.sh** `-TTT` \[-v\] \[`-m`\[*MODEL*\|*ENCODING*\]\]
+\[*TEXT*\|*FILE*\]  
    **chatgpt.sh** `-w` \[`opt`\] \[*AUDIO_FILE*\] \[*LANG*\]
 \[*PROMPT-LANG*\]  
    **chatgpt.sh** `-W` \[`opt`\] \[*AUDIO_FILE*\] \[*PROMPT-EN*\]  
-   **chatgpt.sh** `-TTT` \[-v\] \[`-m`\[*MODEL*\|*ENCODING*\]\]
-\[*TEXT*\|*FILE*\]  
    **chatgpt.sh** `-ccw` \[`opt`\] \[*LANG*\]  
    **chatgpt.sh** `-ccW` \[`opt`\]  
    **chatgpt.sh** `-HH` \[`/`*SESSION_NAME*\]  
@@ -574,12 +574,12 @@ Set twice to print tokens, thrice to available encodings.
 
 Set model or encoding with `option -m`.
 
-**-w** \[*AUD*\] \[*LANG*\]  
+**-w** \[*AUD*\] \[*LANG*\] \[*PROMPT-LANG*\]  
 Transcribe audio file into text. LANG is optional.
 
 Set twice to get phrase-level timestamps.
 
-**-W** \[*AUD*\]  
+**-W** \[*AUD*\] \[*PROMPT-EN*\]  
 Translate audio file into English text.
 
 Set twice to get phrase-level timestamps.

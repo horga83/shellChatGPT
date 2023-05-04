@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.13.8 | General Commands Manual
+% CHATGPT.SH(1) v0.13.9 | General Commands Manual
 % mountaineerbr
 % April 2023
 
@@ -15,9 +15,9 @@
 |    **chatgpt.sh** `-i` \[`opt`] \[_S_|_M_|_L_] \[_PROMPT_]
 |    **chatgpt.sh** `-i` \[`opt`] \[_S_|_M_|_L_] \[_PNG_FILE_]
 |    **chatgpt.sh** `-i` \[`opt`] \[_S_|_M_|_L_] \[_PNG_FILE_] \[_MASK_FILE_] \[_PROPMT_]
+|    **chatgpt.sh** `-TTT` \[-v] \[`-m`\[_MODEL_|_ENCODING_]] \[_TEXT_|_FILE_]
 |    **chatgpt.sh** `-w` \[`opt`] \[_AUDIO_FILE_] \[_LANG_] \[_PROMPT-LANG_]
 |    **chatgpt.sh** `-W` \[`opt`] \[_AUDIO_FILE_] \[_PROMPT-EN_]
-|    **chatgpt.sh** `-TTT` \[-v] \[`-m`\[_MODEL_|_ENCODING_]] \[_TEXT_|_FILE_]
 |    **chatgpt.sh** `-ccw` \[`opt`] \[_LANG_]
 |    **chatgpt.sh** `-ccW` \[`opt`]
 |    **chatgpt.sh** `-HH` \[`/`_SESSION_NAME_]
@@ -658,14 +658,14 @@ times when appropriate.
       Set model or encoding with `option -m`.
 
 
-**-w** \[_AUD_] \[_LANG_]
+**-w** \[_AUD_] \[_LANG_] \[_PROMPT-LANG_]
 
 :     Transcribe audio file into text. LANG is optional.
       
       Set twice to get phrase-level timestamps.
 
 
-**-W** \[_AUD_]
+**-W** \[_AUD_] \[_PROMPT-EN_]
 
 :     Translate audio file into English text.
       

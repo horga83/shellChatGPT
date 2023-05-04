@@ -5,7 +5,7 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="mountaineerbr" />
-  <title>CHATGPT.SH(1) v0.13.8 | General Commands Manual</title>
+  <title>CHATGPT.SH(1) v0.13.9 | General Commands Manual</title>
   <style>
     html {
       color: #1a1a1a;
@@ -167,7 +167,7 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">CHATGPT.SH(1) v0.13.8 | General Commands Manual</h1>
+<h1 class="title">CHATGPT.SH(1) v0.13.9 | General Commands Manual</h1>
 <p class="author">mountaineerbr</p>
 <p class="date">April 2023</p>
 </header>
@@ -188,13 +188,13 @@ Wrapper</div>
    <strong>chatgpt.sh</strong> <code>-i</code> [<code>opt</code>]
 [<em>S</em>|<em>M</em>|<em>L</em>] [<em>PNG_FILE</em>]
 [<em>MASK_FILE</em>] [<em>PROPMT</em>]<br />
+   <strong>chatgpt.sh</strong> <code>-TTT</code> [-v]
+[<code>-m</code>[<em>MODEL</em>|<em>ENCODING</em>]]
+[<em>TEXT</em>|<em>FILE</em>]<br />
    <strong>chatgpt.sh</strong> <code>-w</code> [<code>opt</code>]
 [<em>AUDIO_FILE</em>] [<em>LANG</em>] [<em>PROMPT-LANG</em>]<br />
    <strong>chatgpt.sh</strong> <code>-W</code> [<code>opt</code>]
 [<em>AUDIO_FILE</em>] [<em>PROMPT-EN</em>]<br />
-   <strong>chatgpt.sh</strong> <code>-TTT</code> [-v]
-[<code>-m</code>[<em>MODEL</em>|<em>ENCODING</em>]]
-[<em>TEXT</em>|<em>FILE</em>]<br />
    <strong>chatgpt.sh</strong> <code>-ccw</code> [<code>opt</code>]
 [<em>LANG</em>]<br />
    <strong>chatgpt.sh</strong> <code>-ccW</code>
@@ -905,12 +905,13 @@ heeds <code>options -ccm</code>.</p>
 <p>Set twice to print tokens, thrice to available encodings.</p>
 <p>Set model or encoding with <code>option -m</code>.</p>
 </dd>
-<dt><strong>-w</strong> [<em>AUD</em>] [<em>LANG</em>]</dt>
+<dt><strong>-w</strong> [<em>AUD</em>] [<em>LANG</em>]
+[<em>PROMPT-LANG</em>]</dt>
 <dd>
 <p>Transcribe audio file into text. LANG is optional.</p>
 <p>Set twice to get phrase-level timestamps.</p>
 </dd>
-<dt><strong>-W</strong> [<em>AUD</em>]</dt>
+<dt><strong>-W</strong> [<em>AUD</em>] [<em>PROMPT-EN</em>]</dt>
 <dd>
 <p>Translate audio file into English text.</p>
 <p>Set twice to get phrase-level timestamps.</p>

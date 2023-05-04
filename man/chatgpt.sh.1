@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.13.8" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "April 2023" "v0.13.9" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -49,6 +49,12 @@
 .PD 0
 .P
 .PD
+\ \ \ \f[B]chatgpt.sh\f[R] \f[V]-TTT\f[R] [-v]
+[\f[V]-m\f[R][\f[I]MODEL\f[R]|\f[I]ENCODING\f[R]]]
+[\f[I]TEXT\f[R]|\f[I]FILE\f[R]]
+.PD 0
+.P
+.PD
 \ \ \ \f[B]chatgpt.sh\f[R] \f[V]-w\f[R] [\f[V]opt\f[R]]
 [\f[I]AUDIO_FILE\f[R]] [\f[I]LANG\f[R]] [\f[I]PROMPT-LANG\f[R]]
 .PD 0
@@ -56,12 +62,6 @@
 .PD
 \ \ \ \f[B]chatgpt.sh\f[R] \f[V]-W\f[R] [\f[V]opt\f[R]]
 [\f[I]AUDIO_FILE\f[R]] [\f[I]PROMPT-EN\f[R]]
-.PD 0
-.P
-.PD
-\ \ \ \f[B]chatgpt.sh\f[R] \f[V]-TTT\f[R] [-v]
-[\f[V]-m\f[R][\f[I]MODEL\f[R]|\f[I]ENCODING\f[R]]]
-[\f[I]TEXT\f[R]|\f[I]FILE\f[R]]
 .PD 0
 .P
 .PD
@@ -911,7 +911,7 @@ Set twice to print tokens, thrice to available encodings.
 Set model or encoding with \f[V]option -m\f[R].
 .RE
 .TP
-\f[B]-w\f[R] [\f[I]AUD\f[R]] [\f[I]LANG\f[R]]
+\f[B]-w\f[R] [\f[I]AUD\f[R]] [\f[I]LANG\f[R]] [\f[I]PROMPT-LANG\f[R]]
 Transcribe audio file into text.
 LANG is optional.
 .RS
@@ -919,7 +919,7 @@ LANG is optional.
 Set twice to get phrase-level timestamps.
 .RE
 .TP
-\f[B]-W\f[R] [\f[I]AUD\f[R]]
+\f[B]-W\f[R] [\f[I]AUD\f[R]] [\f[I]PROMPT-EN\f[R]]
 Translate audio file into English text.
 .RS
 .PP
