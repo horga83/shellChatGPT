@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.10  april/2023  by mountaineerbr  GPL+3
+# v0.13.11  april/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -660,12 +660,11 @@ function set_histf
 #usage: push_tohistf [string] [tokens] [time]
 function push_tohistf
 {
-	typeset string tkn_min tkn
 	[[ -n $1 ]] || return
 	unset CKSUM_OLD
-	string="$1" ;tkn_min=$(__tiktokenf "$string" "4")
-	((tkn = ${2:-tkn_min}>0 ? ${2:-tkn_min} : tkn_min ))
-	printf '%.22s\t%d\t"%s"\n' "${3:-$(date -Isec)}" "$tkn" "$string" >> "$FILECHAT"
+	((${2:-0} > 0)) || set -- "${@:1:1}" "" "${@:3}"
+	printf '%.22s\t%d\t"%s"\n' \
+	  "${3:-$(date -Isec)}" "${2:-$(__tiktokenf "${1}" "4")}" "${1}" >> "$FILECHAT"
 }
 
 #poor man's tiktoken
@@ -678,10 +677,10 @@ function __tiktokenf
 
 	[[ -n $ZSH_VERSION ]] && setopt NO_GLOB || set -f
 	# 1 TOKEN ~= 4 CHARS IN ENGLISH
-	#str="${1// }" str=${str//[$'\t\n']/xxxx} str="${str//\\[ntrvf]/xxxx}" tkn=$((${#str}/${by:-4}))
+	#str="${1// }" str="${str//[$'\t\n']/xxxx}" str="${str//\\[ntrvf]/xxxx}" tkn=$((${#str}/${by:-4}))
 	
 	# 1 TOKEN ~= ¾ WORDS
-	set -- "${1//[$'\n\t ']/ x }"
+	set -- "${1//[$'\n\t']/ x }"
 	set -- ${1//\\[ntrvf]/ x }
 	tkn=$(( ($# * 4) / ${by:-3}))
 	[[ -n $ZSH_VERSION ]] && setopt GLOB || set +f
