@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.9  april/2023  by mountaineerbr  GPL+3
+# v0.13.10  april/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -1964,8 +1964,8 @@ MOD="${MOD:-${MODELS[OPTM]}}"
 case "$MOD" in  #set model max tokens
 	davinci|curie|babbage|ada) 	MODMAX=2049;;
 	code-davinci-002) MODMAX=8001;;
-	gpt4-*32k) 	MODMAX=32768;; 
-	gpt4-*) 	MODMAX=8192;;
+	gpt-4*32k) 	MODMAX=32768;; 
+	gpt-4*) 	MODMAX=8192;;
 	*turbo*|*davinci*) 	MODMAX=4096;;
 	*) 	MODMAX=2048;;
 esac
@@ -2151,8 +2151,8 @@ else               #text/chat completions
 				printf "${Cyan}%s${NC}${Purple}%s${NC}\\r${BCyan}" "${Q}" "${OPTW:+VOICE}" >&2
 			do
 				if ((OPTW)) && ((!EDIT))
-				then 	((OPTV)) && ((!WSKIP)) && [[ -t 1 ]] \
-					&& __read_charf -t $(($(wc -w <<<"${ANS_LAST}")/3))  #3-6 (words/tokens)/sec
+				then 	((OPTV>1)) && ((!WSKIP)) && [[ -t 1 ]] \
+					&& __read_charf -t $((SLEEP_WORDS/3))  #sleep 3-6 (words/tokens)/sec
 
 					if recordf "$FILEINW"
 					then 	REPLY=$(
@@ -2343,12 +2343,13 @@ else               #text/chat completions
 			CKSUM_OLD=$(cksumf "$FILECHAT")
 		elif ((OPTC+OPTRESUME))
 		then 	BAD_RESPONSE=1 SKIP=1 EDIT=1 CKSUM_OLD= ;set -- ;continue
-		fi ;ANS_LAST="$ans"
+		fi
+		((OPTW)) && SLEEP_WORDS=$(wc -w <<<"${ans}")
 		((OPTLOG)) && (usr_logf "$(unescapef "$ESC\\n${ans}")" > "$USRLOG" &)
 
 		((++N_LOOP)) ;set --
 		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSUFFIX_OPT SUFFIX OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC CMPLOK Q P optv_save role rest tkn arg ans glob out var s n
 		((OPTC+OPTRESUME)) || break
-	done ;unset OLD_TOTAL ANS_LAST N_LOOP SPC SPC0 SPC1 CKSUM CKSUM_OLD INSTRUCTION_OLD
+	done ;unset OLD_TOTAL SLEEP_WORDS N_LOOP SPC SPC0 SPC1 CKSUM CKSUM_OLD INSTRUCTION_OLD
 fi
 # vim=syntax sync minlines=2400
