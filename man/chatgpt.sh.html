@@ -5,7 +5,7 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="mountaineerbr" />
-  <title>CHATGPT.SH(1) v0.13.10 | General Commands Manual</title>
+  <title>CHATGPT.SH(1) v0.13.12 | General Commands Manual</title>
   <style>
     html {
       color: #1a1a1a;
@@ -167,7 +167,7 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">CHATGPT.SH(1) v0.13.10 | General Commands Manual</h1>
+<h1 class="title">CHATGPT.SH(1) v0.13.12 | General Commands Manual</h1>
 <p class="author">mountaineerbr</p>
 <p class="date">April 2023</p>
 </header>
@@ -232,7 +232,7 @@ Some models have an equivalent <em>INDEX</em> as short-hand, so
 <em>NAME</em> with <code>option -l</code> or by <em>INDEX</em> with
 <code>option -ll</code>).</p>
 <p>Set <em>maximum response tokens</em> with <code>option</code>
-“<code>-</code>NUM” or “<code>-M</code> NUM”. This defaults to 256
+“<code>-</code>NUM” or “<code>-M</code> NUM”. This defaults to 512
 tokens in chat and single-turn modes.</p>
 <p><em>Model capacity</em> (max model tokens) can be set with a second
 <em>NUM</em> such as “<code>-</code><em>NUM,NUM</em>” or
@@ -736,9 +736,9 @@ when appropriate.</p>
 <dl>
 <dt><strong>-M</strong> [<em>NUM</em>[<em>-NUM</em>]]</dt>
 <dd>
-<p>Set maximum number of <em>response tokens</em>. Def=<em>256</em>.</p>
+<p>Set maximum number of <em>response tokens</em>. Def=<em>512</em>.</p>
 <p><em>Model capacity</em> can be set with a second number.
-Def=<em>auto-256</em>.</p>
+Def=<em>auto-512</em>.</p>
 </dd>
 <dt><strong>-a</strong> [<em>VAL</em>]</dt>
 <dd>

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.11  april/2023  by mountaineerbr  GPL+3
+# v0.13.12  april/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -23,7 +23,7 @@ fi
 # Top_p probability mass (nucleus sampling)
 #OPTP=1
 # Maximum response tokens
-OPTMAX=256
+OPTMAX=512
 # Model capacity (auto)
 #MODMAX=
 # Presence penalty
@@ -800,7 +800,9 @@ function cmd_runf
 			if [[ -d "$*" ]]
 			then 	USRLOG="${*%%/}/${USRLOG##*/}"
 			else 	USRLOG="${*:-${USRLOG}}"
-			fi ;_cmdmsgf $'\nLog file' "\`\`$USRLOG''"
+			fi
+			[[ "$USRLOG" = '~'* ]] && USRLOG="${HOME}${USRLOG##\~}"
+			_cmdmsgf $'\nLog file' "<${USRLOG}>"
 			;;
 		models*)
 			list_modelsf "${*##models*(\ )}"
@@ -1060,8 +1062,6 @@ function fmt_ccf
 #create user log
 function usr_logf
 {
-	[[ -d $USRLOG ]] && USRLOG="$USRLOG/${FILETXT##*/}"
-	[[ "$USRLOG" = '~'* ]] && USRLOG="${HOME}${USRLOG##\~}"
 	printf '%s%s\n\n%s\n' "${H_TIME:-$(date -R 2>/dev/null||date)}" "${MAX_PREV:+  Tokens: $MAX_PREV}" "${*}"
 }
 
@@ -1868,7 +1868,9 @@ do
 			if [[ -d "$OPTARG" ]]
 			then 	USRLOG="${OPTARG%%/}/${USRLOG##*/}"
 			else 	USRLOG="${OPTARG:-${USRLOG}}"
-			fi ;_cmdmsgf 'Log file' "\`\`$USRLOG''";;
+			fi
+			[[ "$USRLOG" = '~'* ]] && USRLOG="${HOME}${USRLOG##\~}"
+			_cmdmsgf 'Log file' "<${USRLOG}>";;
 		m) 	OPTMARG="${OPTARG:-0}"
 			if [[ $OPTARG = *[a-zA-Z]* ]]
 			then 	MOD="$OPTARG"  #model name
@@ -2344,7 +2346,7 @@ else               #text/chat completions
 		then 	BAD_RESPONSE=1 SKIP=1 EDIT=1 CKSUM_OLD= ;set -- ;continue
 		fi
 		((OPTW)) && SLEEP_WORDS=$(wc -w <<<"${ans}")
-		((OPTLOG)) && (usr_logf "$(unescapef "$ESC\\n${ans}")" > "$USRLOG" &)
+		((OPTLOG)) && (usr_logf "$(unescapef "${ESC}\\n${ans}")" > "$USRLOG" &)
 
 		((++N_LOOP)) ;set --
 		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSUFFIX_OPT SUFFIX OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC CMPLOK Q P optv_save role rest tkn arg ans glob out var s n

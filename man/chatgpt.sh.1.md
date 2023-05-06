@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.13.10 | General Commands Manual
+% CHATGPT.SH(1) v0.13.12 | General Commands Manual
 % mountaineerbr
 % April 2023
 
@@ -56,7 +56,7 @@ equivalent _INDEX_ as short-hand, so "`-m`_text-davinci-003_" and
 by _INDEX_ with `option -ll`).
 
 Set _maximum response tokens_ with `option` "`-`NUM" or "`-M` NUM". This
-defaults to 256 tokens in chat and single-turn modes.
+defaults to 512 tokens in chat and single-turn modes.
 
 _Model capacity_ (max model tokens) can be set with a second _NUM_ such
 as "`-`_NUM,NUM_" or "`-M` NUM-NUM", otherwise it is set automatically
@@ -511,9 +511,9 @@ times when appropriate.
 
 **-M** \[_NUM_[_-NUM_]]
 
-:     Set maximum number of _response tokens_. Def=_256_.
+:     Set maximum number of _response tokens_. Def=_512_.
 
-      _Model capacity_ can be set with a second number. Def=_auto-256_.
+      _Model capacity_ can be set with a second number. Def=_auto-512_.
 
 
 **-a** \[_VAL_]

@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.13.10" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "April 2023" "v0.13.12" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -121,7 +121,7 @@ Some models have an equivalent \f[I]INDEX\f[R] as short-hand, so
 .PP
 Set \f[I]maximum response tokens\f[R] with \f[V]option\f[R]
 \[lq]\f[V]-\f[R]NUM\[rq] or \[lq]\f[V]-M\f[R] NUM\[rq].
-This defaults to 256 tokens in chat and single-turn modes.
+This defaults to 512 tokens in chat and single-turn modes.
 .PP
 \f[I]Model capacity\f[R] (max model tokens) can be set with a second
 \f[I]NUM\f[R] such as \[lq]\f[V]-\f[R]\f[I]NUM,NUM\f[R]\[rq] or
@@ -729,11 +729,11 @@ Def=\f[I]0%\f[R].
 .TP
 \f[B]-M\f[R] [\f[I]NUM\f[R][\f[I]-NUM\f[R]]]
 Set maximum number of \f[I]response tokens\f[R].
-Def=\f[I]256\f[R].
+Def=\f[I]512\f[R].
 .RS
 .PP
 \f[I]Model capacity\f[R] can be set with a second number.
-Def=\f[I]auto-256\f[R].
+Def=\f[I]auto-512\f[R].
 .RE
 .TP
 \f[B]-a\f[R] [\f[I]VAL\f[R]]

@@ -2,7 +2,7 @@
 author:
 - mountaineerbr
 date: April 2023
-title: CHATGPT.SH(1) v0.13.10 \| General Commands Manual
+title: CHATGPT.SH(1) v0.13.12 \| General Commands Manual
 ---
 
 ### NAME
@@ -61,7 +61,7 @@ equivalent *INDEX* as short-hand, so “`-m`*text-davinci-003*” and
 by *INDEX* with `option -ll`).
 
 Set *maximum response tokens* with `option` “`-`NUM” or “`-M` NUM”. This
-defaults to 256 tokens in chat and single-turn modes.
+defaults to 512 tokens in chat and single-turn modes.
 
 *Model capacity* (max model tokens) can be set with a second *NUM* such
 as “`-`*NUM,NUM*” or “`-M` NUM-NUM”, otherwise it is set automatically
@@ -472,9 +472,9 @@ Fuzz intensity can be set with \[VAL%\]. Def=*0%*.
 **-NUM**
 
 **-M** \[*NUM*\[*-NUM*\]\]  
-Set maximum number of *response tokens*. Def=*256*.
+Set maximum number of *response tokens*. Def=*512*.
 
-*Model capacity* can be set with a second number. Def=*auto-256*.
+*Model capacity* can be set with a second number. Def=*auto-512*.
 
 **-a** \[*VAL*\]  
 Set presence penalty (cmpls/chat, -2.0 - 2.0).
