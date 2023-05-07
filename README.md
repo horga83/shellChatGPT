@@ -31,7 +31,7 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 Just download the stand-alone `chatgpt.sh` and make it executable or clone this repo.
 
 
-### ❌ Required packages
+### ✅ Required packages
 
 - Free [OpenAI GPTChat key](https://platform.openai.com/account/api-keys)
 - Bash or Zsh <!-- [Ksh93u+](https://github.com/ksh93/ksh), Bash or Zsh -->
