@@ -53,7 +53,7 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 - Make a variation of an image, set -i and an image path for upload
 
 
-## 🌎 Environment
+### 🌎 Environment
 
 - Set `$OPENAI_API_KEY` with your OpenAI API key.
 - Optionally, set `$CHATGPTRC` with path to the configuration file. Defaults = `~/.chatgpt.conf`.
@@ -92,7 +92,7 @@ string `[insert]` where the model should insert text:
 works with `davinci`, `text-davinci-002`, and `text-davinci-003`.
 
 
-## Chat Mode of Text Completions
+### Chat Mode of Text Completions
 
 With `option -c`, some options are set automatically to create a chat bot with text completions.
 
@@ -111,7 +111,7 @@ Complete text in multi-turn:
     chatgpt.sh -CC -S'The following is a newspaper article.' "It all starts when FBI agents arrived at the governor house and  "
 
 
-## 💬 Native Chat Completions
+### 💬 Native Chat Completions
 
 Start a new session in chat mode, and set a different temperature:
 
