@@ -5,7 +5,7 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 ![Showing off Chat Completions](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/chat_cpls.gif)
 
 
-## Features
+## 🚀 Features
 
 - Text and chat completions.
 - _Insert mode_ of text completions.
@@ -26,12 +26,12 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 
 ## ✨ Getting Started
 
-### Installation
+### 💾 Installation
 
 Just download the stand-alone `chatgpt.sh` and make it executable or clone this repo.
 
 
-### Required packages
+### ❌ Required packages
 
 - Free [OpenAI GPTChat key](https://platform.openai.com/account/api-keys)
 - Bash or Zsh <!-- [Ksh93u+](https://github.com/ksh93/ksh), Bash or Zsh -->
@@ -41,7 +41,7 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 - Sox/Arecord/FFmpeg (optional)
 
 
-### Usage
+### 🔥 Usage
 
 - Set your OpenAI API key with option `-K [KEY]` or environment variable `$OPENAI_API_KEY`
 - Just write your prompt after the script name `chatgpt.sh`
@@ -53,7 +53,7 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 - Make a variation of an image, set -i and an image path for upload
 
 
-## Environment
+## 🌎 Environment
 
 - Set `$OPENAI_API_KEY` with your OpenAI API key.
 - Optionally, set `$CHATGPTRC` with path to the configuration file. Defaults = `~/.chatgpt.conf`.
@@ -64,7 +64,7 @@ Just download the stand-alone `chatgpt.sh` and make it executable or clone this 
 ![Chat cmpls with prompt confirmation](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/chat_cpls_verb.gif)
 
 
-### Text Completions
+### 📝 Text Completions
 
 One-shot text completion:
 
@@ -111,7 +111,7 @@ Complete text in multi-turn:
     chatgpt.sh -CC -S'The following is a newspaper article.' "It all starts when FBI agents arrived at the governor house and  "
 
 
-## Native Chat Completions
+## 💬 Native Chat Completions
 
 Start a new session in chat mode, and set a different temperature:
 
@@ -122,7 +122,7 @@ Chat mode in text editor (visual) mode. Edit initial input:
     chatgpt.sh -ccx "Complete the story: Alice visits Bob. John arrives .."
 
 
-### Awesome Prompts
+### 🔌 Awesome Prompts
 
 Set a prompt from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts):
 
@@ -163,7 +163,7 @@ Edits works great with INSTRUCTION and an empty prompt (e.g. to create
 some code based on instruction only).
 
 
-### Image Generations
+### 🖼️ Image Generations
 
 Generate image according to prompt:
 
@@ -195,7 +195,7 @@ Generate image variation:
 ![Inpaint, steps](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/img_edits_steps.png)
 
 
-### Audio Transcriptions / Translations
+### 🔊 Audio Transcriptions / Translations
 
 Generate transcription from audio file:
 
@@ -218,7 +218,7 @@ Transcribe audio and print timestamps option `-ww`:
 ![Transcribe audio with timestamps](https://gitlab.com/mountaineerbr/etc/-/raw/main/gfx/chat_trans.jpg)
 
 
-### Voice + Chat Completions
+### 🗣️ Voice + Chat Completions
 
 Chat completion with voice as input:
 
@@ -238,7 +238,7 @@ Start with a commented out code or instruction for the model,
 or ask it in comments to optimise the following code, for example.
 
 
-## Prompts
+## ⚙️ Prompts
 
 Unless the chat `option -c` or `-cc` are set, _no_ instruction is
 given to the language model. On chat mode, if no instruction is set,
@@ -253,7 +253,7 @@ Note that the model's steering and capabilities require prompt engineering
 to even know that it should answer the questions.
 
 
-## Shell Interpreters
+## 🐚 Shell Interpreters
 
 The script can be run with either Bash, or Zsh.
 
@@ -318,7 +318,7 @@ ln -s /data/data/com.termux/files/usr/bin/zsh /data/data/com.termux/files/usr/bi
 -->
 
 
-## Project Objectives
+## 🎯 Project Objectives
 
 - Implement most features available from OpenAI API
 - Provide the closest API defaults
@@ -340,7 +340,7 @@ ln -s /data/data/com.termux/files/usr/bin/zsh /data/data/com.termux/files/usr/bi
 
 _For a simple python wrapper for_ tiktoken, _see_ [tkn-cnt.py](https://github.com/mountaineerbr/scripts/blob/main/tkn-cnt.py).
 
-## Limitations
+## ⚠️ Limitations
 
 OpenAI **API v1** is the focus of the present project implementation.
 New versions of the API may not be implemented. I would rather fix bugs
@@ -349,7 +349,7 @@ of existing features than incorporate new ones.
 See also BUGS section in the [man page](man/README.md).
 
 
-## HELP PAGE 
+## 📖 HELP PAGE 
 
 Read the markdown [**man page here**](man/README.md).
 
