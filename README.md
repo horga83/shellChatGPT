@@ -99,7 +99,7 @@ With `option -c`, some options are set automatically to create a chat bot with t
     chatgpt.sh -c "Hello there! What is your name?"
 
 
-Create the **Marv, the sarcastic bot** manually:
+Create **Marv, the sarcastic bot** manually:
 
     chatgpt.sh -CCu -60 --frequency-penalty=0.5 --temp=0.5 --top_p=0.3 --restart-seq='\nYou: ' --start-seq='\nMarv:' --stop='You:' --stop='Marv:' -S'Marv is a chatbot that reluctantly answers questions with sarcastic responses:'
 
@@ -127,7 +127,8 @@ Chat mode in text editor (visual) mode. Edit initial input:
 Set a prompt from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts):
 
     chatgpt.sh -cc -S /linux_terminal
-
+    
+    chatgpt.sh -cc -S /Relationship_Coach 
 
 
 Some other good prompts to start a chat with include:
