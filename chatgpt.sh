@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.13  may/2023  by mountaineerbr  GPL+3
+# v0.13.14  may/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -74,13 +74,13 @@ HISTCONTROL=erasedups:ignoredups
 HISTSIZE=512
 SAVEHIST=512
 
+# Base API URL
+APIURL="https://api.openai.com/v1"
+
 # Def hist, txt chat types
 Q_TYPE="\\nQ: "
 A_TYPE="\\nA:"
 I_TYPE='[insert]'
-
-# Base API URL
-APIURL="https://api.openai.com/v1"
 
 # Globs
 SPC="*([$IFS])"
@@ -1978,7 +1978,10 @@ set_maxtknf "${OPTMM:-$OPTMAX}"
 set_optsf
 
 #load stdin
-(($#)) || [[ -t 0 ]] || ((OPTTIK)) || set -- "$(</dev/stdin)"
+(($#)) || [[ -t 0 ]] || ((OPTTIK)) || if [[ -n $TERMUX_VERSION ]]
+then 	set -- "$(</proc/self/fd/0)"
+else 	set -- "$(</dev/stdin)"
+fi
 
 ((OPTX)) && ((OPTE+OPTEMBED+OPTI+OPTII+OPTTIK)) &&
 edf "$@" && set -- "$(<"$FILETXT")"  #editor
