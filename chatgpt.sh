@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.12  april/2023  by mountaineerbr  GPL+3
+# v0.13.13  may/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -408,7 +408,7 @@ function block_printf
 	if ((OPTVV>1))
 	then 	printf '%s\n%s\n' "${ENDPOINTS[EPN]}" "$BLOCK"
 		printf '%s ' '<CTRL-D> redo, <CTR-C> exit, or continue' >&2
-		typeset REPLY ;read
+		typeset REPLY ;read </dev/tty
 	else	jq -r '.instruction//empty,
 		.input//empty,
 		.prompt//(.messages[]|.role+": "+.content)//empty' <<<"$BLOCK" \
@@ -435,7 +435,7 @@ function new_prompt_confirmf
 function __read_charf
 {
 	typeset REPLY
-	read -n ${ZSH_VERSION:+-k} 1 "$@"
+	read -n ${ZSH_VERSION:+-k} 1 "$@" </dev/tty
 	printf '%.1s\n' "$REPLY"
 	[[ -z ${REPLY//[$IFS]} ]] || printf '\n' >&2
 }
@@ -1166,7 +1166,7 @@ function recordf
 	
 	sig="INT HUP TERM EXIT"
 	trap "rec_killf $pid $termux; trap - $sig" $sig
-	read ;rec_killf $pid $termux
+	read </dev/tty ;rec_killf $pid $termux
 	trap "-" $sig
 	wait
 }
@@ -1608,7 +1608,7 @@ function session_name_choosef
 			if [[ -n $ZSH_VERSION ]]
 			then 	vared -c -e fname
 			else 	read -r ${fname:+-i "$fname"} -e fname
-			fi
+			fi </dev/tty
 		fi
 
 		if [[ -d "$fname" ]]
@@ -2174,7 +2174,7 @@ else               #text/chat completions
 						then 	((OPTK)) || arg='-p%B%F{14}' #cyan=14
 							vared -c -e -h $arg REPLY
 						else 	IFS=$'\n' read -r -e ${REPLY:+-i "$REPLY"} REPLY
-						fi
+						fi </dev/tty
 					do 	unset EDIT
 						case "$REPLY" in
 							*\\) 	MULTI=1 ex=1
@@ -2233,7 +2233,7 @@ else               #text/chat completions
 		fi
 
 		if ((!OPTCMPL)) && [[ -z "${INSTRUCTION}${*}" ]]
-		then 	__warmsgf "(empty)" #;__read_charf -t 1
+		then 	__warmsgf "(empty)"
 			set -- ; continue
 		fi
 		if ((!OPTCMPL))
@@ -2245,6 +2245,8 @@ else               #text/chat completions
 
 		if ((OPTC+OPTRESUME)) && [[ -n "${*}" ]]
 		then
+			[[ -n $REPLY ]] || REPLY="${*}" #set buffer for EDIT
+
 			((RETRY==1)) ||
 			if [[ -n $ZSH_VERSION ]]
 			then 	print -s -- "${*//$NL/\\n}" ;fc -A #zsh interactive
