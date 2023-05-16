@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.14  may/2023  by mountaineerbr  GPL+3
+# v0.13.15  may/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -1096,16 +1096,20 @@ function check_optrangef
 function set_optsf
 {
 	typeset s n
-	check_optrangef "$OPTA"   -2.0 2.0 'Presence Penalty'
-	check_optrangef "$OPTAA"  -2.0 2.0 'Frequency Penalty'
-	check_optrangef "${OPTB:-$OPTN}"  "$OPTN" 50 'Best Of'
-	check_optrangef "$OPTBB" 0   5 'Log Probs'
-	check_optrangef "$OPTP"  0.0 1.0 'Top_p'
-	check_optrangef "$OPTT"  0.0 2.0 'Temperature'  #whisper max=1
-	check_optrangef "$OPTMAX"  1 "$MODMAX" 'Response Max Tokens'
+	((OPTI+OPTEMBED)) || {
+	  ((OPTW)) || {
+	    ((OPTE)) || {
+	      check_optrangef "$OPTA"   -2.0 2.0 'Presence Penalty'
+	      check_optrangef "$OPTAA"  -2.0 2.0 'Frequency Penalty'
+	      check_optrangef "${OPTB:-$OPTN}"  "$OPTN" 50 'Best Of'
+	      check_optrangef "$OPTBB" 0   5 'Log Probs'
+	    }
+	    check_optrangef "$OPTP"  0.0 1.0 'Top_p'
+	    check_optrangef "$OPTMAX"  1 "$MODMAX" 'Response Max Tokens'
+	  }
+	  check_optrangef "$OPTT"  0.0 2.0 'Temperature'  #whisper max=1
+	}
 	((OPTI)) && check_optrangef "$OPTN"  1 10 'Number of Results'
-	#[[ -n ${OPTT#0} ]] && [[ -n ${OPTP#1} ]] \
-	#&& __warmsgf "Warning:" "Temperature and Top_P are both set"
 
 	[[ -n $OPTA ]] && OPTA_OPT="\"presence_penalty\": $OPTA," || unset OPTA_OPT
 	[[ -n $OPTAA ]] && OPTAA_OPT="\"frequency_penalty\": $OPTAA," || unset OPTAA_OPT
