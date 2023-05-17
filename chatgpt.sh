@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.15  may/2023  by mountaineerbr  GPL+3
+# v0.13.16  may/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -464,7 +464,7 @@ function prompt_printf
 	  "def byellow: null; def red: null ;def reset: null; $JQCOL $JQCOL2
 	  (.choices[1] as \$sep | .choices[] |
 	  byellow + ( (.text//(.message.content)) |
-	  if (${OPTC:-0}>0) then (gsub(\"^[\\\\n\\\\t ]\"; null) |  gsub(\"[\\\\n\\\\t ]+$\"; null)) else . end)
+	  if (${OPTC:-0}>0) then (gsub(\"^[\\\\n\\\\t ]\"; \"\") |  gsub(\"[\\\\n\\\\t ]+$\"; \"\")) else . end)
 	  + \$suffix + reset
 	  + if .finish_reason != \"stop\" then (if .finish_reason != null then red+\"(\"+.finish_reason+\")\"+reset else null end) else null end,
 	  if \$sep != null then \"---\" else empty end)" "$FILE" | foldf ||
@@ -1233,7 +1233,7 @@ function whisperf
 
 		prompt_audiof "$file" $LANGW "$@"
 		jq -r "def yellow: null; def bpurple: null; def reset: null; $JQCOL
-			def pad(x): tostring | (length | if . >= x then null else \"0\" * (x - .) end) as \$padding | \"\(\$padding)\(.)\";
+			def pad(x): tostring | (length | if . >= x then \"\" else \"0\" * (x - .) end) as \$padding | \"\(\$padding)\(.)\";
 			def seconds_to_time_string:
 			def nonzero: floor | if . > 0 then . else empty end;
 			if . == 0 then \"00\"
