@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.17  may/2023  by mountaineerbr  GPL+3
+# v0.13.18  may/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -608,7 +608,7 @@ function set_histf
 		[[ -z $time$token$string ]] && continue
 		[[ ${time}${token} = *[Bb][Rr][Ee][Aa][Kk]* ]] && { 	((OPTHIST)) && continue || break ;}
 		if ((OPTTIK))
-		then 	token=$(OPTV=1 tiktokenf - <<<"$string") ;err=1
+		then 	token=$(OPTV=1 tiktokenf - <<<"$(unescapef "$string")") ;err=1
 		elif ((token<1))
 		then 	((OPTVV>1||OPTJ)) &&
 			__warmsgf "Warning:" "Zero/Neg token in history"
