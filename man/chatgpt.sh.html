@@ -5,7 +5,7 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="mountaineerbr" />
-  <title>CHATGPT.SH(1) v0.13.12 | General Commands Manual</title>
+  <title>CHATGPT.SH(1) v0.13.17 | General Commands Manual</title>
   <style>
     html {
       color: #1a1a1a;
@@ -167,7 +167,7 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">CHATGPT.SH(1) v0.13.12 | General Commands Manual</h1>
+<h1 class="title">CHATGPT.SH(1) v0.13.17 | General Commands Manual</h1>
 <p class="author">mountaineerbr</p>
 <p class="date">April 2023</p>
 </header>
@@ -276,6 +276,11 @@ the model as the second positional argument.</p>
 start <strong>chat with voice input</strong> (Whisper) support. Output
 may be piped to a voice synthesiser to have a full voice in and out
 experience.</p>
+<p><code>Option -y</code> sets python tiktoken instead of the default
+script hack to preview token count. This option makes token count
+preview accurate however it is slow. Useful for rebuilding history
+context independently from the original model used to generate
+responses.</p>
 <p>Stdin is supported when there is no positional arguments left after
 option parsing. Stdin input sets a single PROMPT.</p>
 <p>User configuration is kept at “<em>~/.chatgpt.conf</em>”. Script
@@ -416,11 +421,16 @@ prompt to set a new parameter. The command operator may be either
 <td>Toggle text editor interface.</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;"><code>-y</code></td>
+<td style="text-align: left;"><code>!tik</code></td>
+<td>Toggle python tiktoken use.</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;"><code>!r</code></td>
 <td style="text-align: left;"><code>!regen</code></td>
 <td>Renegerate last response.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td style="text-align: left;"><code>!q</code></td>
 <td style="text-align: left;"><code>!quit</code></td>
 <td>Exit.</td>
@@ -464,7 +474,7 @@ prompt to set a new parameter. The command operator may be either
 <tr class="even">
 <td style="text-align: left;"><code>!c</code></td>
 <td><code>!copy</code></td>
-<td>Copy session from one hist file to another.</td>
+<td>Fork session from one hist file to another.</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;"></td>
@@ -694,39 +704,11 @@ with history, so avoid it.
 <p><code>ImageMagick</code>, and
 <code>Sox</code>/<code>Alsa-tools</code>/<code>FFmpeg</code> are
 optionally required.</p>
-<h3 id="long-options">LONG OPTIONS</h3>
-<p>The following options can be set with an argument, or multiple times
-when appropriate.</p>
-<blockquote>
-<p><code>--alpha</code>, <code>--api-key</code>, <code>--best</code>,
-<code>--best-of</code>, <code>--chat</code>, <code>--clipboard</code>,
-<code>--clip</code>, <code>--cont</code>, <code>--continue</code>,
-<code>--edit</code>, <code>--editor</code>, <code>--frequency</code>,
-<code>--frequency-penalty</code>, <code>--help</code>,
-<code>--hist</code>, <code>--image</code>, <code>--insert</code>,
-<code>--instruction</code>, <code>--last</code>,
-<code>--list-model</code>, <code>--list-models</code>,
-<code>--log</code>, <code>--log-prob</code>, <code>--max</code>,
-<code>--max-tokens</code>, <code>--mod</code>, <code>--model</code>,
-<code>--no-colour</code>, <code>--no-config</code>,
-<code>--presence</code>, <code>--presence-penalty</code>,
-<code>--prob</code>, <code>--raw</code>, <code>--restart-seq</code>,
-<code>--restart-sequence</code>, <code>--results</code>,
-<code>--resume</code>, <code>--start-seq</code>,
-<code>--start-sequence</code>, <code>--stop</code>, <code>--temp</code>,
-<code>--temperature</code>, <code>--tiktoken</code>, <code>--top</code>,
-<code>--top-p</code>, <code>--transcribe</code>,
-<code>--translate</code>, <code>--multi</code>,
-<code>--multiline</code>, and <code>--verbose</code>.</p>
-</blockquote>
-<div class="line-block">E.g.: “<code>--chat</code>”,
-“<code>--temp</code>=<em>0.9</em>”,
-“<code>--max</code>=<em>1024,128</em>”, and
-“<code>--presence-penalty</code> <em>0.6</em>”.</div>
 <h3 id="options">OPTIONS</h3>
 <h4 id="model-settings">Model Settings</h4>
 <dl>
-<dt><strong>-@</strong> [[<em>VAL%</em>]<em>COLOUR</em>]</dt>
+<dt><strong>-@</strong> [[<em>VAL%</em>]<em>COLOUR</em>],
+<strong>–alpha</strong>=[[<em>VAL%</em>]<em>COLOUR</em>]</dt>
 <dd>
 <p>Set transparent colour of image mask. Def=<em>black</em>.</p>
 <p>Fuzz intensity can be set with [VAL%]. Def=<em>0%</em>.</p>
@@ -734,30 +716,35 @@ when appropriate.</p>
 </dl>
 <p><strong>-NUM</strong></p>
 <dl>
-<dt><strong>-M</strong> [<em>NUM</em>[<em>-NUM</em>]]</dt>
+<dt><strong>-M</strong> [<em>NUM</em>[<em>-NUM</em>]],
+<strong>–max-tokens</strong>=[<em>NUM</em>[<em>-NUM</em>]]</dt>
 <dd>
 <p>Set maximum number of <em>response tokens</em>. Def=<em>512</em>.</p>
 <p><em>Model capacity</em> can be set with a second number.
 Def=<em>auto-512</em>.</p>
 </dd>
-<dt><strong>-a</strong> [<em>VAL</em>]</dt>
+<dt><strong>-a</strong> [<em>VAL</em>],
+<strong>–presence-penalty</strong>=[<em>VAL</em>]</dt>
 <dd>
 <p>Set presence penalty (cmpls/chat, -2.0 - 2.0).</p>
 </dd>
-<dt><strong>-A</strong> [<em>VAL</em>]</dt>
+<dt><strong>-A</strong> [<em>VAL</em>],
+<strong>–frequency-penalty</strong>=[<em>VAL</em>]</dt>
 <dd>
 <p>Set frequency penalty (cmpls/chat, -2.0 - 2.0).</p>
 </dd>
-<dt><strong>-b</strong> [<em>VAL</em>]</dt>
+<dt><strong>-b</strong> [<em>VAL</em>],
+<strong>–best-of</strong>=[<em>VAL</em>]</dt>
 <dd>
 <p>Set best of, must be greater than <code>option -n</code> (cmpls).
 Def=<em>1</em>.</p>
 </dd>
-<dt><strong>-B</strong></dt>
+<dt><strong>-B</strong>, <strong>–log-prob</strong></dt>
 <dd>
 <p>Print log probabilities to stderr (cmpls, 0 - 5).</p>
 </dd>
-<dt><strong>-m</strong> [<em>MOD</em>]</dt>
+<dt><strong>-m</strong> [<em>MOD</em>],
+<strong>–model</strong>=[<em>MOD</em>]</dt>
 <dd>
 <p>Set model by <em>NAME</em>.</p>
 </dd>
@@ -821,31 +808,38 @@ Def=<em>1</em>.</p>
 </tbody>
 </table>
 <dl>
-<dt><strong>-n</strong> [<em>NUM</em>]</dt>
+<dt><strong>-n</strong> [<em>NUM</em>],
+<strong>–results</strong>=[<em>NUM</em>]</dt>
 <dd>
 <p>Set number of results. Def=<em>1</em>.</p>
 </dd>
-<dt><strong>-p</strong> [<em>VAL</em>]</dt>
+<dt><strong>-p</strong> [<em>VAL</em>],
+<strong>–top-p</strong>=[<em>VAL</em>]</dt>
 <dd>
 <p>Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).</p>
 </dd>
-<dt><strong>-r</strong> [<em>SEQ</em>]</dt>
+<dt><strong>-r</strong> [<em>SEQ</em>],
+<strong>–restart-sequence</strong>=[<em>SEQ</em>]</dt>
 <dd>
 <p>Set restart sequence string (cmpls).</p>
 </dd>
-<dt><strong>-R</strong> [<em>SEQ</em>]</dt>
+<dt><strong>-R</strong> [<em>SEQ</em>],
+<strong>–start-sequence</strong>=[<em>SEQ</em>]</dt>
 <dd>
 <p>Set start sequence string (cmpls).</p>
 </dd>
-<dt><strong>-s</strong> [<em>SEQ</em>]</dt>
+<dt><strong>-s</strong> [<em>SEQ</em>],
+<strong>–stop</strong>=[<em>SEQ</em>]</dt>
 <dd>
 <p>Set stop sequences, up to 4. Def="<em>&lt;|endoftext|&gt;</em>".</p>
 </dd>
-<dt><strong>-S</strong> [<em>INSTRUCTION</em>|<em>FILE</em>]</dt>
+<dt><strong>-S</strong> [<em>INSTRUCTION</em>|<em>FILE</em>],
+<strong>–instruction</strong></dt>
 <dd>
 <p>Set an instruction prompt. It may be a text file.</p>
 </dd>
-<dt><strong>-t</strong> [<em>VAL</em>]</dt>
+<dt><strong>-t</strong> [<em>VAL</em>],
+<strong>–temperature</strong>=[<em>VAL</em>]</dt>
 <dd>
 <p>Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper
 0.0 - 1.0). Def=<em>0</em>.</p>
@@ -853,7 +847,7 @@ Def=<em>1</em>.</p>
 </dl>
 <h4 id="script-modes">Script Modes</h4>
 <dl>
-<dt><strong>-c</strong></dt>
+<dt><strong>-c</strong>, <strong>–chat</strong></dt>
 <dd>
 <p>Chat mode in text completions, session break.</p>
 </dd>
@@ -861,7 +855,8 @@ Def=<em>1</em>.</p>
 <dd>
 <p>Chat mode in chat completions, session break.</p>
 </dd>
-<dt><strong>-C</strong></dt>
+<dt><strong>-C</strong>, <strong>–continue</strong>,
+<strong>–resume</strong></dt>
 <dd>
 <p>Continue (resume) from last session (compls/chat).</p>
 </dd>
@@ -869,11 +864,12 @@ Def=<em>1</em>.</p>
 <dd>
 <p>Start new session of pure text compls (<code>without -cc</code>).</p>
 </dd>
-<dt><strong>-e</strong> [<em>INSTRUCTION</em>] [<em>INPUT</em>]</dt>
+<dt><strong>-e</strong> [<em>INSTRUCTION</em>] [<em>INPUT</em>],
+<strong>–edit</strong></dt>
 <dd>
 <p>Set Edit mode. Model def=<em>text-davinci-edit-001</em>.</p>
 </dd>
-<dt><strong>-i</strong> [<em>PROMPT</em>]</dt>
+<dt><strong>-i</strong> [<em>PROMPT</em>], <strong>–image</strong></dt>
 <dd>
 <p>Generate images given a prompt.</p>
 </dd>
@@ -886,7 +882,7 @@ Def=<em>1</em>.</p>
 <dd>
 <p>Edit image with mask and prompt (required).</p>
 </dd>
-<dt><strong>-q</strong></dt>
+<dt><strong>-q</strong>, <strong>–insert</strong></dt>
 <dd>
 <p>Insert text rather than completing only.</p>
 <p>Use “<em>[insert]</em>” to indicate where the language model should
@@ -898,7 +894,7 @@ insert text (cmpls).</p>
 <p>Set or search an <em>awesome-chatgpt-prompt</em>.</p>
 <p>Set <code>//</code> instead to refresh cache.</p>
 </dd>
-<dt><strong>-TTT</strong></dt>
+<dt><strong>-TTT</strong>, <strong>–tiktoken</strong></dt>
 <dd>
 <p>Count input tokens with python tiktoken (ignores special tokens). It
 heeds <code>options -ccm</code>.</p>
@@ -906,12 +902,13 @@ heeds <code>options -ccm</code>.</p>
 <p>Set model or encoding with <code>option -m</code>.</p>
 </dd>
 <dt><strong>-w</strong> [<em>AUD</em>] [<em>LANG</em>]
-[<em>PROMPT-LANG</em>]</dt>
+[<em>PROMPT-LANG</em>], <strong>–transcribe</strong></dt>
 <dd>
 <p>Transcribe audio file into text. LANG is optional.</p>
 <p>Set twice to get phrase-level timestamps.</p>
 </dd>
-<dt><strong>-W</strong> [<em>AUD</em>] [<em>PROMPT-EN</em>]</dt>
+<dt><strong>-W</strong> [<em>AUD</em>] [<em>PROMPT-EN</em>],
+<strong>–translate</strong></dt>
 <dd>
 <p>Translate audio file into English text.</p>
 <p>Set twice to get phrase-level timestamps.</p>
@@ -919,15 +916,16 @@ heeds <code>options -ccm</code>.</p>
 </dl>
 <h3 id="script-settings">Script Settings</h3>
 <dl>
-<dt><strong>-f</strong></dt>
+<dt><strong>-f</strong>, <strong>–no-config</strong></dt>
 <dd>
 <p>Ignore user config file and environment.</p>
 </dd>
-<dt><strong>-h</strong></dt>
+<dt><strong>-h</strong>, <strong>–help</strong></dt>
 <dd>
 <p>Print the help page.</p>
 </dd>
-<dt><strong>-H</strong> <code>/</code>[<em>HIST_FILE</em>]</dt>
+<dt><strong>-H</strong> <code>/</code>[<em>HIST_FILE</em>],
+<strong>–hist</strong></dt>
 <dd>
 <p>Edit history file with text editor or pipe to stdout.</p>
 <p>A history file name can be optionally set as argument.</p>
@@ -938,36 +936,39 @@ heeds <code>options -ccm</code>.</p>
 <p>With <code>-ccC</code>, or <code>-rR</code>, prints with the
 specified restart and start sequences.</p>
 </dd>
-<dt><strong>-j</strong></dt>
+<dt><strong>-j</strong>, <strong>–raw</strong></dt>
 <dd>
 <p>Print raw JSON response (debug with <code>-jVVz</code>).</p>
 </dd>
-<dt><strong>-k</strong></dt>
+<dt><strong>-k</strong>, <strong>–no-colour</strong></dt>
 <dd>
 <p>Disable colour output. Def=<em>auto</em>.</p>
 </dd>
-<dt><strong>-K</strong> [<em>KEY</em>]</dt>
+<dt><strong>-K</strong> [<em>KEY</em>],
+<strong>–api-key</strong>=[<em>KEY</em>]</dt>
 <dd>
 <p>Set OpenAI API key.</p>
 </dd>
-<dt><strong>-l</strong> [<em>MOD</em>]</dt>
+<dt><strong>-l</strong> [<em>MOD</em>],
+<strong>–list-models</strong></dt>
 <dd>
 <p>List models or print details of <em>MODEL</em>.</p>
 <p>Set twice to print script model indexes instead.</p>
 </dd>
-<dt><strong>-L</strong> [<em>FILEPATH</em>]</dt>
+<dt><strong>-L</strong> [<em>FILEPATH</em>],
+<strong>–log</strong>=[<em>FILEPATH</em>]</dt>
 <dd>
 <p>Set log file. <em>FILEPATH</em> is required.</p>
 </dd>
-<dt><strong>-o</strong></dt>
+<dt><strong>-o</strong>, <strong>–clipboard</strong></dt>
 <dd>
 <p>Copy response to clipboard.</p>
 </dd>
-<dt><strong>-u</strong></dt>
+<dt><strong>-u</strong>, <strong>–multiline</strong></dt>
 <dd>
 <p>Toggle multiline prompter.</p>
 </dd>
-<dt><strong>-v</strong></dt>
+<dt><strong>-v</strong>, <strong>–verbose</strong></dt>
 <dd>
 <p>Less verbose. May set multiple times.</p>
 </dd>
@@ -976,11 +977,15 @@ specified restart and start sequences.</p>
 <p>Pretty-print context.</p>
 <p>Set twice to dump raw request.</p>
 </dd>
-<dt><strong>-x</strong></dt>
+<dt><strong>-x</strong>, <strong>–editor</strong></dt>
 <dd>
 <p>Edit prompt in text editor.</p>
 </dd>
-<dt><strong>-z</strong></dt>
+<dt><strong>-y</strong>, <strong>–tik</strong></dt>
+<dd>
+<p>Set tiktoken for token preview (cmpls, chat).</p>
+</dd>
+<dt><strong>-z</strong>, <strong>–last</strong></dt>
 <dd>
 <p>Print last response JSON data.</p>
 </dd>

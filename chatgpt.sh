@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.16  may/2023  by mountaineerbr  GPL+3
+# v0.13.17  may/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -40,6 +40,8 @@ OPTS=512x512
 OPTI_FMT=b64_json  #url
 # Recorder command
 #REC_CMD=
+# Set python tiktoken to count tokens (slow)
+#OPTTIK=
 # Inject restart text
 #RESTART=
 # Inject   start text
@@ -129,6 +131,10 @@ Description
 	Option -i generates or edits images. Option -w transcribes audio
 	and option -W tarnslates audio to English.
 
+	Option -y sets python tiktoken instead of the default script hack
+	to preview token count. Set this option for accurate history
+	context length (slow).
+
 	A personal (free) OpenAI API is required, set it with -K. Also
 	see ENVIRONMENT section in man page.
 
@@ -162,6 +168,7 @@ Chat Commands
 	     -u      !multi        Toggle multiline prompter.
 	     -v      !ver          Toggle verbose.
 	     -x      !ed           Toggle text editor interface.
+	     -y      !tik          Toggle python tiktoken use.
 	     !r      !regen        Renegerate last response.
 	     !q      !quit         Exit.
 		     !help         Print this help snippet.
@@ -172,7 +179,7 @@ Chat Commands
 	     -L      !log          Save to log file (pretty-print).
 	     !s      !session      Change to, search or create hist file.
 	    !!s     !!session      Same as !session, add session break.
-	     !c      !copy         Copy session from one hist file to another.
+	     !c      !copy         Fork session from one hist file to another.
 		     !list         List history files.
 	  ------    ----------    ---------------------------------------
 	
@@ -193,38 +200,25 @@ Chat Commands
 	Once enabled, press ENTER twice to confirm the prompt.
 
 
-Long Options
-	The following options can be set with an argument, or multiple
-	times when appropriate.
-
-	--alpha, --api-key, --best, --best-of, --chat, --clipboard,
-	--clip, --cont, --continue, --edit, --editor, --frequency,
-	--frequency-penalty, --help, --hist, --image, --insert,
-	--instruction, --last, --list-model, --list-models, --log,
-	--log-prob, --max, --max-tokens, --mod, --model, --no-colour,
-	--no-config, --presence, --presence-penalty, --prob, --raw,
-	--restart-seq, --restart-sequence, --results, --resume,
-	--start-seq, --start-sequence, --stop, --temp, --temperature,
-	--tiktoken, --top, --top-p, --transcribe, --translate, --multi,
-	--multiline, and --verbose.
-
-	E.g.: \`--chat', \`--temp=0.9', \`--max=1024,128', and \`--presence-penalty 0.6'.
-
-
 Options
 	Model Settings
-	-@ [[VAL%]COLOUR]
-		 Set transparent colour of image mask. Def=black.
-		 Fuzz intensity can be set with [VAL%]. Def=0%.
+	-@ [[VAL%]COLOUR], --alpha=[[VAL%]COLOUR]
+		Set transparent colour of image mask. Def=black.
+		Fuzz intensity can be set with [VAL%]. Def=0%.
 	-NUM
-	-M [NUM[-NUM]]
-		 Set maximum number of \`response tokens'. Def=$OPTMAX.
-		 \`Model capacity' can be set with a second number.
-	-a [VAL] Set presence penalty  (cmpls/chat, -2.0 - 2.0).
-	-A [VAL] Set frequency penalty (cmpls/chat, -2.0 - 2.0).
-	-b [VAL] Set best of, must be greater than opt -n (cmpls). Def=1.
-	-B 	 Print log probabilities to stderr (cmpls, 0 - 5).
-	-m [MOD] Set model by NAME.
+	-M [NUM[-NUM]], --max-tokens=[NUM[,NUM]]
+		Set maximum number of \`response tokens'. Def=$OPTMAX.
+		\`Model capacity' can be set with a second number.
+	-a [VAL], --presence-penalty=[VAL]
+		Set presence penalty  (cmpls/chat, -2.0 - 2.0).
+	-A [VAL], --frequency-penalty=[VAL]
+		Set frequency penalty (cmpls/chat, -2.0 - 2.0).
+	-b [VAL], --best-of=[VAL]
+		Set best of, must be greater than opt -n (cmpls). Def=1.
+	-B, --log-prob
+		Print log probabilities to stderr (cmpls, 0 - 5).
+	-m [MOD], --model=[MOD]
+		Set model by NAME.
 	-m [IND] Set model by INDEX:
 		# COMPLETIONS               # EDITS
 		0.  text-davinci-003        8.  text-davinci-edit-001
@@ -236,68 +230,91 @@ Options
 		# MODERATION                # GPT-4 
 		6.  text-moderation-latest  12. gpt-4
 		7.  text-moderation-stable  13. gpt-4-32k
-	-n [NUM] Set number of results. Def=$OPTN.
-	-p [VAL] Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
-	-r [SEQ] Set restart sequence string (cmpls).
-	-R [SEQ] Set start sequence string (cmpls).
-	-s [SEQ] Set stop sequences, up to 4. Def=\"<|endoftext|>\".
-	-S [INSTRUCTION|FILE]
-		 Set an instruction prompt. It may be a text file.
-	-t [VAL] Set temperature value (cmpls/chat/edits/audio),
-		 (0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
+	-n [NUM], --results=[NUM]
+		Set number of results. Def=$OPTN.
+	-p [VAL], --top-p=[VAL]
+		Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
+	-r [SEQ], --restart-sequence=[SEQ]
+		Set restart sequence string (cmpls).
+	-R [SEQ], --start-sequence=[SEQ]
+		Set start sequence string (cmpls).
+	-s [SEQ], --stop=[SEQ]
+		Set stop sequences, up to 4. Def=\"<|endoftext|>\".
+	-S [INSTRUCTION|FILE], --instruction
+		Set an instruction prompt. It may be a text file.
+	-t [VAL], --temperature=[VAL]
+		Set temperature value (cmpls/chat/edits/audio),
+		(0.0 - 2.0, whisper 0.0 - 1.0). Def=${OPTT:-0}.
 
 	Script Modes
-	-c 	 Chat mode in text completions, session break.
-	-cc 	 Chat mode in chat completions, session break.
-	-C 	 Continue (resume) from last session (compls/chat).
-	-CC 	 Start new session of pure text compls (without -cc).
-	-e [INSTRUCTION] [INPUT]
-		 Set Edit mode. Model def=text-davinci-edit-001.
-	-i [PROMPT]
-		 Generate images given a prompt.
+	-c, --chat
+		Chat mode in text completions, session break.
+	-cc 	Chat mode in chat completions, session break.
+	-C, --continue, --resume
+		Continue (resume) from last session (compls/chat).
+	-CC 	Start new session of pure text compls (without -cc).
+	-e [INSTRUCTION] [INPUT], --edit
+		Set Edit mode. Model def=text-davinci-edit-001.
+	-i [PROMPT], --image
+		Generate images given a prompt.
 	-i [PNG]
-		 Create variations of a given image.
+		Create variations of a given image.
 	-i [PNG] [MASK] [PROMPT]
-		 Edit image with mask and prompt (required).
-	-q 	 Insert text rather than completing only. Use \`[insert]'
-		 to indicate where the model should insert text (cmpls).
+		Edit image with mask and prompt (required).
+	-q, --insert
+		Insert text rather than completing only. Use \`[insert]'
+		to indicate where the model should insert text (cmpls).
 	-S /[AWESOME_PROMPT_NAME]
-		 Set or search an awesome-chatgpt-prompt.
-		 Set \`//' to refresh cache.
-	-TTT 	 Count input tokens with tiktoken, it heeds options -ccm.
-		 Set twice to print tokens, thrice to available encodings.
-		 Set model or encoding with option -m.
-	-w [AUD] [LANG] [PROMPT-LANG]
-		 Transcribe audio file into text. LANG is optional.
-		 Set twice to get phrase-level timestamps. 
-	-W [AUD] [PROMPT-EN]
-		 Translate audio file into English text.
-		 Set twice to get phrase-level timestamps. 
+		Set or search an awesome-chatgpt-prompt.
+		Set \`//' to refresh cache.
+	-TTT, --tiktoken
+		Count input tokens with tiktoken, it heeds options -ccm.
+		Set twice to print tokens, thrice to available encodings.
+		Set model or encoding with option -m.
+	-w [AUD] [LANG] [PROMPT-LANG], --transcribe
+		Transcribe audio file into text. LANG is optional.
+		Set twice to get phrase-level timestamps. 
+	-W [AUD] [PROMPT-EN], --translate
+		Translate audio file into English text.
+		Set twice to get phrase-level timestamps. 
 	
 	Script Settings
-	-f 	 Ignore user config file and environment.
-	-h 	 Print this help page.
-	-H /[HIST_FILE]
-		 Edit history file with text editor or pipe to stdout.
-		 A hist file name can be optionally set as argument.
+	-f, --no-config
+		Ignore user config file and environment.
+	-h, --help
+		Print this help page.
+	-H /[HIST_FILE], --hist
+		Edit history file with text editor or pipe to stdout.
+		A hist file name can be optionally set as argument.
 	-HH /[HIST_FILE]
-		 Pretty print last history session to stdout.
-		 With -ccC, or -rR, prints the specified seqs.
-	-j 	 Print raw JSON response (debug with -jVVz).
-	-k 	 Disable colour output. Def=auto.
-	-K [KEY] Set OpenAI API key.
-	-l [MOD] List models or print details of MODEL. Set twice
-		 to print model indexes instead.
-	-L [FILEPATH]
-		 Set log file. FILEPATH is required.
-	-o 	 Copy response to clipboard.
-	-u 	 Toggle multiline prompter.
-	-v 	 Less verbose. May set multiple times.
-	-V 	 Pretty-print context (request).
-	-VV 	 Dump raw request block to stderr.
-	-x 	 Edit prompt in text editor.
-	-z 	 Print last response JSON data.
-	-Z 	 Run with Z-shell."
+		Pretty print last history session to stdout.
+		With -ccC, or -rR, prints the specified seqs.
+	-j, --raw
+		Print raw JSON response (debug with -jVVz).
+	-k, --no-colour
+		Disable colour output. Def=auto.
+	-K [KEY], --api-key
+		Set OpenAI API key.
+	-l [MOD], --list-models
+		List models or print details of MODEL. Set twice
+		to print model indexes instead.
+	-L [FILEPATH], --log=[FILEPATH]
+		Set log file. FILEPATH is required.
+	-o, --clipboard
+		Copy response to clipboard.
+	-u, --multiline
+		Toggle multiline prompter.
+	-v, --verbose
+		Less verbose. May set multiple times.
+	-V 	Pretty-print context (request).
+	-VV 	Dump raw request block to stderr.
+	-x, --editor
+		Edit prompt in text editor.
+	-y, --tik
+		Set tiktoken for token count preview (cmpls, chat).
+	-z, --last
+		Print last response JSON data.
+	-Z 	Run with Z-shell."
 
 MODELS=(
 	#COMPLETIONS
@@ -578,9 +595,9 @@ function token_prevf
 #set up context from history file ($HIST and $HIST_C)
 function set_histf
 {
-	typeset time token string max_prev q_type a_type role role_last rest a_append sub ind n
+	typeset time token string max_prev q_type a_type role role_last rest a_append sub ind err n
 	[[ -s "$FILECHAT" ]] || return
-	unset HIST HIST_C
+	unset HIST HIST_C ;err=4
 	(($#)) && token_prevf "$*"
 	{ 	((OPTC>1)) || ((EPN==6)) ;} && a_append=" "
 	q_type="${Q_TYPE##$SPC0}" a_type="${A_TYPE##$SPC0}"
@@ -590,13 +607,15 @@ function set_histf
 	do 	[[ ${time}${token} = *([$IFS])\#* ]] && continue
 		[[ -z $time$token$string ]] && continue
 		[[ ${time}${token} = *[Bb][Rr][Ee][Aa][Kk]* ]] && { 	((OPTHIST)) && continue || break ;}
-		if ((token<1))
+		if ((OPTTIK))
+		then 	token=$(OPTV=1 tiktokenf - <<<"$string") ;err=1
+		elif ((token<1))
 		then 	((OPTVV>1||OPTJ)) &&
 			__warmsgf "Warning:" "Zero/Neg token in history"
 			token=$(__tiktokenf "${string}")
 		fi
 
-		if ((max_prev+token+TKN_PREV+( (max_prev*4)/100) < MODMAX-OPTMAX)) #4% for tkn count errs
+		if ((max_prev+token+TKN_PREV+( (max_prev*err)/100 ) < MODMAX-OPTMAX)) #4% for tkn count errs
 		then 	((max_prev+=token))
 			((N_LOOP)) || ((OLD_TOTAL+=token))
 			H_TIME="${time}" MAX_PREV="${max_prev}"
@@ -696,7 +715,7 @@ function tiktokenf
 	python <(printf "
 import sys
 import tiktoken
-opttik, optv, optl = ${OPTTIK:-0}, ${OPTV:-0}, ${OPTL:-0}
+opttik, optv, optl = ${OPTTIKTOKEN:-0}, ${OPTV:-0}, ${OPTL:-0}
 if opttik+optl > 2:
     for enc_name in tiktoken.list_encoding_names():
         print(enc_name)
@@ -878,6 +897,10 @@ function cmd_runf
 		-x|editor|ed|vim|vi)
 			((++OPTX)) ;((OPTX%=2))
 			;;
+		-y|tiktoken|tik)
+			((++OPTTIK)) ;((OPTTIK%=2))
+			__cmdmsgf 'Tiktoken' $( ((OPTTIK)) && echo ON || echo OFF)
+			;;
 		-[wW]*|audio*|rec*)
 			OPTW=1 ;[[ $* = -W* ]] && OPTW=2
 			set -- "${*##@(-[wW][wW]|-[wW]|audio|rec)$SPC}"
@@ -891,7 +914,7 @@ function cmd_runf
 		change*|create*|search*|list*|s*)
 			session_mainf /"${args[@]}"
 			;;
-		copy*|c*)
+		copy*|fork*|c*)
 			session_mainf /"${args[@]}"
 			;;
 		r|regenerate|regen|[$IFS]|'')  #regenerate last response
@@ -1119,6 +1142,13 @@ function set_optsf
 	[[ -n $SUFFIX ]] && OPTSUFFIX_OPT="\"suffix\": \"$(escapef "$SUFFIX")\"," || unset OPTSUFFIX_OPT
 	((OPTV<1)) && unset OPTV
 	
+	if ((OPTTIK))
+	then 	TIKFUN="${TIKFUN:-$(declare -f __tiktokenf)}"
+		function __tiktokenf { 	OPTV=1 tiktokenf "$1" ;}
+	elif [[ -n $TIKFUN ]]
+	then 	eval "$TIKFUN" ;unset TIKFUN
+	fi
+
 	if ((${#STOPS[@]}))
 	then  #compile stop sequences  #def: <|endoftext|>
 		unset OPTSTOP
@@ -1716,10 +1746,10 @@ function session_mainf
 			return
 			;;
 		#copy session from hist option? operator: /copy
-		copy*|c*)
+		copy*|fork*|c*)
 			__cmdmsgf 'Session' 'copy'
 			optsession=3
-			set -- "${1##*([/!])@(copy|c)*(\ )}" "${@:2}" #two args
+			set -- "${1##*([/!])@(copy|fork|c)*(\ )}" "${@:2}" #two args
 			set -- "${@/\~\//"$HOME"\/}"
 			unset fname
 			;;
@@ -1790,7 +1820,7 @@ function session_mainf
 }
 
 #parse opts
-optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:qr:R:s:S:t:TouvVxwWzZ0123456789@:/,.+-:"
+optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:qr:R:s:S:t:TouvVxwWyzZ0123456789@:/,.+-:"
 while getopts "$optstring" opt
 do
 	if [[ $opt = - ]]  #long options
@@ -1808,8 +1838,8 @@ do
 			R:start-sequence           R:start-seq \
 			s:stop      S:instruction  t:temperature \
 			t:temp      T:tiktoken  u:multiline   u:multi \
-			v:verbose  x:editor  w:transcribe  W:translate  z:last
-			#opt:cmd_name
+			v:verbose  x:editor  w:transcribe  W:translate \
+			y:tik  z:last    #opt:cmd_name
 		do
 			name="${opt##*:}"  name="${name/[_-]/[_-]}"
 			opt="${opt%%:*}"
@@ -1878,7 +1908,7 @@ do
 		m) 	OPTMARG="${OPTARG:-0}"
 			if [[ $OPTARG = *[a-zA-Z]* ]]
 			then 	MOD="$OPTARG"  #model name
-			else 	MOD="${MODELS[OPTARG]}" #pre-defined model index
+			else 	MOD="${MODELS[OPTARG]}" #model index
 			fi;;
 		n) 	OPTN="$OPTARG" ;;
 		k) 	OPTK=1;;
@@ -1895,13 +1925,14 @@ do
 			else 	INSTRUCTION="$OPTARG"
 			fi;;
 		t) 	OPTT="$OPTARG";;
-		T) 	((++OPTTIK));;
+		T) 	((++OPTTIKTOKEN));;
 		u) 	((++OPTMULTI)); ((OPTMULTI%=2));;
 		v) 	((++OPTV));;
 		V) 	((++OPTVV));;  #debug
 		x) 	OPTX=1;;
 		w) 	((++OPTW));;
 		W) 	((OPTW)) || OPTW=1 ;((++OPTWW));;
+		y) 	OPTTIK=1;;
 		z) 	OPTZ=1;;
 		#try to run script with zsh
 		Z) 	((++OPTZZ))
@@ -1982,15 +2013,15 @@ set_maxtknf "${OPTMM:-$OPTMAX}"
 set_optsf
 
 #load stdin
-(($#)) || [[ -t 0 ]] || ((OPTTIK)) || if [[ -n $TERMUX_VERSION ]]
+(($#)) || [[ -t 0 ]] || ((OPTTIKTOKEN)) || if [[ -n $TERMUX_VERSION ]]
 then 	set -- "$(</proc/self/fd/0)"
 else 	set -- "$(</dev/stdin)"
 fi
 
-((OPTX)) && ((OPTE+OPTEMBED+OPTI+OPTII+OPTTIK)) &&
+((OPTX)) && ((OPTE+OPTEMBED+OPTI+OPTII+OPTTIKTOKEN)) &&
 edf "$@" && set -- "$(<"$FILETXT")"  #editor
 
-if ((!(OPTI+OPTII+OPTL+OPTW+OPTZ+OPTTIK) ))
+if ((!(OPTI+OPTII+OPTL+OPTW+OPTZ+OPTTIKTOKEN) ))
 then 	#session cmds
 	if ((!(OPTE+OPTEMBED) )) &&
 		[[ "${1}" = *(\ )/* ]]
@@ -2008,7 +2039,7 @@ then 	#session cmds
 	}
 fi
 
-((OPTTIK)) ||
+((OPTTIKTOKEN)) ||
 for arg  #escape input
 do 	((init++)) || set --
 	set -- "$@" "$(escapef "$arg")"
@@ -2034,8 +2065,8 @@ elif ((OPTZ))      #last response json
 then 	lastjsonf
 elif ((OPTL))      #model list
 then 	list_modelsf "$@"
-elif ((OPTTIK))
-then 	((OPTTIK>2)) || __sysmsgf 'Language Model:' "$MOD"
+elif ((OPTTIKTOKEN))
+then 	((OPTTIKTOKEN>2)) || __sysmsgf 'Language Model:' "$MOD"
 	(($#)) || [[ -t 0 ]] || set -- "-"
 	[[ -f "$*" ]] && [[ -t 0 ]] && exec 0< "$*" && set -- "-"
 	if ! tiktokenf "$*"

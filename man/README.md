@@ -2,7 +2,7 @@
 author:
 - mountaineerbr
 date: April 2023
-title: CHATGPT.SH(1) v0.13.12 \| General Commands Manual
+title: CHATGPT.SH(1) v0.13.17 \| General Commands Manual
 ---
 
 ### NAME
@@ -105,6 +105,11 @@ Combine `-wW` **with** `-cc` to start **chat with voice input**
 (Whisper) support. Output may be piped to a voice synthesiser to have a
 full voice in and out experience.
 
+`Option -y` sets python tiktoken instead of the default script hack to
+preview token count. This option makes token count preview accurate
+however it is slow. Useful for rebuilding history context independently
+from the original model used to generate responses.
+
 Stdin is supported when there is no positional arguments left after
 option parsing. Stdin input sets a single PROMPT.
 
@@ -188,6 +193,7 @@ or “`/`”.
 | `-u`   | `!multi` | Toggle multiline prompter.    |
 | `-v`   | `!ver`   | Toggle verbose.               |
 | `-x`   | `!ed`    | Toggle text editor interface. |
+| `-y`   | `!tik`   | Toggle python tiktoken use.   |
 | `!r`   | `!regen` | Renegerate last response.     |
 | `!q`   | `!quit`  | Exit.                         |
 
@@ -198,7 +204,7 @@ or “`/`”.
 | `-L`    | `!log`      | Save to log file.                           |
 | `!s`    | `!session`  | Change to, search or create hist file.      |
 | `!!s`   | `!!session` | Same as `!session`, add session break.      |
-| `!c`    | `!copy`     | Copy session from one hist file to another. |
+| `!c`    | `!copy`     | Fork session from one hist file to another. |
 |         | `!list`     | List history files.                         |
 
 E.g.: “`/temp` *0.7*”, “`!mod`*1*”, “`-p` *0.2*”, and “`/s`
@@ -440,55 +446,35 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 
 `ImageMagick`, and `Sox`/`Alsa-tools`/`FFmpeg` are optionally required.
 
-### LONG OPTIONS
-
-The following options can be set with an argument, or multiple times
-when appropriate.
-
-> `--alpha`, `--api-key`, `--best`, `--best-of`, `--chat`,
-> `--clipboard`, `--clip`, `--cont`, `--continue`, `--edit`, `--editor`,
-> `--frequency`, `--frequency-penalty`, `--help`, `--hist`, `--image`,
-> `--insert`, `--instruction`, `--last`, `--list-model`,
-> `--list-models`, `--log`, `--log-prob`, `--max`, `--max-tokens`,
-> `--mod`, `--model`, `--no-colour`, `--no-config`, `--presence`,
-> `--presence-penalty`, `--prob`, `--raw`, `--restart-seq`,
-> `--restart-sequence`, `--results`, `--resume`, `--start-seq`,
-> `--start-sequence`, `--stop`, `--temp`, `--temperature`, `--tiktoken`,
-> `--top`, `--top-p`, `--transcribe`, `--translate`, `--multi`,
-> `--multiline`, and `--verbose`.
-
-E.g.: “`--chat`”, “`--temp`=*0.9*”, “`--max`=*1024,128*”, and
-“`--presence-penalty` *0.6*”.
-
 ### OPTIONS
 
 #### Model Settings
 
-**-@** \[\[*VAL%*\]*COLOUR*\]  
+**-@** \[\[*VAL%*\]*COLOUR*\], **–alpha**=\[\[*VAL%*\]*COLOUR*\]  
 Set transparent colour of image mask. Def=*black*.
 
 Fuzz intensity can be set with \[VAL%\]. Def=*0%*.
 
 **-NUM**
 
-**-M** \[*NUM*\[*-NUM*\]\]  
+**-M** \[*NUM*\[*-NUM*\]\], **–max-tokens**=\[*NUM*\[*-NUM*\]\]  
 Set maximum number of *response tokens*. Def=*512*.
 
 *Model capacity* can be set with a second number. Def=*auto-512*.
 
-**-a** \[*VAL*\]  
+**-a** \[*VAL*\], **–presence-penalty**=\[*VAL*\]  
 Set presence penalty (cmpls/chat, -2.0 - 2.0).
 
-**-A** \[*VAL*\]  
+**-A** \[*VAL*\], **–frequency-penalty**=\[*VAL*\]  
 Set frequency penalty (cmpls/chat, -2.0 - 2.0).
 
-**-b** \[*VAL*\]  
+**-b** \[*VAL*\], **–best-of**=\[*VAL*\]  
 Set best of, must be greater than `option -n` (cmpls). Def=*1*.
 
-**-B**  
+**-B**, **–log-prob**  
 Print log probabilities to stderr (cmpls, 0 - 5).
 
-**-m** \[*MOD*\]  
+**-m** \[*MOD*\], **–model**=\[*MOD*\]  
 Set model by *NAME*.
 
 **-m** \[*IND*\]  
@@ -507,46 +493,46 @@ Set model by *INDEX*:
 |     | *6*. text-moderation-latest | *12*. gpt-4                |
 |     | *7*. text-moderation-stable | *13*. gpt-4-32k            |
 
-**-n** \[*NUM*\]  
+**-n** \[*NUM*\], **–results**=\[*NUM*\]  
 Set number of results. Def=*1*.
 
-**-p** \[*VAL*\]  
+**-p** \[*VAL*\], **–top-p**=\[*VAL*\]  
 Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
 
-**-r** \[*SEQ*\]  
+**-r** \[*SEQ*\], **–restart-sequence**=\[*SEQ*\]  
 Set restart sequence string (cmpls).
 
-**-R** \[*SEQ*\]  
+**-R** \[*SEQ*\], **–start-sequence**=\[*SEQ*\]  
 Set start sequence string (cmpls).
 
-**-s** \[*SEQ*\]  
+**-s** \[*SEQ*\], **–stop**=\[*SEQ*\]  
 Set stop sequences, up to 4. Def="*\<\|endoftext\|\>*".
 
-**-S** \[*INSTRUCTION*\|*FILE*\]  
+**-S** \[*INSTRUCTION*\|*FILE*\], **–instruction**  
 Set an instruction prompt. It may be a text file.
 
-**-t** \[*VAL*\]  
+**-t** \[*VAL*\], **–temperature**=\[*VAL*\]  
 Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper
 0.0 - 1.0). Def=*0*.
 
 #### Script Modes
 
-**-c**  
+**-c**, **–chat**  
 Chat mode in text completions, session break.
 
 **-cc**  
 Chat mode in chat completions, session break.
 
-**-C**  
+**-C**, **–continue**, **–resume**  
 Continue (resume) from last session (compls/chat).
 
 **-CC**  
 Start new session of pure text compls (`without -cc`).
 
-**-e** \[*INSTRUCTION*\] \[*INPUT*\]  
+**-e** \[*INSTRUCTION*\] \[*INPUT*\], **–edit**  
 Set Edit mode. Model def=*text-davinci-edit-001*.
 
-**-i** \[*PROMPT*\]  
+**-i** \[*PROMPT*\], **–image**  
 Generate images given a prompt.
 
 **-i** \[*PNG*\]  
@@ -555,7 +541,7 @@ Create variations of a given image.
 **-i** \[*PNG*\] \[*MASK*\] \[*PROMPT*\]  
 Edit image with mask and prompt (required).
 
-**-q**  
+**-q**, **–insert**  
 Insert text rather than completing only.
 
 Use “*\[insert\]*” to indicate where the language model should insert
@@ -566,7 +552,7 @@ Set or search an *awesome-chatgpt-prompt*.
 
 Set `//` instead to refresh cache.
 
-**-TTT**  
+**-TTT**, **–tiktoken**  
 Count input tokens with python tiktoken (ignores special tokens). It
 heeds `options -ccm`.
 
@@ -574,25 +560,25 @@ Set twice to print tokens, thrice to available encodings.
 
 Set model or encoding with `option -m`.
 
-**-w** \[*AUD*\] \[*LANG*\] \[*PROMPT-LANG*\]  
+**-w** \[*AUD*\] \[*LANG*\] \[*PROMPT-LANG*\], **–transcribe**  
 Transcribe audio file into text. LANG is optional.
 
 Set twice to get phrase-level timestamps.
 
-**-W** \[*AUD*\] \[*PROMPT-EN*\]  
+**-W** \[*AUD*\] \[*PROMPT-EN*\], **–translate**  
 Translate audio file into English text.
 
 Set twice to get phrase-level timestamps.
 
 ### Script Settings
 
-**-f**  
+**-f**, **–no-config**  
 Ignore user config file and environment.
 
-**-h**  
+**-h**, **–help**  
 Print the help page.
 
-**-H** `/`\[*HIST_FILE*\]  
+**-H** `/`\[*HIST_FILE*\], **–hist**  
 Edit history file with text editor or pipe to stdout.
 
 A history file name can be optionally set as argument.
@@ -603,30 +589,30 @@ Pretty print last history session to stdout.
 With `-ccC`, or `-rR`, prints with the specified restart and start
 sequences.
 
-**-j**  
+**-j**, **–raw**  
 Print raw JSON response (debug with `-jVVz`).
 
-**-k**  
+**-k**, **–no-colour**  
 Disable colour output. Def=*auto*.
 
-**-K** \[*KEY*\]  
+**-K** \[*KEY*\], **–api-key**=\[*KEY*\]  
 Set OpenAI API key.
 
-**-l** \[*MOD*\]  
+**-l** \[*MOD*\], **–list-models**  
 List models or print details of *MODEL*.
 
 Set twice to print script model indexes instead.
 
-**-L** \[*FILEPATH*\]  
+**-L** \[*FILEPATH*\], **–log**=\[*FILEPATH*\]  
 Set log file. *FILEPATH* is required.
 
-**-o**  
+**-o**, **–clipboard**  
 Copy response to clipboard.
 
-**-u**  
+**-u**, **–multiline**  
 Toggle multiline prompter.
 
-**-v**  
+**-v**, **–verbose**  
 Less verbose. May set multiple times.
 
 **-V**  
@@ -634,10 +620,13 @@ Pretty-print context.
 
 Set twice to dump raw request.
 
-**-x**  
+**-x**, **–editor**  
 Edit prompt in text editor.
 
-**-z**  
+**-y**, **–tik**  
+Set tiktoken for token preview (cmpls, chat).
+
+**-z**, **–last**  
 Print last response JSON data.
 
 **-Z**  
