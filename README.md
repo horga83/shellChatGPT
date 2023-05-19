@@ -31,7 +31,7 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 Just download the stand-alone `chatgpt.sh` and make it executable or clone this repo.
 
 
-### ✅ Required packages
+### ✔️ Required packages
 
 - Free [OpenAI GPTChat key](https://platform.openai.com/account/api-keys)
 - Bash or Zsh <!-- [Ksh93u+](https://github.com/ksh93/ksh), Bash or Zsh -->
@@ -131,7 +131,7 @@ Set a prompt from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt
     chatgpt.sh -cc -S /Relationship_Coach 
 
 
-Some other good prompts to start a chat with include:
+Some simple prompts to get one started include:
 
 
     chatgpt.sh -cc -S'You are a professional psicologist.' 
@@ -141,8 +141,8 @@ Some other good prompts to start a chat with include:
     chatgpt.sh -cc -S'You are a post-graduation teacher and will do various activities related to preparing and elaborating a Philosophy course.'
 
 
-*Obs: in this case, instructions (or system prompt) may refer to both
-**user** and **assistant** roles, so write like one.
+*Obs: in this case, the instruction (or system prompt) may refer to both
+**user** and **assistant** roles, so heed your own instruction!
 
 
 <!--
@@ -355,4 +355,19 @@ See also BUGS section in the [man page](man/README.md).
 Read the markdown [**man page here**](man/README.md).
 
 Alternatively, an help page snippet can be printed with `chatgpt.sh -h`.
+
+
+## 💪 Contributors
+
+***Many Thanks*** to all that contributed to this project.
+
+
+[edshamis](https://www.github.com/edshamis)
+
+
+---
+
+Everyone is welcome to submit issues, PRs, and new ideas!
+
+
 
