@@ -11,7 +11,7 @@ Shell wrapper for OpenAI API for ChatGPT, DALL-E and Whisper.
 - _Insert mode_ of text completions.
 - _Follow up_ conversations, _preview/regenerate_ responses
 - Manage _sessions_, _continue_ from last session, print last session.
-- Integration with [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts)
+- Integration with [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts) and [awesome-chatgpt-prompts-zh](https://github.com/PlexPt/awesome-chatgpt-prompts-zh)
 - _Generate images_ from text input
 - _Generate variations_ of images
 - _Edit images_, easily generate an alpha mask
@@ -124,11 +124,14 @@ Chat mode in text editor (visual) mode. Edit initial input:
 
 ### 🔌 Awesome Prompts
 
-Set a prompt from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts):
+Set a prompt from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts)
+or [awesome-chatgpt-prompts-zh](https://github.com/PlexPt/awesome-chatgpt-prompts-zh):
 
     chatgpt.sh -cc -S /linux_terminal
     
     chatgpt.sh -cc -S /Relationship_Coach 
+
+    chatgpt.sh -cc -S %担任雅思写作考官
 
 
 Some simple prompts to get one started include:
@@ -198,14 +201,24 @@ Generate image variation:
 
 ### 🔊 Audio Transcriptions / Translations
 
-Generate transcription from audio file:
+Generate transcription from audio file. A prompt to guide the model's style is optional.
+The prompt should match the audio language:
 
     chatgpt.sh -w path/to/audio.mp3
     chatgpt.sh -w path/to/audio.mp3 "en" "This is a poem about X."
 
-Generate transcription from voice recording, set Portuguese as input language:
+Generate transcription from voice recording, set Portuguese as the language to transcribe to:
 
     chatgpt.sh -w pt
+
+
+Also works to transcribe from one language to another.
+
+Transcribe any language audio **to japanese** (_prompt_ must be in
+the same language as the input audio language):
+
+    chatgpt.sh -w ja "An interview."
+
 
 Translate audio file or voice recording in any language to English:
 
@@ -335,7 +348,6 @@ ln -s /data/data/com.termux/files/usr/bin/zsh /data/data/com.termux/files/usr/bi
 - In chat mode, edit live history entries with command `!hist`.
 - Add operator forward slash `/` to the end of prompt to trigger **preview mode**.
 - One can regenerate a response typing in a new prompt a single slash `/`.
-- Set or search prompts from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts) with `-S /prompt_name`
 - Set clipboard with the latest response with `option -o`.
 - Hopefully, default colours are colour-blind friendly.
 

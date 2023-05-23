@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.13.18  may/2023  by mountaineerbr  GPL+3
+# v0.14  may/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -53,6 +53,13 @@ OPTI_FMT=b64_json  #url
 # Text and chat completions, and edits endpoints
 #INSTRUCTION="The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly."
 
+# Awesome-chatgpt-prompts URL
+AWEURL="https://raw.githubusercontent.com/f/awesome-chatgpt-prompts/main/prompts.csv"
+AWEURLZH="https://raw.githubusercontent.com/PlexPt/awesome-chatgpt-prompts-zh/main/prompts-zh.json"  #prompts-zh-TW.json
+
+# Base API URL
+APIURL="${APIURL:-https://api.openai.com/v1}"
+
 # CACHE AND OUTPUT DIRECTORIES
 CONFFILE="$HOME/.chatgpt.conf"
 CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatgptsh"
@@ -76,9 +83,6 @@ HISTCONTROL=erasedups:ignoredups
 HISTSIZE=512
 SAVEHIST=512
 
-# Base API URL
-APIURL="https://api.openai.com/v1"
-
 # Def hist, txt chat types
 Q_TYPE="\\nQ: "
 A_TYPE="\\nA:"
@@ -95,13 +99,13 @@ HELP="Name
 
 
 Synopsis
-	${0##*/} [opt] [-m [MOD_NAME|MOD_INDEX]] [PROMPT|TXT_FILE]
+	${0##*/} [-c|-d] [opt] [PROMPT|TXT_FILE]
 	${0##*/} -e [opt] [INSTRUCTION] [INPUT]
 	${0##*/} -i [opt] [S|M|L] [PROMPT]
 	${0##*/} -i [opt] [S|M|L] [PNG_FILE]
 	${0##*/} -i [opt] [S|M|L] [PNG_FILE] [MASK_FILE] [PROPMT]
 	${0##*/} -TTT [-v] [-m[MOD|ENC]] [TEXT|FILE]
-	${0##*/} -w [opt] [AUDIO_FILE] [LANG] [PROMPT-LANG]
+	${0##*/} -w [opt] [AUDIO_FILE] [LANG] [PROMPT]
 	${0##*/} -W [opt] [AUDIO_FILE] [PROMPT-EN]
 	${0##*/} -ccw [opt] [LANG]
 	${0##*/} -ccW [opt]
@@ -117,33 +121,52 @@ Description
 	argument is taken as INSTRUCTION and the following ones as INPUT
 	or PROMPT.
 
-	Set option -c to start the chat mode via text completions or -cc
-	for native chat completions. Combined with option -C, resumes from
-	last history session.
+	Option -d starts a multi-turn session in pure text completions,
+	and does not set further options automatically.
 
-	Option -CC (without -cc) starts a multi-turn and pure text com-
-	pletions session, and use restart and start sequences when defined.
+	Set option -c to start multi-turn chat mode via text completions
+	or -cc for native chat completions.
+
+	Option -C resumes (continues) from last history session.
 
 	If the first positional argument of the script starts with the
 	command operator, the command \`/session [HIST_NAME]' to change
-	to or create a new history file is assumed (with options -ccCCHH).
+	to or create a new history file is assumed (with options -ccCdHH).
 
 	Option -i generates or edits images. Option -w transcribes audio
-	and option -W tarnslates audio to English.
+	and option -W translates audio to English.
 
 	Option -y sets python tiktoken instead of the default script hack
 	to preview token count. Set this option for accurate history
 	context length (slow).
 
-	A personal (free) OpenAI API is required, set it with -K. Also
-	see ENVIRONMENT section in man page.
+	A personal (free) OpenAI API is required, set it with -K.
 
 
 See Also
 	Check the man page for extended description of interface and
-	settings. It is also available online at:
+	settings. See the online man page and script usage examples at:
 
-	<https://github.com/mountaineerbr/shellChatGPT#help-page>.
+	<https://github.com/mountaineerbr/shellChatGPT>.
+
+
+Environment
+	CHATGPTRC
+	CONFFILE 	Path to user chatgpt.sh configuration.
+			Defaults=\"${CHATGPTRC:-${CONFFILE:-~/.chatgpt.conf}}\"
+
+	FILECHAT 	Path to a script-formatted TSV history file.
+
+	INSTRUCTION 	Initial instruction set for the chatbot.
+
+	OPENAI_API_KEY
+	OPENAI_KEY 	Set your personal (free) OpenAI API key.
+
+	REC_CMD 	Audio recording command.
+
+	VISUAL
+	EDITOR 		Text editor for external prompt editing.
+			Defaults=\"${VISUAL:-${EDITOR:-vim}}\"
 
 
 Chat Commands
@@ -252,7 +275,8 @@ Options
 	-cc 	Chat mode in chat completions, session break.
 	-C, --continue, --resume
 		Continue (resume) from last session (compls/chat).
-	-CC 	Start new session of pure text compls (without -cc).
+	-d, --text
+		Start new multi-turn session in pure text completions.
 	-e [INSTRUCTION] [INPUT], --edit
 		Set Edit mode. Model def=text-davinci-edit-001.
 	-i [PROMPT], --image
@@ -265,14 +289,16 @@ Options
 		Insert text rather than completing only. Use \`[insert]'
 		to indicate where the model should insert text (cmpls).
 	-S /[AWESOME_PROMPT_NAME]
-		Set or search an awesome-chatgpt-prompt.
-		Set \`//' to refresh cache.
+	-S %[AWESOME_PROMPT_NAME_ZH]
+		Set or search an awesome-chatgpt-prompt(-zh).
+		Set \`//' or \`%%' to refresh cache.
 	-TTT, --tiktoken
 		Count input tokens with tiktoken, it heeds options -ccm.
 		Set twice to print tokens, thrice to available encodings.
 		Set model or encoding with option -m.
-	-w [AUD] [LANG] [PROMPT-LANG], --transcribe
+	-w [AUD] [LANG] [PROMPT], --transcribe
 		Transcribe audio file into text. LANG is optional.
+		A prompt that matches the audio language is optional.
 		Set twice to get phrase-level timestamps. 
 	-W [AUD] [PROMPT-EN], --translate
 		Translate audio file into English text.
@@ -281,6 +307,7 @@ Options
 	Script Settings
 	-f, --no-config
 		Ignore user config file and environment.
+	-F 	Edit configuration file, if it exists.
 	-h, --help
 		Print this help page.
 	-H /[HIST_FILE], --hist
@@ -288,7 +315,7 @@ Options
 		A hist file name can be optionally set as argument.
 	-HH /[HIST_FILE]
 		Pretty print last history session to stdout.
-		With -ccC, or -rR, prints the specified seqs.
+		Heeds -ccdrR to print the specified (re-)start seqs.
 	-j, --raw
 		Print raw JSON response (debug with -jVVz).
 	-k, --no-colour
@@ -712,7 +739,7 @@ function __tiktokenf
 #usage: tiktokenf [model|encoding] [text|-]
 function tiktokenf
 {
-	python <(printf "
+	python <(printf '%s\n' "
 import sys
 import tiktoken
 opttik, optv, optl = ${OPTTIKTOKEN:-0}, ${OPTV:-0}, ${OPTL:-0}
@@ -938,7 +965,7 @@ function cmd_runf
 #usage: __sysmsgf [string_one] [string_two] ['']
 function __sysmsgf
 {
-	if ((OPTC+OPTRESUME))
+	if ((CHAT+OPTRESUME))
 	then 	((OPTV-1<1)) || return
 	else 	((OPTV<1))   || return ;fi
 	COL1="${COL1:-${BWhite}}" COL2="${COL2}"
@@ -980,7 +1007,7 @@ function edf
 	((OPTC)) && rest="${RESTART:-$Q_TYPE}" || rest="${RESTART}"
 	rest="$(unescapef "$rest")"
 
-	if ((OPTC+OPTRESUME))
+	if ((CHAT+OPTRESUME))
 	then 	N_LOOP=1 Q_TYPE="\\n${Q_TYPE}" A_TYPE="\\n${A_TYPE}" \
 		set_histf "${rest}${*}"
 	fi
@@ -1009,7 +1036,7 @@ function edf
 	fi
 	printf "%s\\n" "$*" > "$FILETXT"
 
-	if ((OPTC+OPTRESUME))
+	if ((CHAT))
 	then 	cmd_runf "${*#*:}" && return 200
 	fi ;return 0
 }
@@ -1495,13 +1522,19 @@ function editf
 # awesome-chatgpt-prompts / custom prompts
 function awesomef
 {
-	typeset act_keys act a l n
-	set -- "${INSTRUCTION##/}"
+	typeset act_keys act zh a l n
+	[[ "$INSTRUCTION" = %* ]] && FILEAWE="${FILEAWE%%.csv}-zh.csv" zh=1
+	set -- "${INSTRUCTION##[/%]}"
 	set -- "${1// /_}"
 
-	if [[ ! -s $FILEAWE ]] || [[ $1 = /* ]]  #second slash
-	then 	set -- "${1##/}"
-		if ! curl -\#L "https://raw.githubusercontent.com/f/awesome-chatgpt-prompts/main/prompts.csv" -o "$FILEAWE"
+	if [[ ! -s $FILEAWE ]] || [[ $1 = [/%]* ]]  #second slash
+	then 	set -- "${1##[/%]}"
+		if 	if ((zh))
+			then 	! { curl -\#L "$AWEURLZH" \
+				| jq '"act,prompt",(.[]|join(","))' \
+				| sed 's/,/","/' >"$FILEAWE" ;}  #json to csv
+			else 	! curl -\#L "$AWEURL" -o "$FILEAWE"
+			fi
 		then 	[[ -f $FILEAWE ]] && rm -- "$FILEAWE"
 			return 1
 		fi
@@ -1524,7 +1557,7 @@ function awesomef
 		printf '#? ' >&2 ;read -r act
 	fi
 
-	INSTRUCTION="$(sed -n -e 's/^[^,]*,//; s/""/"/g; s/^"//; s/"$//' -e "$((act+1))p" "$FILEAWE")"
+	INSTRUCTION="$(sed -n -e 's/^[^,]*,//; s/^"//; s/"$//; s/""/"/g' -e "$((act+1))p" "$FILEAWE")"
 	if [[ -n $ZSH_VERSION ]]  #edit chosen awesome prompt
 	then 	vared -c -e -h INSTRUCTION
 	else 	read -r -e -i "$INSTRUCTION" INSTRUCTION
@@ -1806,7 +1839,7 @@ function session_mainf
 		fi
 
 		#break session?
-		if { 	((OPTC+OPTRESUME)) && [[ -f "${file}" ]] && ((optsession<3)) ;} && {
+		if { 	((CHAT+OPTRESUME)) && [[ -f "${file}" ]] && ((optsession<3)) ;} && {
 			_sysmsgf 'Break session?' '[N/ys] ' ''
 			case "$(__read_charf)" in [YySs]) 	:;; *) 	false ;;esac
 		}
@@ -1820,7 +1853,7 @@ function session_mainf
 }
 
 #parse opts
-optstring="a:A:b:B:cCefhHijlL:m:M:n:kK:p:qr:R:s:S:t:TouvVxwWyzZ0123456789@:/,.+-:"
+optstring="a:A:b:B:cCdefFhHijlL:m:M:n:kK:p:qr:R:s:S:t:TouvVxwWyzZ0123456789@:/,.+-:"
 while getopts "$optstring" opt
 do
 	if [[ $opt = - ]]  #long options
@@ -1828,7 +1861,7 @@ do
 			a:presence-penalty      a:presence \
 			A:frequency-penalty     A:frequency \
 			b:best-of   b:best      B:log-prob  B:prob \
-			c:chat      C:resume  C:continue  C:cont \
+			c:chat      C:resume  C:continue  C:cont  d:text \
 			e:edit      f:no-config  h:help  H:hist \
 			i:image     j:raw       k:no-colo?r \
 			K:api-key   l:list-model   l:list-models \
@@ -1886,9 +1919,13 @@ do
 		B) 	OPTBB="$OPTARG";;
 		c) 	((++OPTC));;
 		C) 	((++OPTRESUME));;
+		d) 	OPTCMPL=1;;
 		e) 	OPTE=1 EPN=2;;
-		f$OPTF) unset EPN MOD MOD_CHAT MOD_EDIT MOD_AUDIO MODMAX INSTRUCTION CHATINSTR OPTC OPTE OPTI OPTJ OPTLOG USRLOG OPTRESUME OPTHH OPTL OPTMARG OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTN OPTP OPTT OPTV OPTVV OPTW OPTWW OPTZ OPTZZ OPTCLIP OPTMULTI MULTI OPT_AT_PC OPT_AT Q_TYPE A_TYPE RESTART START STOPS OPTSUFFIX SUFFIX
+		f$OPTF) unset EPN MOD MOD_CHAT MOD_EDIT MOD_AUDIO MODMAX INSTRUCTION CHATINSTR OPTC OPTE OPTI OPTJ OPTLOG USRLOG OPTRESUME OPTCMPL CHAT OPTTIKTOKEN OPTTIK OPTHH OPTL OPTMARG OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTN OPTP OPTT OPTV OPTVV OPTW OPTWW OPTZ OPTZZ OPTCLIP OPTMULTI MULTI OPT_AT_PC OPT_AT Q_TYPE A_TYPE RESTART START STOPS OPTSUFFIX SUFFIX
 			OPTF=1 OPTIND=1 OPTARG= ;. "$0" "$@" ;exit;;
+		F) 	[[ -f "${CHATGPTRC:-$CONFFILE}" ]] \
+			&& ${VISUAL:-${EDITOR:-vim}} "${CHATGPTRC:-$CONFFILE}" </dev/tty >/dev/tty
+			exit;;
 		h) 	while read
 			do 	[[ $REPLY = \#\ v* ]] && break
 			done <"$0"
@@ -1943,7 +1980,7 @@ do
 	esac ;OPTARG=
 done
 shift $((OPTIND -1))
-unset LANGW CMPLOK REPLY N_LOOP SKIP EDIT COL1 COL2 optstring opt role rest input arg n
+unset LANGW CHAT REPLY N_LOOP SKIP EDIT COL1 COL2 optstring opt role rest input arg n
 
 [[ -t 1 ]] || OPTK=1 ;((OPTK)) ||
 # Normal Colours    # Bold              # Background
@@ -1963,11 +2000,14 @@ OPENAI_API_KEY="${OPENAI_API_KEY:-${OPENAI_KEY:-${GPTCHATKEY:-${BEARER:?API key 
 ((OPTL+OPTZ)) && unset OPTX
 ((OPTE+OPTI)) && unset OPTC
 ((OPTCLIP)) && set_clipcmdf
-((OPTC)) || OPTT="${OPTT:-0}"  #!#
-((!OPTC)) && ((OPTRESUME)) && OPTCMPL=$OPTRESUME
+((OPTC)) || OPTT="${OPTT:-0}"  #!#temp *must* be set
+((OPTCMPL)) && unset OPTC  #opt -d
+((!OPTC)) && ((OPTRESUME>1)) && OPTCMPL=${OPTCMPL:-$OPTRESUME}  #1# txt cmpls cont
+((OPTCMPL)) && ((!OPTRESUME)) && OPTCMPL=2  #2# txt cmpls new
+((OPTC+OPTCMPL||OPTRESUME>1)) && CHAT=1  #multi-turn, interactive
 
-#invert -v logic for chat
-if ((OPTC+OPTRESUME))
+#adjust -v logic for chat
+if ((CHAT+OPTRESUME))
 then 	((++OPTV)) ;((OPTV%=4))
 fi
 
@@ -1987,7 +2027,7 @@ if ((OPTE))  #edits
 then 	OPTM=8 MOD="$MOD_EDIT"
 elif ((OPTC>1))  #chat
 then 	OPTM=10 MOD="$MOD_CHAT"
-elif ((OPTW)) && ((!OPTC))  #audio
+elif ((OPTW)) && ((!(OPTC+OPTCMPL) ))  #audio
 then 	OPTM=11 MOD="$MOD_AUDIO"
 fi
 
@@ -2052,7 +2092,7 @@ command -v jq >/dev/null 2>&1 || function jq { 	false ;}
 if ((OPTHH))  #edit history/pretty print last session
 then 	if ((OPTHH>1))
 	then 	{ 	((OPTC)) || ((EPN==6)) ;} && OPTC=2
-		((OPTRESUME)) || { 	((OPTC)) || OPTC=1 ;}
+		((OPTRESUME+OPTCMPL)) || { 	((OPTC)) || OPTC=1 ;}
 		Q_TYPE="\\n${Q_TYPE}" A_TYPE="\\n${A_TYPE}" \
 		MODMAX=65536 set_histf
 		usr_logf "$(unescapef "$HIST")"
@@ -2073,7 +2113,7 @@ then 	((OPTTIKTOKEN>2)) || __sysmsgf 'Language Model:' "$MOD"
 	then 	__warmsgf "Err:" "Make sure python tiktoken module is installed: \`pip install tiktoken\`"
 		false
 	fi
-elif ((OPTW)) && ((!OPTC))  #audio transcribe/translation
+elif ((OPTW)) && ((!(OPTC+OPTCMPL) ))  #audio transcribe/translation
 then 	whisperf "$@"
 elif ((OPTII))     #image variations/edits
 then 	__sysmsgf 'Image Variations / Edits'
@@ -2084,7 +2124,7 @@ then 	__sysmsgf 'Image Generations'
 elif ((OPTEMBED))  #embeds
 then 	[[ $MOD = *embed* ]] || [[ $MOD = *moderation* ]] \
 	|| __warmsgf "Warning:" "Not an embedding model -- $MOD"
-	unset Q_TYPE A_TYPE OPTC
+	unset Q_TYPE A_TYPE OPTC OPTCMPL
 	embedf "$@"
 elif ((OPTE))      #edits
 then 	__sysmsgf 'Text Edits'
@@ -2114,15 +2154,15 @@ else               #text/chat completions
 	((EPN!=6)) || unset RESTART START
 
 	#awesome prompts
-	if [[ $INSTRUCTION = /* ]] && ((!OPTW))
+	if [[ $INSTRUCTION = [/%]* ]] && ((!OPTW))
 	then 	OPTAWE=1 ;((OPTC)) || OPTC=1
 		awesomef || exit
 	fi
 	#model instruction
 	__sysmsgf 'Language Model:' "$MOD"
-	if ((OPTC+OPTRESUME))
+	if ((CHAT+OPTRESUME))
 	then 	INSTRUCTION="${INSTRUCTION##:$SPC}"
-		if { 	((OPTC)) && ((OPTRESUME)) ;} || ((OPTRESUME==1))
+		if ((OPTC&&OPTRESUME)) || ((OPTCMPL==1||OPTRESUME==1))
 		then 	unset INSTRUCTION
 		else 	break_sessionf
 			((OPTC)) && INSTRUCTION="${INSTRUCTION:-Be a helpful assistant.}"
@@ -2137,7 +2177,7 @@ else               #text/chat completions
 	else 	unset INSTRUCTION
 	fi
 
-	if ((OPTC+OPTRESUME))  #chat mode
+	if ((CHAT))  #chat mode (multi-turn, interactive)
 	then 	if [[ -n $ZSH_VERSION ]]
 		then 	if [[ -o interactive ]] && ((OPTZZ<2))
 			then 	setopt HIST_FIND_NO_DUPS HIST_IGNORE_ALL_DUPS HIST_SAVE_NO_DUPS
@@ -2158,8 +2198,8 @@ else               #text/chat completions
 		fi
 	fi
 
-	#pos arg input confirmation (disabled)
-	#if (($#)) && [[ -t 1 ]] ;then 	REPLY="$*" EDIT=1 SKIP=1 ;set -- ;fi
+	#pos arg input confirmation
+	if (($#)) && ((OPTV<2)) && ((CHAT)) && [[ -t 1 ]] ;then 	REPLY="$*" EDIT=1 SKIP=1 ;set -- ;fi
 
 	WSKIP=1
 	while :
@@ -2204,7 +2244,7 @@ else               #text/chat completions
 				else
 					if ((OPTCMPL)) && { 	((N_LOOP)) || ((OPTCMPL==1)) ;} \
 						&&  ((EPN!=6)) && [[ -z "${RESTART}${REPLY}" ]]
-					then 	REPLY=" " EDIT=1 CMPLOK=1
+					then 	REPLY=" " EDIT=1
 					fi ;unset ex
 					while ((EDIT)) || unset REPLY  #!#
 						((OPTMULTI+MULTI)) && [[ -z "$RESTART" ]] && printf ">\\r" >&2
@@ -2228,7 +2268,7 @@ else               #text/chat completions
 					done
 					REPLY="${input:-$REPLY}"
 					((ex)) || REPLY="${REPLY%%\\n}"
-					unset MULTI CMPLOK arg input ex
+					unset MULTI arg input ex
 				fi
 				((OPTK)) || printf "${NC}" >&2
 				
@@ -2281,7 +2321,7 @@ else               #text/chat completions
 		
 		}  #awesome 1st pass skip end
 
-		if ((OPTC+OPTRESUME)) && [[ -n "${*}" ]]
+		if ((CHAT+OPTRESUME)) && [[ -n "${*}" ]]
 		then
 			[[ -n $REPLY ]] || REPLY="${*}" #set buffer for EDIT
 
@@ -2311,7 +2351,7 @@ else               #text/chat completions
 		fi
 
 		if ((RETRY<2))
-		then 	((OPTC+OPTRESUME)) && set_histf "${@}"
+		then 	((CHAT+OPTRESUME)) && set_histf "${@}"
 			if ((OPTC)) || [[ -n "${RESTART}" ]]
 			then 	rest="${RESTART:-$Q_TYPE}"
 			else 	unset rest
@@ -2357,7 +2397,7 @@ else               #text/chat completions
 		((RETRY==1)) && { 	SKIP=1 EDIT=1 ;set -- ;continue ;}
 
 		#record to hist file
-		if ((OPTC+OPTRESUME)) && {
+		if ((CHAT+OPTRESUME)) && {
 		 	tkn=($(jq -r '.usage.prompt_tokens//"0",
 				.usage.completion_tokens//"0",
 				(.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"
@@ -2379,18 +2419,18 @@ else               #text/chat completions
 			ans="${A_TYPE##$SPC0}${ans}"
 			((OPTB>1)) && tkn[1]=$(__tiktokenf "$ans" "4") #tkn sum will compensate later
 			((OPTAWE)) || push_tohistf "$(escapef "${REC_OUT:-$*}")" "$((tkn[0]-OLD_TOTAL))" "${tkn[2]}"
-			push_tohistf "$ans" "${tkn[1]}" "${tkn[2]}" || unset OPTC OPTRESUME
+			push_tohistf "$ans" "${tkn[1]}" "${tkn[2]}" || unset OPTC OPTRESUME OPTCMPL CHAT
 			((OLD_TOTAL=tkn[0]+tkn[1])) ;MAX_PREV="$OLD_TOTAL" H_TIME=
 			CKSUM_OLD=$(cksumf "$FILECHAT")
-		elif ((OPTC+OPTRESUME))
+		elif ((CHAT))
 		then 	BAD_RESPONSE=1 SKIP=1 EDIT=1 CKSUM_OLD= ;set -- ;continue
 		fi
 		((OPTW)) && SLEEP_WORDS=$(wc -w <<<"${ans}")
 		((OPTLOG)) && (usr_logf "$(unescapef "${ESC}\\n${ans}")" > "$USRLOG" &)
 
 		((++N_LOOP)) ;set --
-		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSUFFIX_OPT SUFFIX OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC CMPLOK Q P optv_save role rest tkn arg ans glob out var s n
-		((OPTC+OPTRESUME)) || break
+		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSUFFIX_OPT SUFFIX OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC Q P optv_save role rest tkn arg ans glob out var s n
+		((CHAT)) || break
 	done ;unset OLD_TOTAL SLEEP_WORDS N_LOOP SPC SPC0 SPC1 CKSUM CKSUM_OLD INSTRUCTION_OLD
 fi
-# vim=syntax sync minlines=2400
+# vim=syntax sync minlines=2450

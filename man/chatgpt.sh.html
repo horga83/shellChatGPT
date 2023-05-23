@@ -5,7 +5,7 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="mountaineerbr" />
-  <title>CHATGPT.SH(1) v0.13.17 | General Commands Manual</title>
+  <title>CHATGPT.SH(1) v0.14 | General Commands Manual</title>
   <style>
     html {
       color: #1a1a1a;
@@ -167,17 +167,16 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">CHATGPT.SH(1) v0.13.17 | General Commands Manual</h1>
+<h1 class="title">CHATGPT.SH(1) v0.14 | General Commands Manual</h1>
 <p class="author">mountaineerbr</p>
-<p class="date">April 2023</p>
+<p class="date">May 2023</p>
 </header>
 <h3 id="name">NAME</h3>
 <div class="line-block">   chatgpt.sh – ChatGPT / DALL-E / Whisper Shell
 Wrapper</div>
 <h3 id="synopsis">SYNOPSIS</h3>
 <div class="line-block">   <strong>chatgpt.sh</strong>
-[<code>opt</code>] [<code>-m</code>
-[<em>MODEL_NAME</em>|<em>MODEL_INDEX</em>]]
+[<code>-c</code>|<code>-d</code>] [<code>opt</code>]
 [<em>PROMPT|TXT_FILE</em>]<br />
    <strong>chatgpt.sh</strong> <code>-e</code> [<code>opt</code>]
 [<em>INSTRUCTION</em>] [<em>INPUT</em>]<br />
@@ -192,7 +191,7 @@ Wrapper</div>
 [<code>-m</code>[<em>MODEL</em>|<em>ENCODING</em>]]
 [<em>TEXT</em>|<em>FILE</em>]<br />
    <strong>chatgpt.sh</strong> <code>-w</code> [<code>opt</code>]
-[<em>AUDIO_FILE</em>] [<em>LANG</em>] [<em>PROMPT-LANG</em>]<br />
+[<em>AUDIO_FILE</em>] [<em>LANG</em>] [<em>PROMPT</em>]<br />
    <strong>chatgpt.sh</strong> <code>-W</code> [<code>opt</code>]
 [<em>AUDIO_FILE</em>] [<em>PROMPT-EN</em>]<br />
    <strong>chatgpt.sh</strong> <code>-ccw</code> [<code>opt</code>]
@@ -211,20 +210,22 @@ Model <strong>INSTRUCTION</strong> is usually optional, however if it is
 mandatory for a chosen model (such as edits models), then the first
 positional argument is read as <strong>INSTRUCTION</strong> and the
 following ones as <strong>INPUT</strong> or <strong>PROMPT</strong>.</p>
-<p>Set <code>option -c</code> to start the chat mode via <strong>text
-completions</strong> and record conversation. This option accepts
-various models, defaults to <em>text-davinci-003</em> if none set.</p>
+<p><code>Option -d</code> starts a multi-turn session in <strong>pure
+text completions</strong>. This does not set further options
+automatically.</p>
+<p>Set <code>option -c</code> to start a multi-turn chat mode via
+<strong>text completions</strong> and record conversation. This option
+accepts various models, defaults to <em>text-davinci-003</em> if none
+set.</p>
 <p>Set <code>option -cc</code> to start the chat mode via <strong>native
 chat completions</strong> and use turbo models. While in chat mode, some
 options are automatically set to un-lobotomise the bot.</p>
 <p>Set <code>option -C</code> to <strong>resume</strong> from last
-history session. Setting only <code>option -CC</code> (without -cc)
-starts a multi-turn session in <strong>pure text completions</strong>,
-and use restart and start sequences when defined.</p>
+history session.</p>
 <p>If the first positional argument of the script starts with the
 command operator, the command “<code>/session</code>
 [<em>HIST_NAME</em>]” to change to or create a new history file is
-assumed (with <code>options -ccCCHH</code>).</p>
+assumed (with <code>options -ccCdHH</code>).</p>
 <p>Set model with “<code>-m</code> [<em>NAME</em>]” (full model name).
 Some models have an equivalent <em>INDEX</em> as short-hand, so
 “<code>-m</code><em>text-davinci-003</em>” and
@@ -242,11 +243,12 @@ capacity of known models, or to <em>2048</em> tokens as fallback.</p>
 loaded as text PROMPT (text cmpls, chat cmpls, and text/code edits).</p>
 <p><code>Option -S</code> sets an INSTRUCTION prompt (the initial
 prompt) for text cmpls, chat cmpls, and text/code edits. A text file
-path may be supplied as the single argument. If the argument to this
-option starts with a backslash such as “<code>-S</code>
+path may be supplied as the single argument.</p>
+<p>If the argument to <code>-S</code> option starts with a backslash or
+a percent sign, such as “<code>-S</code>
 <code>/</code><em>linux_terminal</em>”, start search for an
-<em>awesome-chatgpt-prompt</em> (by Fatih KA). Set “<code>//</code>” to
-refresh cache.</p>
+<em>awesome-chatgpt-prompt(-zh)</em> (by Fatih KA and PlexPt). Set
+“<code>//</code>” or “<code>%%</code>” to refresh cache.</p>
 <p><code>Option -e</code> sets the <strong>text edits</strong> endpoint.
 That endpoint requires both INSTRUCTION and INPUT prompts. User may
 choose a model amongst the <em>edit model family</em>.</p>
@@ -268,7 +270,8 @@ transparency.</p>
 <em>wav</em>, and <em>webm</em> files. First positional argument must be
 an <em>AUDIO</em> file. Optionally, set a <em>TWO-LETTER</em> input
 language (<em>ISO-639-1</em>) as second argument. A PROMPT may also be
-set after language (must be in the same language as the audio).</p>
+set to guide the model’s style or continue a previous audio segment. The
+prompt should match the audio language.</p>
 <p><code>Option -W</code> <strong>translates audio</strong> stream to
 <strong>English text</strong>. A PROMPT in English may be set to guide
 the model as the second positional argument.</p>
@@ -287,6 +290,9 @@ option parsing. Stdin input sets a single PROMPT.</p>
 cache is kept at “<em>~/.cache/chatgptsh</em>”.</p>
 <p>A personal (free) OpenAI API is required, set it with
 <code>-K</code>. Also, see <strong>ENVIRONMENT section</strong>.</p>
+<p>See the online man page and script usage examples at: <a
+href="https://github.com/mountaineerbr/shellChatGPT/tree/main"
+class="uri">https://github.com/mountaineerbr/shellChatGPT/tree/main</a>.</p>
 <p>For complete model and settings information, refer to OpenAI API docs
 at <a href="https://platform.openai.com/docs/"
 class="uri">https://platform.openai.com/docs/</a>.</p>
@@ -645,10 +651,11 @@ more random.</p>
 g. <strong>Latex syntax</strong>), type in an extra backslash such as
 “<code>\\theta</code>”.</p>
 <h3 id="environment">ENVIRONMENT</h3>
+<p><strong>CHATGPTRC</strong></p>
 <dl>
-<dt><strong>CHATGPTRC</strong></dt>
+<dt><strong>CONFFILE</strong></dt>
 <dd>
-<p>Path to user chatgpt.sh configuration.</p>
+<p>Path to user <em>chatgpt.sh configuration</em>.</p>
 <p>Defaults="<em>~/.chatgpt.conf</em>"</p>
 </dd>
 <dt><strong>FILECHAT</strong></dt>
@@ -860,9 +867,9 @@ Def=<em>1</em>.</p>
 <dd>
 <p>Continue (resume) from last session (compls/chat).</p>
 </dd>
-<dt><strong>-CC</strong></dt>
+<dt><strong>-d</strong>, <strong>–text</strong></dt>
 <dd>
-<p>Start new session of pure text compls (<code>without -cc</code>).</p>
+<p>Start new multi-turn session in pure text completions.</p>
 </dd>
 <dt><strong>-e</strong> [<em>INSTRUCTION</em>] [<em>INPUT</em>],
 <strong>–edit</strong></dt>
@@ -888,11 +895,13 @@ Def=<em>1</em>.</p>
 <p>Use “<em>[insert]</em>” to indicate where the language model should
 insert text (cmpls).</p>
 </dd>
-<dt><strong>-S</strong>
-<code>/</code>[<em>AWESOME_PROMPT_NAME</em>]</dt>
+</dl>
+<p><strong>-S</strong> <code>/</code>[<em>AWESOME_PROMPT_NAME</em>]</p>
+<dl>
+<dt><strong>-S</strong> <code>%</code>[_AWESOME_PROMPT_NAME_ZH]</dt>
 <dd>
 <p>Set or search an <em>awesome-chatgpt-prompt</em>.</p>
-<p>Set <code>//</code> instead to refresh cache.</p>
+<p>Set <code>//</code> or <code>%%</code> instead to refresh cache.</p>
 </dd>
 <dt><strong>-TTT</strong>, <strong>–tiktoken</strong></dt>
 <dd>
@@ -902,9 +911,10 @@ heeds <code>options -ccm</code>.</p>
 <p>Set model or encoding with <code>option -m</code>.</p>
 </dd>
 <dt><strong>-w</strong> [<em>AUD</em>] [<em>LANG</em>]
-[<em>PROMPT-LANG</em>], <strong>–transcribe</strong></dt>
+[<em>PROMPT</em>], <strong>–transcribe</strong></dt>
 <dd>
-<p>Transcribe audio file into text. LANG is optional.</p>
+<p>Transcribe audio file into text. LANG is optional. A prompt that
+matches the audio language is optional.</p>
 <p>Set twice to get phrase-level timestamps.</p>
 </dd>
 <dt><strong>-W</strong> [<em>AUD</em>] [<em>PROMPT-EN</em>],
@@ -920,21 +930,25 @@ heeds <code>options -ccm</code>.</p>
 <dd>
 <p>Ignore user config file and environment.</p>
 </dd>
+<dt><strong>-F</strong></dt>
+<dd>
+<p>Edit configuration file with text editor, if it exists.</p>
+</dd>
 <dt><strong>-h</strong>, <strong>–help</strong></dt>
 <dd>
 <p>Print the help page.</p>
 </dd>
-<dt><strong>-H</strong> <code>/</code>[<em>HIST_FILE</em>],
+<dt><strong>-H</strong> [<code>/</code><em>HIST_FILE</em>],
 <strong>–hist</strong></dt>
 <dd>
 <p>Edit history file with text editor or pipe to stdout.</p>
 <p>A history file name can be optionally set as argument.</p>
 </dd>
-<dt><strong>-HH</strong> <code>/</code>[<em>HIST_FILE</em>]</dt>
+<dt><strong>-HH</strong> [<code>/</code><em>HIST_FILE</em>]</dt>
 <dd>
 <p>Pretty print last history session to stdout.</p>
-<p>With <code>-ccC</code>, or <code>-rR</code>, prints with the
-specified restart and start sequences.</p>
+<p>Heeds <code>options -ccdrR</code> to print with the specified restart
+and start sequences.</p>
 </dd>
 <dt><strong>-j</strong>, <strong>–raw</strong></dt>
 <dd>

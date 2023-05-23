@@ -15,15 +15,14 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "April 2023" "v0.13.17" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "May 2023" "v0.14" "General Commands Manual"
 .hy
 .SS NAME
 .PP
 \ \ \ chatgpt.sh \[en] ChatGPT / DALL-E / Whisper Shell Wrapper
 .SS SYNOPSIS
 .PP
-\ \ \ \f[B]chatgpt.sh\f[R] [\f[V]opt\f[R]] [\f[V]-m\f[R]
-[\f[I]MODEL_NAME\f[R]|\f[I]MODEL_INDEX\f[R]]]
+\ \ \ \f[B]chatgpt.sh\f[R] [\f[V]-c\f[R]|\f[V]-d\f[R]] [\f[V]opt\f[R]]
 [\f[I]PROMPT|TXT_FILE\f[R]]
 .PD 0
 .P
@@ -56,7 +55,7 @@
 .P
 .PD
 \ \ \ \f[B]chatgpt.sh\f[R] \f[V]-w\f[R] [\f[V]opt\f[R]]
-[\f[I]AUDIO_FILE\f[R]] [\f[I]LANG\f[R]] [\f[I]PROMPT-LANG\f[R]]
+[\f[I]AUDIO_FILE\f[R]] [\f[I]LANG\f[R]] [\f[I]PROMPT\f[R]]
 .PD 0
 .P
 .PD
@@ -91,7 +90,11 @@ mandatory for a chosen model (such as edits models), then the first
 positional argument is read as \f[B]INSTRUCTION\f[R] and the following
 ones as \f[B]INPUT\f[R] or \f[B]PROMPT\f[R].
 .PP
-Set \f[V]option -c\f[R] to start the chat mode via \f[B]text
+\f[V]Option -d\f[R] starts a multi-turn session in \f[B]pure text
+completions\f[R].
+This does not set further options automatically.
+.PP
+Set \f[V]option -c\f[R] to start a multi-turn chat mode via \f[B]text
 completions\f[R] and record conversation.
 This option accepts various models, defaults to
 \f[I]text-davinci-003\f[R] if none set.
@@ -102,14 +105,11 @@ While in chat mode, some options are automatically set to un-lobotomise
 the bot.
 .PP
 Set \f[V]option -C\f[R] to \f[B]resume\f[R] from last history session.
-Setting only \f[V]option -CC\f[R] (without -cc) starts a multi-turn
-session in \f[B]pure text completions\f[R], and use restart and start
-sequences when defined.
 .PP
 If the first positional argument of the script starts with the command
 operator, the command \[lq]\f[V]/session\f[R] [\f[I]HIST_NAME\f[R]]\[rq]
 to change to or create a new history file is assumed (with
-\f[V]options -ccCCHH\f[R]).
+\f[V]options -ccCdHH\f[R]).
 .PP
 Set model with \[lq]\f[V]-m\f[R] [\f[I]NAME\f[R]]\[rq] (full model
 name).
@@ -134,10 +134,12 @@ loaded as text PROMPT (text cmpls, chat cmpls, and text/code edits).
 \f[V]Option -S\f[R] sets an INSTRUCTION prompt (the initial prompt) for
 text cmpls, chat cmpls, and text/code edits.
 A text file path may be supplied as the single argument.
-If the argument to this option starts with a backslash such as
-\[lq]\f[V]-S\f[R] \f[V]/\f[R]\f[I]linux_terminal\f[R]\[rq], start search
-for an \f[I]awesome-chatgpt-prompt\f[R] (by Fatih KA).
-Set \[lq]\f[V]//\f[R]\[rq] to refresh cache.
+.PP
+If the argument to \f[V]-S\f[R] option starts with a backslash or a
+percent sign, such as \[lq]\f[V]-S\f[R]
+\f[V]/\f[R]\f[I]linux_terminal\f[R]\[rq], start search for an
+\f[I]awesome-chatgpt-prompt(-zh)\f[R] (by Fatih KA and PlexPt).
+Set \[lq]\f[V]//\f[R]\[rq] or \[lq]\f[V]%%\f[R]\[rq] to refresh cache.
 .PP
 \f[V]Option -e\f[R] sets the \f[B]text edits\f[R] endpoint.
 That endpoint requires both INSTRUCTION and INPUT prompts.
@@ -166,8 +168,9 @@ See \f[B]IMAGES section\f[R] below for more information on
 First positional argument must be an \f[I]AUDIO\f[R] file.
 Optionally, set a \f[I]TWO-LETTER\f[R] input language
 (\f[I]ISO-639-1\f[R]) as second argument.
-A PROMPT may also be set after language (must be in the same language as
-the audio).
+A PROMPT may also be set to guide the model\[cq]s style or continue a
+previous audio segment.
+The prompt should match the audio language.
 .PP
 \f[V]Option -W\f[R] \f[B]translates audio\f[R] stream to \f[B]English
 text\f[R].
@@ -194,6 +197,9 @@ Script cache is kept at \[lq]\f[I]\[ti]/.cache/chatgptsh\f[R]\[rq].
 .PP
 A personal (free) OpenAI API is required, set it with \f[V]-K\f[R].
 Also, see \f[B]ENVIRONMENT section\f[R].
+.PP
+See the online man page and script usage examples at:
+<https://github.com/mountaineerbr/shellChatGPT/tree/main>.
 .PP
 For complete model and settings information, refer to OpenAI API docs at
 <https://platform.openai.com/docs/>.
@@ -645,9 +651,11 @@ g.
 \f[B]Latex syntax\f[R]), type in an extra backslash such as
 \[lq]\f[V]\[rs]\[rs]theta\f[R]\[rq].
 .SS ENVIRONMENT
-.TP
+.PP
 \f[B]CHATGPTRC\f[R]
-Path to user chatgpt.sh configuration.
+.TP
+\f[B]CONFFILE\f[R]
+Path to user \f[I]chatgpt.sh configuration\f[R].
 .RS
 .PP
 Defaults=\[dq]\f[I]\[ti]/.chatgpt.conf\f[R]\[dq]
@@ -854,8 +862,8 @@ Chat mode in chat completions, session break.
 \f[B]-C\f[R], \f[B]\[en]continue\f[R], \f[B]\[en]resume\f[R]
 Continue (resume) from last session (compls/chat).
 .TP
-\f[B]-CC\f[R]
-Start new session of pure text compls (\f[V]without -cc\f[R]).
+\f[B]-d\f[R], \f[B]\[en]text\f[R]
+Start new multi-turn session in pure text completions.
 .TP
 \f[B]-e\f[R] [\f[I]INSTRUCTION\f[R]] [\f[I]INPUT\f[R]], \f[B]\[en]edit\f[R]
 Set Edit mode.
@@ -877,12 +885,14 @@ Insert text rather than completing only.
 Use \[lq]\f[I][insert]\f[R]\[rq] to indicate where the language model
 should insert text (cmpls).
 .RE
-.TP
+.PP
 \f[B]-S\f[R] \f[V]/\f[R][\f[I]AWESOME_PROMPT_NAME\f[R]]
+.TP
+\f[B]-S\f[R] \f[V]%\f[R][_AWESOME_PROMPT_NAME_ZH]
 Set or search an \f[I]awesome-chatgpt-prompt\f[R].
 .RS
 .PP
-Set \f[V]//\f[R] instead to refresh cache.
+Set \f[V]//\f[R] or \f[V]%%\f[R] instead to refresh cache.
 .RE
 .TP
 \f[B]-TTT\f[R], \f[B]\[en]tiktoken\f[R]
@@ -895,9 +905,10 @@ Set twice to print tokens, thrice to available encodings.
 Set model or encoding with \f[V]option -m\f[R].
 .RE
 .TP
-\f[B]-w\f[R] [\f[I]AUD\f[R]] [\f[I]LANG\f[R]] [\f[I]PROMPT-LANG\f[R]], \f[B]\[en]transcribe\f[R]
+\f[B]-w\f[R] [\f[I]AUD\f[R]] [\f[I]LANG\f[R]] [\f[I]PROMPT\f[R]], \f[B]\[en]transcribe\f[R]
 Transcribe audio file into text.
 LANG is optional.
+A prompt that matches the audio language is optional.
 .RS
 .PP
 Set twice to get phrase-level timestamps.
@@ -914,22 +925,25 @@ Set twice to get phrase-level timestamps.
 \f[B]-f\f[R], \f[B]\[en]no-config\f[R]
 Ignore user config file and environment.
 .TP
+\f[B]-F\f[R]
+Edit configuration file with text editor, if it exists.
+.TP
 \f[B]-h\f[R], \f[B]\[en]help\f[R]
 Print the help page.
 .TP
-\f[B]-H\f[R] \f[V]/\f[R][\f[I]HIST_FILE\f[R]], \f[B]\[en]hist\f[R]
+\f[B]-H\f[R] [\f[V]/\f[R]\f[I]HIST_FILE\f[R]], \f[B]\[en]hist\f[R]
 Edit history file with text editor or pipe to stdout.
 .RS
 .PP
 A history file name can be optionally set as argument.
 .RE
 .TP
-\f[B]-HH\f[R] \f[V]/\f[R][\f[I]HIST_FILE\f[R]]
+\f[B]-HH\f[R] [\f[V]/\f[R]\f[I]HIST_FILE\f[R]]
 Pretty print last history session to stdout.
 .RS
 .PP
-With \f[V]-ccC\f[R], or \f[V]-rR\f[R], prints with the specified restart
-and start sequences.
+Heeds \f[V]options -ccdrR\f[R] to print with the specified restart and
+start sequences.
 .RE
 .TP
 \f[B]-j\f[R], \f[B]\[en]raw\f[R]

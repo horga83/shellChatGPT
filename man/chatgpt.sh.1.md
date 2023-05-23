@@ -1,6 +1,6 @@
-% CHATGPT.SH(1) v0.13.17 | General Commands Manual
+% CHATGPT.SH(1) v0.14 | General Commands Manual
 % mountaineerbr
-% April 2023
+% May 2023
 
 
 ### NAME
@@ -10,13 +10,13 @@
 
 ### SYNOPSIS
 
-|    **chatgpt.sh** \[`opt`] \[`-m` \[_MODEL_NAME_|_MODEL_INDEX_]] \[_PROMPT|TXT_FILE_]
+|    **chatgpt.sh** \[`-c`|`-d`] \[`opt`] \[_PROMPT|TXT_FILE_]
 |    **chatgpt.sh** `-e` \[`opt`] \[_INSTRUCTION_] \[_INPUT_]
 |    **chatgpt.sh** `-i` \[`opt`] \[_S_|_M_|_L_] \[_PROMPT_]
 |    **chatgpt.sh** `-i` \[`opt`] \[_S_|_M_|_L_] \[_PNG_FILE_]
 |    **chatgpt.sh** `-i` \[`opt`] \[_S_|_M_|_L_] \[_PNG_FILE_] \[_MASK_FILE_] \[_PROPMT_]
 |    **chatgpt.sh** `-TTT` \[-v] \[`-m`\[_MODEL_|_ENCODING_]] \[_TEXT_|_FILE_]
-|    **chatgpt.sh** `-w` \[`opt`] \[_AUDIO_FILE_] \[_LANG_] \[_PROMPT-LANG_]
+|    **chatgpt.sh** `-w` \[`opt`] \[_AUDIO_FILE_] \[_LANG_] \[_PROMPT_]
 |    **chatgpt.sh** `-W` \[`opt`] \[_AUDIO_FILE_] \[_PROMPT-EN_]
 |    **chatgpt.sh** `-ccw` \[`opt`] \[_LANG_]
 |    **chatgpt.sh** `-ccW` \[`opt`]
@@ -34,21 +34,22 @@ is usually optional, however if it is mandatory for a chosen model
 (such as edits models), then the first positional argument is read as
 **INSTRUCTION** and the following ones as **INPUT** or **PROMPT**.
 
-Set `option -c` to start the chat mode via **text completions**
-and record conversation. This option accepts various
-models, defaults to _text-davinci-003_ if none set.
+`Option -d` starts a multi-turn session in **pure text completions**.
+This does not set further options automatically.
+
+Set `option -c` to start a multi-turn chat mode via **text completions**
+and record conversation. This option accepts various models,
+defaults to _text-davinci-003_ if none set.
 
 Set `option -cc` to start the chat mode via **native chat completions**
 and use turbo models. While in chat mode, some options are
 automatically set to un-lobotomise the bot.
 
-Set `option -C` to **resume** from last history session. Setting only
-`option -CC` (without -cc) starts a multi-turn session in
-**pure text completions**, and use restart and start sequences when defined.
+Set `option -C` to **resume** from last history session.
 
 If the first positional argument of the script starts with the
 command operator, the command "`/session` \[_HIST_NAME_]" to change to
-or create a new history file is assumed (with `options -ccCCHH`).
+or create a new history file is assumed (with `options -ccCdHH`).
 
 Set model with "`-m` \[_NAME_]" (full model name). Some models have an
 equivalent _INDEX_ as short-hand, so "`-m`_text-davinci-003_" and
@@ -68,10 +69,11 @@ edits).
 
 `Option -S` sets an INSTRUCTION prompt (the initial prompt) for
 text cmpls, chat cmpls, and text/code edits. A text file path
-may be supplied as the single argument. If the argument to this
-option starts with a backslash such as "`-S` `/`_linux_terminal_",
-start search for an *awesome-chatgpt-prompt* (by Fatih KA).
-Set "`//`" to refresh cache.
+may be supplied as the single argument.
+
+If the argument to `-S` option starts with a backslash or a percent sign,
+such as "`-S` `/`_linux_terminal_", start search for an *awesome-chatgpt-prompt(-zh)*
+(by Fatih KA and PlexPt). Set "`//`" or "`%%`" to refresh cache.
 
 `Option -e` sets the **text edits** endpoint. That endpoint requires
 both INSTRUCTION and INPUT prompts. User may choose a model amongst
@@ -93,8 +95,8 @@ See **IMAGES section** below for more information on
 _m4a_, _wav_, and _webm_ files.
 First positional argument must be an _AUDIO_ file.
 Optionally, set a _TWO-LETTER_ input language (_ISO-639-1_) as second
-argument. A PROMPT may also be set after language (must be in the
-same language as the audio).
+argument. A PROMPT may also be set to guide the model's style or continue
+a previous audio segment. The prompt should match the audio language.
 
 `Option -W` **translates audio** stream to **English text**. A PROMPT in
 English may be set to guide the model as the second positional
@@ -117,6 +119,9 @@ Script cache is kept at "_~/.cache/chatgptsh_".
 
 A personal (free) OpenAI API is required, set it with `-K`. Also,
 see **ENVIRONMENT section**.
+
+See the online man page and script usage examples at:
+<https://github.com/mountaineerbr/shellChatGPT/tree/main>.
 
 For complete model and settings information, refer to OpenAI
 API docs at <https://platform.openai.com/docs/>.
@@ -414,7 +419,9 @@ _tab_ and _unicode hex_. To preserve these symbols as literals instead
 
 **CHATGPTRC**
 
-:   Path to user chatgpt.sh configuration.
+**CONFFILE**
+
+:   Path to user _chatgpt.sh configuration_.
 
     Defaults=\"_~/.chatgpt.conf_\"
 
@@ -597,9 +604,9 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 
 : Continue (resume) from last session (compls/chat).
  
-**-CC**
+**-d**, **--text**
 
-: Start new session of pure text compls (`without -cc`).
+: Start new multi-turn session in pure text completions.
 
 
 **-e** \[_INSTRUCTION_] \[_INPUT_], **--edit**
@@ -631,9 +638,11 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 
 **-S** `/`[_AWESOME_PROMPT_NAME_]
 
+**-S** `%`[_AWESOME_PROMPT_NAME_ZH]
+
 :     Set or search an *awesome-chatgpt-prompt*.
       
-      Set `//` instead to refresh cache.
+      Set `//` or `%%` instead to refresh cache.
 
 
 **-TTT**, **--tiktoken**
@@ -645,9 +654,10 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
       Set model or encoding with `option -m`.
 
 
-**-w** \[_AUD_] \[_LANG_] \[_PROMPT-LANG_], **--transcribe**
+**-w** \[_AUD_] \[_LANG_] \[_PROMPT_], **--transcribe**
 
 :     Transcribe audio file into text. LANG is optional.
+      A prompt that matches the audio language is optional.
       
       Set twice to get phrase-level timestamps.
 
@@ -665,23 +675,29 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 
 : Ignore user config file and environment.
 
+
+**-F**
+
+: Edit configuration file with text editor, if it exists.
+
+
 **-h**, **--help**
 
 : Print the help page.
 
 
-**-H** `/`\[_HIST_FILE_], **--hist**
+**-H** \[`/`_HIST_FILE_], **--hist**
 
 :     Edit history file with text editor or pipe to stdout.
       
       A history file name can be optionally set as argument.
 
 
-**-HH** `/`\[_HIST_FILE_]
+**-HH** \[`/`_HIST_FILE_]
 
 :     Pretty print last history session to stdout.
       
-      With `-ccC`, or `-rR`, prints with the specified restart and start sequences.
+      Heeds `options -ccdrR` to print with the specified restart and start sequences.
 
 
 **-j**, **--raw**
