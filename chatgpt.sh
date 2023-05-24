@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.14  may/2023  by mountaineerbr  GPL+3
+# v0.14.1  may/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -2199,7 +2199,7 @@ else               #text/chat completions
 	fi
 
 	#pos arg input confirmation
-	if (($#)) && ((OPTV<2)) && ((CHAT)) && [[ -t 1 ]] ;then 	REPLY="$*" EDIT=1 SKIP=1 ;set -- ;fi
+	#if (($#)) && ((OPTV<2)) && ((CHAT)) && [[ -t 1 ]] ;then 	REPLY="$*" EDIT=1 SKIP=1 ;set -- ;fi
 
 	WSKIP=1
 	while :
