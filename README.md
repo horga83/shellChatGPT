@@ -297,13 +297,10 @@ in the man page.
 <!-- [Ksh93u+](https://github.com/ksh93/ksh) (~~_avoid_ Ksh2020~~), -->
 
 
-<!--
 ## Arch Linux Users
 
-There is a [*PKGBUILD*](PKGBUILD) file available to install the package
-in Arch Linux and derivative distros (I am still perfecting the PKGBUILD
-but it should work fine).
--->
+There is a [*PKGBUILD*](https://aur.archlinux.org/packages/chatgpt.sh) entry available to install the package
+in Arch Linux and derivative distros.
 
 
 ## Termux Users
