@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.14.1  may/2023  by mountaineerbr  GPL+3
+# v0.14.2  may/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -174,37 +174,44 @@ Chat Commands
 	new prompt to set a new parameter. The command operator may be
 	either \`!', or \`/'.
 
-	  ------    ----------    ---------------------------------------
-	  --- Model Settings --------------------------------------------
-	   !NUM      !max          Set response tokens / model capacity.
-	     -a      !pre          Set presence pensalty.
-	     -A      !freq         Set frequency penalty.
-	     -m      !mod          Set model (by index or name).
-	     -p      !top          Set top_p.
-	     -r      !restart      Set restart sequence.
-	     -R      !start        Set start sequence.
-	     -s      !stop         Set one stop sequence.
-	     -t      !temp         Set temperature.
-	     -w      !rec          Start audio record chat.
-	  --- Script Settings -------------------------------------------
-	     -o      !clip         Copy responses to clipboard.
-	     -u      !multi        Toggle multiline prompter.
-	     -v      !ver          Toggle verbose.
-	     -x      !ed           Toggle text editor interface.
-	     -y      !tik          Toggle python tiktoken use.
-	     !r      !regen        Renegerate last response.
-	     !q      !quit         Exit.
-		     !help         Print this help snippet.
-		     !models       Print language model names.
-	  --- Session Management ----------------------------------------
-	     -c      !new          Start new session (session break).
-	     -H      !hist         Edit raw history file in editor.
-	     -L      !log          Save to log file (pretty-print).
-	     !s      !session      Change to, search or create hist file.
-	    !!s     !!session      Same as !session, add session break.
-	     !c      !copy         Fork session from one hist file to another.
-		     !list         List history files.
-	  ------    ----------    ---------------------------------------
+    ------    ----------    ---------------------------------------
+    --- Model Settings --------------------------------------------
+     !NUM      !max  [NUM,NUM]  Set response tokens / model capacity.
+       -a      !pre      [VAL]  Set presence pensalty.
+       -A      !freq     [VAL]  Set frequency penalty.
+       -m      !mod  [MOD|IND]  Set model (by index or name).
+       -p      !top      [VAL]  Set top_p.
+       -r      !restart  [SEQ]  Set restart sequence.
+       -R      !start    [SEQ]  Set start sequence.
+       -s      !stop     [SEQ]  Set one stop sequence.
+       -t      !temp     [VAL]  Set temperature.
+       -w      !rec             Start audio record chat.
+    --- Script Settings -------------------------------------------
+       -o      !clip            Copy responses to clipboard.
+       -u      !multi           Toggle multiline prompter.
+       -v      !ver             Toggle verbose.
+       -x      !ed              Toggle text editor interface.
+       -y      !tik             Toggle python tiktoken use.
+       !r      !regen           Renegerate last response.
+       !q      !quit            Exit.
+               !help            Print this help snippet.
+               !models          Print language model names.
+    --- Session Management ----------------------------------------
+       -c      !new             Start new session (session break).
+       -H      !hist            Edit raw history file in editor.
+       -L      !log      [FILEPATH] 
+                                Save to log file (pretty-print).
+       !c      !copy     [SRC_HIST] [DEST_HIST]
+                                Copy session from source to destination.
+       !f      !fork     [DEST_HIST]
+                                Fork current session to destination.
+       !s      !session  [HIST_FILE]
+                                Change to, search or create hist file.
+      !!s     !!session  [HIST_FILE]
+                                Same as !session, break session.
+	       !sub             Copy session to tail.
+               !list            List history files.
+    ------    ----------    ---------------------------------------
 	
 	E.g.: \`/temp 0.7', \`!mod1', \`-p 0.2', and \`/s hist_name'.
 
@@ -825,7 +832,7 @@ function cmd_runf
 			fix_dotf OPTAA
 			__cmdmsgf 'Frequency penalty' "$OPTAA"
 			;;
-		-[Cc]|break|session|br|new)
+		-[Cc]|break|br|new)
 			break_sessionf
 			[[ -n ${INSTRUCTION_OLD} ]] && {
 			  push_tohistf "$(escapef ":${INSTRUCTION_OLD}")"
@@ -938,10 +945,7 @@ function cmd_runf
 
 			INPUT_ORIG=("${@:-${INPUT_ORIG[@]}}")
 			;;
-		change*|create*|search*|list*|s*)
-			session_mainf /"${args[@]}"
-			;;
-		copy*|fork*|c*)
+		session*|change*|create*|search*|list*|copy*|fork*|sub|[cfs]*)
 			session_mainf /"${args[@]}"
 			;;
 		r|regenerate|regen|[$IFS]|'')  #regenerate last response
@@ -1746,14 +1750,17 @@ function session_copyf
 	typeset src dest buff
 	
 	(($#==1)) && [[ ${1} = +([!\ ])[\ ]+([!\ ]) ]] && set -- $@
+
 	_sysmsgf 'Source hist file: ' '' ''
-	if (($#==1))
-	then 	src="$(session_globf "$@" || session_name_choosef "$@")"; echo "${src:-err}" >&2
-		_sysmsgf 'Destination hist file:' "current"
+	if (($#==1)) && [[ "$1" != [Cc]urrent ]]
+	then 	src=current; echo "${src:-err}" >&2
+		_sysmsgf 'Destination hist file:' '' ''
+		dest="$(session_globf "$@" || session_name_choosef "$@")"; echo "${dest:-err}" >&2
 	else
 		src="$(session_globf "${@:1:1}" || session_name_choosef "${@:1:1}")"; echo "${src:-err}" >&2
+		[[ $src != abort ]] || return
 		_sysmsgf 'Destination hist file: ' '' ''
-		dest="$(session_globf "${@:2:1}" || session_name_choosef "${@:2:1}")"; echo "${src:-err}" >&2
+		dest="$(session_globf "${@:2:1}" || session_name_choosef "${@:2:1}")"; echo "${dest:-err}" >&2
 	fi
 	dest="${dest:-$FILECHAT}" 
 
@@ -1772,22 +1779,33 @@ function session_mainf
 	name="${name##?([/!])*(\ )}"
 
 	case "${name}" in
-		#list hist files? operator: /list
+		#list hist files: /list
 		list*)
 			__cmdmsgf 'Session' 'list files'
 			session_listf "${name##list*(\ )}"
 			return
 			;;
-		#copy session from hist option? operator: /copy
-		copy*|fork*|c*)
+		#fork current session to [dest_hist]: /fork
+		fork*|f*)
+			__cmdmsgf 'Session' 'fork'
+			optsession=4
+			set -- "${1##*([/!])@(fork|f)*(\ )}"
+			set -- current "${1/\~\//"$HOME"\/}"
+			;;
+		#copy session to tail: /sub
+		sub) 	set -- current current
+			optsession=3
+			unset name
+			;;
+		#copy session from hist option: /copy
+		copy*|c*)
 			__cmdmsgf 'Session' 'copy'
 			optsession=3
-			set -- "${1##*([/!])@(copy|fork|c)*(\ )}" "${@:2}" #two args
+			set -- "${1##*([/!])@(copy|c)*(\ )}" "${@:2}" #two args
 			set -- "${@/\~\//"$HOME"\/}"
-			unset fname
 			;;
 		#change to, or create a hist file
-		#break session? operator: //
+		#break session: //
 		[/!]*)
 			if [[ "$name" != /[!/]*/* ]] \
 				|| [[ "$name" = [/!]/*/* ]]
@@ -1801,7 +1819,7 @@ function session_mainf
 	esac
 	
 	optsession=${optsession:-1} 
-	name="${name##@(create|change|search|s)*(\ )}"
+	name="${name##@(create|change|search|session|sub|s)*(\ )}"
 	name="${name/\~\//"$HOME"\/}"
 
 	#del unused positional args
@@ -1818,10 +1836,11 @@ function session_mainf
 		fi  >"$FILEFIFO"
 		FILECHAT="$FILEFIFO"
 		return
-	#copy session to destination
+	#copy/fork session to destination
 	elif ((optsession>2))
 	then
 		session_copyf "$@" >/dev/null || unset file
+	#change to hist file
 	else
 		#set source session file
 		if [[ -f $name ]]
@@ -1845,12 +1864,14 @@ function session_mainf
 		}
 		then 	FILECHAT="${file}" cmd_runf /break
 		fi
+		#print snippet of tail session
 		((optsession>2)) || OPTPRINT=1 session_sub_printf "${file:-$FILECHAT}" >/dev/null
 	fi
 
 	[[ ${file:-$FILECHAT} = "${FILECHAT}" ]] || _sysmsgf 'Changed to:' "${file:-$FILECHAT}"
 	FILECHAT="${file:-$FILECHAT}"
 }
+
 
 #parse opts
 optstring="a:A:b:B:cCdefFhHijlL:m:M:n:kK:p:qr:R:s:S:t:TouvVxwWyzZ0123456789@:/,.+-:"

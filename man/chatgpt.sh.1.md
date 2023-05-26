@@ -1,11 +1,11 @@
-% CHATGPT.SH(1) v0.14 | General Commands Manual
+% CHATGPT.SH(1) v0.14.2 | General Commands Manual
 % mountaineerbr
 % May 2023
 
 
 ### NAME
 
-|    chatgpt.sh -- ChatGPT / DALL-E / Whisper  Shell Wrapper
+|    chatgpt.sh \-- ChatGPT / DALL-E / Whisper  Shell Wrapper
 
 
 ### SYNOPSIS
@@ -184,40 +184,42 @@ may be either "`!`", or "`/`".
 
 
   Model       Settings
-  --------    ----------    -------------------------------------------
-    `!NUM`    `!max`        Set response tokens / model capacity.
-      `-a`    `!pre`        Set presence pensalty.
-      `-A`    `!freq`       Set frequency penalty.
-      `-m`    `!mod`        Set model (by index or name).
-      `-p`    `!top`        Set top_p.
-      `-r`    `!restart`    Set restart sequence.
-      `-R`    `!start`      Set start sequence.
-      `-s`    `!stop`       Set one stop sequence.
-      `-t`    `!temp`       Set temperature.
-      `-w`    `!rec`        Start audio record chat.
-  --------    ----------    -------------------------------------------
+  --------    ---------------------    ---------------------------------------------
+    `!NUM`    `!max` \[_NUM_,_NUM_]    Set response tokens / model capacity.
+      `-a`    `!pre`       \[_VAL_]    Set presence pensalty.
+      `-A`    `!freq`      \[_VAL_]    Set frequency penalty.
+      `-m`    `!mod` \[_MOD_|_IND_]    Set model (by index or name).
+      `-p`    `!top`       \[_VAL_]    Set top_p.
+      `-r`    `!restart`   \[_SEQ_]    Set restart sequence.
+      `-R`    `!start`     \[_SEQ_]    Set start sequence.
+      `-s`    `!stop`      \[_SEQ_]    Set one stop sequence.
+      `-t`    `!temp`      \[_VAL_]    Set temperature.
+      `-w`    `!rec`                   Start audio record chat.
+  --------    ---------------------    ---------------------------------------------
 
   Script      Settings
-  --------    ----------    -------------------------------------------
-      `-o`    `!clip`       Copy responses to clipboard.
-      `-u`    `!multi`      Toggle multiline prompter.
-      `-v`    `!ver`        Toggle verbose.
-      `-x`    `!ed`         Toggle text editor interface.
-      `-y`    `!tik`        Toggle python tiktoken use.
-      `!r`    `!regen`      Renegerate last response.
-      `!q`    `!quit`       Exit.
-  --------    ----------    -------------------------------------------
+  --------    ---------------------    ---------------------------------------------
+      `-o`    `!clip`                  Copy responses to clipboard.
+      `-u`    `!multi`                 Toggle multiline prompter.
+      `-v`    `!ver`                   Toggle verbose.
+      `-x`    `!ed`                    Toggle text editor interface.
+      `-y`    `!tik`                   Toggle python tiktoken use.
+      `!r`    `!regen`                 Renegerate last response.
+      `!q`    `!quit`                  Exit.
+  --------    ---------------------    ---------------------------------------------
 
   Session     Management
-  --------    ----------    -------------------------------------------
-      `-c`    `!new`        Start new session.
-      `-H`    `!hist`       Edit history in editor.
-      `-L`    `!log`        Save to log file.
-      `!s`    `!session`    Change to, search or create hist file.
-      `!!s`   `!!session`   Same as `!session`, add session break.
-      `!c`    `!copy`       Fork session from one hist file to another.
-              `!list`       List history files.
-  --------    ----------    -------------------------------------------
+  --------    ------------------------------------    -----------------------------------------------
+      `-c`    `!new`                                  Start new session.
+      `-H`    `!hist`                                 Edit history in editor.
+      `-L`    `!log` \[_FILEPATH_]                    Save to log file.
+      `!c`    `!copy` \[_SRC_HIST_] \[_DEST_HIST_]    Copy session from source to destination.
+      `!f`    `!fork` \[_DEST_HIST_]                  Fork current session to destination.
+      `!s`    `!session` \[_HIST_FILE_]               Change to, search or create hist file.
+      `!!s`   `!!session` \[_HIST_FILE_]              Same as `!session`, break session.
+              `!sub`                                  Copy session to tail.
+              `!list`                                 List history files.
+  --------    ------------------------------------    -----------------------------------------------
 
 
 | E.g.: "`/temp` _0.7_", "`!mod`_1_", "`-p` _0.2_", and "`/s` _hist_name_".
@@ -494,7 +496,7 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 
 #### Model Settings
 
-**-\@** \[\[_VAL%_]_COLOUR_], **--alpha**=\[\[_VAL%_]_COLOUR_]
+**-\@** \[\[_VAL%_]_COLOUR_], **\--alpha**=\[\[_VAL%_]_COLOUR_]
 
 :      Set transparent colour of image mask. Def=_black_.
 
@@ -503,34 +505,34 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 
 **-NUM**
 
-**-M** \[_NUM_[_-NUM_]], **--max-tokens**=\[_NUM_[_-NUM_]]
+**-M** \[_NUM_[_-NUM_]], **\--max-tokens**=\[_NUM_[_-NUM_]]
 
 :     Set maximum number of _response tokens_. Def=_512_.
 
       _Model capacity_ can be set with a second number. Def=_auto-512_.
 
 
-**-a** \[_VAL_], **--presence-penalty**=\[_VAL_]
+**-a** \[_VAL_], **\--presence-penalty**=\[_VAL_]
 
 : Set presence penalty  (cmpls/chat, -2.0 - 2.0).
 
 
-**-A** \[_VAL_], **--frequency-penalty**=\[_VAL_]
+**-A** \[_VAL_], **\--frequency-penalty**=\[_VAL_]
 
 : Set frequency penalty (cmpls/chat, -2.0 - 2.0).
 
 
-**-b** \[_VAL_], **--best-of**=\[_VAL_]
+**-b** \[_VAL_], **\--best-of**=\[_VAL_]
 
 : Set best of, must be greater than `option -n` (cmpls). Def=_1_.
 
 
-**-B**, **--log-prob**
+**-B**, **\--log-prob**
 
 : Print log probabilities to stderr (cmpls, 0 - 5).
 
 
-**-m** \[_MOD_], **--model**=\[_MOD_]
+**-m** \[_MOD_], **\--model**=\[_MOD_]
 
 : Set model by _NAME_.
 
@@ -553,44 +555,44 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
   ----  ----------------------------  ------------------------------
 
 
-**-n** \[_NUM_], **--results**=\[_NUM_]
+**-n** \[_NUM_], **\--results**=\[_NUM_]
 
 : Set number of results. Def=_1_.
 
 
-**-p** \[_VAL_], **--top-p**=\[_VAL_]
+**-p** \[_VAL_], **\--top-p**=\[_VAL_]
 
 : Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
 
 
-**-r** \[_SEQ_], **--restart-sequence**=\[_SEQ_]
+**-r** \[_SEQ_], **\--restart-sequence**=\[_SEQ_]
 
 : Set restart sequence string (cmpls).
 
 
-**-R** \[_SEQ_], **--start-sequence**=\[_SEQ_]
+**-R** \[_SEQ_], **\--start-sequence**=\[_SEQ_]
 
 : Set start sequence string (cmpls).
 
 
-**-s** \[_SEQ_], **--stop**=\[_SEQ_]
+**-s** \[_SEQ_], **\--stop**=\[_SEQ_]
 
 : Set stop sequences, up to 4. Def=\"_<|endoftext|>_\".
 
 
-**-S** \[_INSTRUCTION_|_FILE_], **--instruction**
+**-S** \[_INSTRUCTION_|_FILE_], **\--instruction**
 
 : Set an instruction prompt. It may be a text file.
 
 
-**-t** \[_VAL_], **--temperature**=\[_VAL_]
+**-t** \[_VAL_], **\--temperature**=\[_VAL_]
 
 : Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper 0.0 - 1.0). Def=_0_.
 
 
 #### Script Modes
 
-**-c**, **--chat**
+**-c**, **\--chat**
 
 : Chat mode in text completions, session break.
 
@@ -600,21 +602,21 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 : Chat mode in chat completions, session break.
 
 
-**-C**, **--continue**, **--resume**
+**-C**, **\--continue**, **\--resume**
 
 : Continue (resume) from last session (compls/chat).
  
-**-d**, **--text**
+**-d**, **\--text**
 
 : Start new multi-turn session in pure text completions.
 
 
-**-e** \[_INSTRUCTION_] \[_INPUT_], **--edit**
+**-e** \[_INSTRUCTION_] \[_INPUT_], **\--edit**
 
 : Set Edit mode. Model def=_text-davinci-edit-001_.
 
 
-**-i** \[_PROMPT_], **--image**
+**-i** \[_PROMPT_], **\--image**
 
 : Generate images given a prompt.
 
@@ -629,7 +631,7 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 : Edit image with mask and prompt (required).
 
 
-**-q**, **--insert**
+**-q**, **\--insert**
 
 :     Insert text rather than completing only. 
 
@@ -645,7 +647,7 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
       Set `//` or `%%` instead to refresh cache.
 
 
-**-TTT**, **--tiktoken**
+**-TTT**, **\--tiktoken**
 
 :     Count input tokens with python tiktoken (ignores special tokens). It heeds `options -ccm`.
 
@@ -654,7 +656,7 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
       Set model or encoding with `option -m`.
 
 
-**-w** \[_AUD_] \[_LANG_] \[_PROMPT_], **--transcribe**
+**-w** \[_AUD_] \[_LANG_] \[_PROMPT_], **\--transcribe**
 
 :     Transcribe audio file into text. LANG is optional.
       A prompt that matches the audio language is optional.
@@ -662,7 +664,7 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
       Set twice to get phrase-level timestamps.
 
 
-**-W** \[_AUD_] \[_PROMPT-EN_], **--translate**
+**-W** \[_AUD_] \[_PROMPT-EN_], **\--translate**
 
 :     Translate audio file into English text.
       
@@ -671,7 +673,7 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 
 ### Script Settings
 
-**-f**, **--no-config**
+**-f**, **\--no-config**
 
 : Ignore user config file and environment.
 
@@ -681,12 +683,12 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 : Edit configuration file with text editor, if it exists.
 
 
-**-h**, **--help**
+**-h**, **\--help**
 
 : Print the help page.
 
 
-**-H** \[`/`_HIST_FILE_], **--hist**
+**-H** \[`/`_HIST_FILE_], **\--hist**
 
 :     Edit history file with text editor or pipe to stdout.
       
@@ -700,44 +702,44 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
       Heeds `options -ccdrR` to print with the specified restart and start sequences.
 
 
-**-j**, **--raw**
+**-j**, **\--raw**
 
 : Print raw JSON response (debug with `-jVVz`).
 
 
-**-k**, **--no-colour**
+**-k**, **\--no-colour**
 
 : Disable colour output. Def=_auto_.
 
 
-**-K** \[_KEY_], **--api-key**=\[_KEY_]
+**-K** \[_KEY_], **\--api-key**=\[_KEY_]
 
 : Set OpenAI API key.
 
 
-**-l** \[_MOD_], **--list-models**
+**-l** \[_MOD_], **\--list-models**
 
 :     List models or print details of _MODEL_.
       
       Set twice to print script model indexes instead.
 
 
-**-L** \[_FILEPATH_], **--log**=\[_FILEPATH_]
+**-L** \[_FILEPATH_], **\--log**=\[_FILEPATH_]
 
 : Set log file. _FILEPATH_ is required.
 
 
-**-o**, **--clipboard**
+**-o**, **\--clipboard**
 
 : Copy response to clipboard.
 
 
-**-u**, **--multiline**
+**-u**, **\--multiline**
 
 : Toggle multiline prompter.
 
 
-**-v**, **--verbose**
+**-v**, **\--verbose**
 
 :     Less verbose. May set multiple times.
 
@@ -749,17 +751,17 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
       Set twice to dump raw request.
 
 
-**-x**, **--editor**
+**-x**, **\--editor**
 
 : Edit prompt in text editor.
 
 
-**-y**, **--tik**
+**-y**, **\--tik**
 
 : Set tiktoken for token preview (cmpls, chat).
 
 
-**-z**, **--last**
+**-z**, **\--last**
 
 : Print last response JSON data.
 

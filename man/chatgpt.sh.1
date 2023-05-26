@@ -15,11 +15,11 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "May 2023" "v0.14" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "May 2023" "v0.14.2" "General Commands Manual"
 .hy
 .SS NAME
 .PP
-\ \ \ chatgpt.sh \[en] ChatGPT / DALL-E / Whisper Shell Wrapper
+\ \ \ chatgpt.sh -- ChatGPT / DALL-E / Whisper Shell Wrapper
 .SS SYNOPSIS
 .PP
 \ \ \ \f[B]chatgpt.sh\f[R] [\f[V]-c\f[R]|\f[V]-d\f[R]] [\f[V]opt\f[R]]
@@ -266,63 +266,63 @@ _
 T{
 \f[V]!NUM\f[R]
 T}@T{
-\f[V]!max\f[R]
+\f[V]!max\f[R] [\f[I]NUM\f[R],\f[I]NUM\f[R]]
 T}@T{
 Set response tokens / model capacity.
 T}
 T{
 \f[V]-a\f[R]
 T}@T{
-\f[V]!pre\f[R]
+\f[V]!pre\f[R] [\f[I]VAL\f[R]]
 T}@T{
 Set presence pensalty.
 T}
 T{
 \f[V]-A\f[R]
 T}@T{
-\f[V]!freq\f[R]
+\f[V]!freq\f[R] [\f[I]VAL\f[R]]
 T}@T{
 Set frequency penalty.
 T}
 T{
 \f[V]-m\f[R]
 T}@T{
-\f[V]!mod\f[R]
+\f[V]!mod\f[R] [\f[I]MOD\f[R]|\f[I]IND\f[R]]
 T}@T{
 Set model (by index or name).
 T}
 T{
 \f[V]-p\f[R]
 T}@T{
-\f[V]!top\f[R]
+\f[V]!top\f[R] [\f[I]VAL\f[R]]
 T}@T{
 Set top_p.
 T}
 T{
 \f[V]-r\f[R]
 T}@T{
-\f[V]!restart\f[R]
+\f[V]!restart\f[R] [\f[I]SEQ\f[R]]
 T}@T{
 Set restart sequence.
 T}
 T{
 \f[V]-R\f[R]
 T}@T{
-\f[V]!start\f[R]
+\f[V]!start\f[R] [\f[I]SEQ\f[R]]
 T}@T{
 Set start sequence.
 T}
 T{
 \f[V]-s\f[R]
 T}@T{
-\f[V]!stop\f[R]
+\f[V]!stop\f[R] [\f[I]SEQ\f[R]]
 T}@T{
 Set one stop sequence.
 T}
 T{
 \f[V]-t\f[R]
 T}@T{
-\f[V]!temp\f[R]
+\f[V]!temp\f[R] [\f[I]VAL\f[R]]
 T}@T{
 Set temperature.
 T}
@@ -423,30 +423,43 @@ T}
 T{
 \f[V]-L\f[R]
 T}@T{
-\f[V]!log\f[R]
+\f[V]!log\f[R] [\f[I]FILEPATH\f[R]]
 T}@T{
 Save to log file.
 T}
 T{
+\f[V]!c\f[R]
+T}@T{
+\f[V]!copy\f[R] [\f[I]SRC_HIST\f[R]] [\f[I]DEST_HIST\f[R]]
+T}@T{
+Copy session from source to destination.
+T}
+T{
+\f[V]!f\f[R]
+T}@T{
+\f[V]!fork\f[R] [\f[I]DEST_HIST\f[R]]
+T}@T{
+Fork current session to destination.
+T}
+T{
 \f[V]!s\f[R]
 T}@T{
-\f[V]!session\f[R]
+\f[V]!session\f[R] [\f[I]HIST_FILE\f[R]]
 T}@T{
 Change to, search or create hist file.
 T}
 T{
 \f[V]!!s\f[R]
 T}@T{
-\f[V]!!session\f[R]
+\f[V]!!session\f[R] [\f[I]HIST_FILE\f[R]]
 T}@T{
-Same as \f[V]!session\f[R], add session break.
+Same as \f[V]!session\f[R], break session.
 T}
 T{
-\f[V]!c\f[R]
 T}@T{
-\f[V]!copy\f[R]
+\f[V]!sub\f[R]
 T}@T{
-Fork session from one hist file to another.
+Copy session to tail.
 T}
 T{
 T}@T{
@@ -708,7 +721,7 @@ required.
 .SS OPTIONS
 .SS Model Settings
 .TP
-\f[B]-\[at]\f[R] [[\f[I]VAL%\f[R]]\f[I]COLOUR\f[R]], \f[B]\[en]alpha\f[R]=[[\f[I]VAL%\f[R]]\f[I]COLOUR\f[R]]
+\f[B]-\[at]\f[R] [[\f[I]VAL%\f[R]]\f[I]COLOUR\f[R]], \f[B]--alpha\f[R]=[[\f[I]VAL%\f[R]]\f[I]COLOUR\f[R]]
 Set transparent colour of image mask.
 Def=\f[I]black\f[R].
 .RS
@@ -719,7 +732,7 @@ Def=\f[I]0%\f[R].
 .PP
 \f[B]-NUM\f[R]
 .TP
-\f[B]-M\f[R] [\f[I]NUM\f[R][\f[I]-NUM\f[R]]], \f[B]\[en]max-tokens\f[R]=[\f[I]NUM\f[R][\f[I]-NUM\f[R]]]
+\f[B]-M\f[R] [\f[I]NUM\f[R][\f[I]-NUM\f[R]]], \f[B]--max-tokens\f[R]=[\f[I]NUM\f[R][\f[I]-NUM\f[R]]]
 Set maximum number of \f[I]response tokens\f[R].
 Def=\f[I]512\f[R].
 .RS
@@ -728,20 +741,20 @@ Def=\f[I]512\f[R].
 Def=\f[I]auto-512\f[R].
 .RE
 .TP
-\f[B]-a\f[R] [\f[I]VAL\f[R]], \f[B]\[en]presence-penalty\f[R]=[\f[I]VAL\f[R]]
+\f[B]-a\f[R] [\f[I]VAL\f[R]], \f[B]--presence-penalty\f[R]=[\f[I]VAL\f[R]]
 Set presence penalty (cmpls/chat, -2.0 - 2.0).
 .TP
-\f[B]-A\f[R] [\f[I]VAL\f[R]], \f[B]\[en]frequency-penalty\f[R]=[\f[I]VAL\f[R]]
+\f[B]-A\f[R] [\f[I]VAL\f[R]], \f[B]--frequency-penalty\f[R]=[\f[I]VAL\f[R]]
 Set frequency penalty (cmpls/chat, -2.0 - 2.0).
 .TP
-\f[B]-b\f[R] [\f[I]VAL\f[R]], \f[B]\[en]best-of\f[R]=[\f[I]VAL\f[R]]
+\f[B]-b\f[R] [\f[I]VAL\f[R]], \f[B]--best-of\f[R]=[\f[I]VAL\f[R]]
 Set best of, must be greater than \f[V]option -n\f[R] (cmpls).
 Def=\f[I]1\f[R].
 .TP
-\f[B]-B\f[R], \f[B]\[en]log-prob\f[R]
+\f[B]-B\f[R], \f[B]--log-prob\f[R]
 Print log probabilities to stderr (cmpls, 0 - 5).
 .TP
-\f[B]-m\f[R] [\f[I]MOD\f[R]], \f[B]\[en]model\f[R]=[\f[I]MOD\f[R]]
+\f[B]-m\f[R] [\f[I]MOD\f[R]], \f[B]--model\f[R]=[\f[I]MOD\f[R]]
 Set model by \f[I]NAME\f[R].
 .TP
 \f[B]-m\f[R] [\f[I]IND\f[R]]
@@ -826,50 +839,50 @@ gpt-4-32k
 T}
 .TE
 .TP
-\f[B]-n\f[R] [\f[I]NUM\f[R]], \f[B]\[en]results\f[R]=[\f[I]NUM\f[R]]
+\f[B]-n\f[R] [\f[I]NUM\f[R]], \f[B]--results\f[R]=[\f[I]NUM\f[R]]
 Set number of results.
 Def=\f[I]1\f[R].
 .TP
-\f[B]-p\f[R] [\f[I]VAL\f[R]], \f[B]\[en]top-p\f[R]=[\f[I]VAL\f[R]]
+\f[B]-p\f[R] [\f[I]VAL\f[R]], \f[B]--top-p\f[R]=[\f[I]VAL\f[R]]
 Set Top_p value, nucleus sampling (cmpls/chat, 0.0 - 1.0).
 .TP
-\f[B]-r\f[R] [\f[I]SEQ\f[R]], \f[B]\[en]restart-sequence\f[R]=[\f[I]SEQ\f[R]]
+\f[B]-r\f[R] [\f[I]SEQ\f[R]], \f[B]--restart-sequence\f[R]=[\f[I]SEQ\f[R]]
 Set restart sequence string (cmpls).
 .TP
-\f[B]-R\f[R] [\f[I]SEQ\f[R]], \f[B]\[en]start-sequence\f[R]=[\f[I]SEQ\f[R]]
+\f[B]-R\f[R] [\f[I]SEQ\f[R]], \f[B]--start-sequence\f[R]=[\f[I]SEQ\f[R]]
 Set start sequence string (cmpls).
 .TP
-\f[B]-s\f[R] [\f[I]SEQ\f[R]], \f[B]\[en]stop\f[R]=[\f[I]SEQ\f[R]]
+\f[B]-s\f[R] [\f[I]SEQ\f[R]], \f[B]--stop\f[R]=[\f[I]SEQ\f[R]]
 Set stop sequences, up to 4.
 Def=\[dq]\f[I]<|endoftext|>\f[R]\[dq].
 .TP
-\f[B]-S\f[R] [\f[I]INSTRUCTION\f[R]|\f[I]FILE\f[R]], \f[B]\[en]instruction\f[R]
+\f[B]-S\f[R] [\f[I]INSTRUCTION\f[R]|\f[I]FILE\f[R]], \f[B]--instruction\f[R]
 Set an instruction prompt.
 It may be a text file.
 .TP
-\f[B]-t\f[R] [\f[I]VAL\f[R]], \f[B]\[en]temperature\f[R]=[\f[I]VAL\f[R]]
+\f[B]-t\f[R] [\f[I]VAL\f[R]], \f[B]--temperature\f[R]=[\f[I]VAL\f[R]]
 Set temperature value (cmpls/chat/edits/audio), (0.0 - 2.0, whisper 0.0
 - 1.0).
 Def=\f[I]0\f[R].
 .SS Script Modes
 .TP
-\f[B]-c\f[R], \f[B]\[en]chat\f[R]
+\f[B]-c\f[R], \f[B]--chat\f[R]
 Chat mode in text completions, session break.
 .TP
 \f[B]-cc\f[R]
 Chat mode in chat completions, session break.
 .TP
-\f[B]-C\f[R], \f[B]\[en]continue\f[R], \f[B]\[en]resume\f[R]
+\f[B]-C\f[R], \f[B]--continue\f[R], \f[B]--resume\f[R]
 Continue (resume) from last session (compls/chat).
 .TP
-\f[B]-d\f[R], \f[B]\[en]text\f[R]
+\f[B]-d\f[R], \f[B]--text\f[R]
 Start new multi-turn session in pure text completions.
 .TP
-\f[B]-e\f[R] [\f[I]INSTRUCTION\f[R]] [\f[I]INPUT\f[R]], \f[B]\[en]edit\f[R]
+\f[B]-e\f[R] [\f[I]INSTRUCTION\f[R]] [\f[I]INPUT\f[R]], \f[B]--edit\f[R]
 Set Edit mode.
 Model def=\f[I]text-davinci-edit-001\f[R].
 .TP
-\f[B]-i\f[R] [\f[I]PROMPT\f[R]], \f[B]\[en]image\f[R]
+\f[B]-i\f[R] [\f[I]PROMPT\f[R]], \f[B]--image\f[R]
 Generate images given a prompt.
 .TP
 \f[B]-i\f[R] [\f[I]PNG\f[R]]
@@ -878,7 +891,7 @@ Create variations of a given image.
 \f[B]-i\f[R] [\f[I]PNG\f[R]] [\f[I]MASK\f[R]] [\f[I]PROMPT\f[R]]
 Edit image with mask and prompt (required).
 .TP
-\f[B]-q\f[R], \f[B]\[en]insert\f[R]
+\f[B]-q\f[R], \f[B]--insert\f[R]
 Insert text rather than completing only.
 .RS
 .PP
@@ -895,7 +908,7 @@ Set or search an \f[I]awesome-chatgpt-prompt\f[R].
 Set \f[V]//\f[R] or \f[V]%%\f[R] instead to refresh cache.
 .RE
 .TP
-\f[B]-TTT\f[R], \f[B]\[en]tiktoken\f[R]
+\f[B]-TTT\f[R], \f[B]--tiktoken\f[R]
 Count input tokens with python tiktoken (ignores special tokens).
 It heeds \f[V]options -ccm\f[R].
 .RS
@@ -905,7 +918,7 @@ Set twice to print tokens, thrice to available encodings.
 Set model or encoding with \f[V]option -m\f[R].
 .RE
 .TP
-\f[B]-w\f[R] [\f[I]AUD\f[R]] [\f[I]LANG\f[R]] [\f[I]PROMPT\f[R]], \f[B]\[en]transcribe\f[R]
+\f[B]-w\f[R] [\f[I]AUD\f[R]] [\f[I]LANG\f[R]] [\f[I]PROMPT\f[R]], \f[B]--transcribe\f[R]
 Transcribe audio file into text.
 LANG is optional.
 A prompt that matches the audio language is optional.
@@ -914,7 +927,7 @@ A prompt that matches the audio language is optional.
 Set twice to get phrase-level timestamps.
 .RE
 .TP
-\f[B]-W\f[R] [\f[I]AUD\f[R]] [\f[I]PROMPT-EN\f[R]], \f[B]\[en]translate\f[R]
+\f[B]-W\f[R] [\f[I]AUD\f[R]] [\f[I]PROMPT-EN\f[R]], \f[B]--translate\f[R]
 Translate audio file into English text.
 .RS
 .PP
@@ -922,16 +935,16 @@ Set twice to get phrase-level timestamps.
 .RE
 .SS Script Settings
 .TP
-\f[B]-f\f[R], \f[B]\[en]no-config\f[R]
+\f[B]-f\f[R], \f[B]--no-config\f[R]
 Ignore user config file and environment.
 .TP
 \f[B]-F\f[R]
 Edit configuration file with text editor, if it exists.
 .TP
-\f[B]-h\f[R], \f[B]\[en]help\f[R]
+\f[B]-h\f[R], \f[B]--help\f[R]
 Print the help page.
 .TP
-\f[B]-H\f[R] [\f[V]/\f[R]\f[I]HIST_FILE\f[R]], \f[B]\[en]hist\f[R]
+\f[B]-H\f[R] [\f[V]/\f[R]\f[I]HIST_FILE\f[R]], \f[B]--hist\f[R]
 Edit history file with text editor or pipe to stdout.
 .RS
 .PP
@@ -946,34 +959,34 @@ Heeds \f[V]options -ccdrR\f[R] to print with the specified restart and
 start sequences.
 .RE
 .TP
-\f[B]-j\f[R], \f[B]\[en]raw\f[R]
+\f[B]-j\f[R], \f[B]--raw\f[R]
 Print raw JSON response (debug with \f[V]-jVVz\f[R]).
 .TP
-\f[B]-k\f[R], \f[B]\[en]no-colour\f[R]
+\f[B]-k\f[R], \f[B]--no-colour\f[R]
 Disable colour output.
 Def=\f[I]auto\f[R].
 .TP
-\f[B]-K\f[R] [\f[I]KEY\f[R]], \f[B]\[en]api-key\f[R]=[\f[I]KEY\f[R]]
+\f[B]-K\f[R] [\f[I]KEY\f[R]], \f[B]--api-key\f[R]=[\f[I]KEY\f[R]]
 Set OpenAI API key.
 .TP
-\f[B]-l\f[R] [\f[I]MOD\f[R]], \f[B]\[en]list-models\f[R]
+\f[B]-l\f[R] [\f[I]MOD\f[R]], \f[B]--list-models\f[R]
 List models or print details of \f[I]MODEL\f[R].
 .RS
 .PP
 Set twice to print script model indexes instead.
 .RE
 .TP
-\f[B]-L\f[R] [\f[I]FILEPATH\f[R]], \f[B]\[en]log\f[R]=[\f[I]FILEPATH\f[R]]
+\f[B]-L\f[R] [\f[I]FILEPATH\f[R]], \f[B]--log\f[R]=[\f[I]FILEPATH\f[R]]
 Set log file.
 \f[I]FILEPATH\f[R] is required.
 .TP
-\f[B]-o\f[R], \f[B]\[en]clipboard\f[R]
+\f[B]-o\f[R], \f[B]--clipboard\f[R]
 Copy response to clipboard.
 .TP
-\f[B]-u\f[R], \f[B]\[en]multiline\f[R]
+\f[B]-u\f[R], \f[B]--multiline\f[R]
 Toggle multiline prompter.
 .TP
-\f[B]-v\f[R], \f[B]\[en]verbose\f[R]
+\f[B]-v\f[R], \f[B]--verbose\f[R]
 Less verbose.
 May set multiple times.
 .TP
@@ -984,13 +997,13 @@ Pretty-print context.
 Set twice to dump raw request.
 .RE
 .TP
-\f[B]-x\f[R], \f[B]\[en]editor\f[R]
+\f[B]-x\f[R], \f[B]--editor\f[R]
 Edit prompt in text editor.
 .TP
-\f[B]-y\f[R], \f[B]\[en]tik\f[R]
+\f[B]-y\f[R], \f[B]--tik\f[R]
 Set tiktoken for token preview (cmpls, chat).
 .TP
-\f[B]-z\f[R], \f[B]\[en]last\f[R]
+\f[B]-z\f[R], \f[B]--last\f[R]
 Print last response JSON data.
 .TP
 \f[B]-Z\f[R]
