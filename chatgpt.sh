@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.14.3  may/2023  by mountaineerbr  GPL+3
+# v0.14.4  may/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -1325,11 +1325,11 @@ function whisperf
 #image edits/variations
 function imgvarf
 {
-	typeset size prompt mask REPLY
+	typeset size prompt mask REPLY ;unset ARGS PNG32
 	[[ -e ${1:?input PNG path required} ]]
 
 	if command -v magick >/dev/null 2>&1
-	then 	if ! __is_pngf "$1" || ! __is_squaref "$1" ||
+	then 	if ! __is_pngf "$1" || ! __is_squaref "$1" || ! __is_rgbf "$1" ||
 			{ 	(($# > 1)) && [[ ! -e $2 ]] ;} || [[ -n ${OPT_AT+force} ]]
 		then  #not png or not square, or needs alpha
 			if (($# > 1)) && [[ ! -e $2 ]]
@@ -1346,6 +1346,7 @@ function imgvarf
 					printf '%s\n' 'Alpha not needed, transparent image' >&2
 				fi
 			fi
+			__is_rgbf "$1" || { 	PNG32="png32:" ;printf '%s\n' 'Image colour space is not RGB(A)' >&2 ;}
 			img_convf "$1" $ARGS "${PNG32}${FILEIN}" &&
 				set -- "${FILEIN}" "${@:2}"  #adjusted
 		else 	((OPTV)) ||
@@ -1354,7 +1355,7 @@ function imgvarf
 						
 		if [[ -e $2 ]]  #edits + mask file
 		then 	size=$(print_imgsizef "$1") 
-			if ! __is_pngf "$2" || {
+			if ! __is_pngf "$2" || ! __is_rgbf "$2" || {
 				[[ $(print_imgsizef "$2") != "$size" ]] &&
 				{ 	((OPTV)) || printf '%s\n' 'Mask size differs' >&2 ;}
 			} || __is_opaquef "$2" || [[ -n ${OPT_AT+true} ]]
@@ -1483,6 +1484,11 @@ function __chk_imgsizef
 	then 	__warmsgf "Warning:" "Max image size is 4MB [file:$((chk_fsize/1000))KB]"
 		(( (chk_fsize+500000)/1000000 < 5))
 	fi
+}
+#is image colour space rgb?
+function __is_rgbf
+{
+	[[ " $(magick identify -format "%r" "$@") " = *[!sS][Rr][Gg][Bb]* ]]
 }
 
 #image generations
@@ -2039,9 +2045,8 @@ if ((OPTI+OPTII))
 then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
 	if set_sizef "$1"
 	then 	shift
-	elif (($#<5)) && set_sizef "$2"
-	then 	set -- "$1" "${@:3}"
-	fi
+	elif set_sizef "$OPTS"
+	then 	: ;fi
 	[[ -e $1 ]] && OPTII=1  #img edits and vars
 fi
 
@@ -2140,7 +2145,9 @@ then 	((OPTTIKTOKEN>2)) || __sysmsgf 'Language Model:' "$MOD"
 elif ((OPTW)) && ((!(OPTC+OPTCMPL) ))  #audio transcribe/translation
 then 	whisperf "$@"
 elif ((OPTII))     #image variations/edits
-then 	__sysmsgf 'Image Variations / Edits'
+then 	if (($#>1))
+	then 	__sysmsgf 'Image Edits'
+	else 	__sysmsgf 'Image Variations' ;fi
 	imgvarf "$@"
 elif ((OPTI))      #image generations
 then 	__sysmsgf 'Image Generations'
