@@ -5,7 +5,7 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="mountaineerbr" />
-  <title>CHATGPT.SH(1) v0.14.2 | General Commands Manual</title>
+  <title>CHATGPT.SH(1) v0.14.3 | General Commands Manual</title>
   <style>
     html {
       color: #1a1a1a;
@@ -167,7 +167,7 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">CHATGPT.SH(1) v0.14.2 | General Commands Manual</h1>
+<h1 class="title">CHATGPT.SH(1) v0.14.3 | General Commands Manual</h1>
 <p class="author">mountaineerbr</p>
 <p class="date">May 2023</p>
 </header>
@@ -203,14 +203,14 @@ Shell Wrapper</div>
    <strong>chatgpt.sh</strong> <code>-ll</code>
 [<em>MODEL_NAME</em>]</div>
 <h3 id="description">DESCRIPTION</h3>
-<p>Complete INPUT text when run without any options (single-turn, pure
+<p>Complete INPUT text when run without any options (single-turn, plain
 text completions).</p>
 <p>Positional arguments are read as a single <strong>PROMPT</strong>.
 Model <strong>INSTRUCTION</strong> is usually optional, however if it is
 mandatory for a chosen model (such as edits models), then the first
 positional argument is read as <strong>INSTRUCTION</strong> and the
 following ones as <strong>INPUT</strong> or <strong>PROMPT</strong>.</p>
-<p><code>Option -d</code> starts a multi-turn session in <strong>pure
+<p><code>Option -d</code> starts a multi-turn session in <strong>plain
 text completions</strong>. This does not set further options
 automatically.</p>
 <p>Set <code>option -c</code> to start a multi-turn chat mode via
@@ -248,7 +248,8 @@ path may be supplied as the single argument.</p>
 a percent sign, such as “<code>-S</code>
 <code>/</code><em>linux_terminal</em>”, start search for an
 <em>awesome-chatgpt-prompt(-zh)</em> (by Fatih KA and PlexPt). Set
-“<code>//</code>” or “<code>%%</code>” to refresh cache.</p>
+“<code>//</code>” or “<code>%%</code>” to refresh cache. Use with
+<em>davinci</em> and <em>gpt-3.5+</em> models.</p>
 <p><code>Option -e</code> sets the <strong>text edits</strong> endpoint.
 That endpoint requires both INSTRUCTION and INPUT prompts. User may
 choose a model amongst the <em>edit model family</em>.</p>
@@ -885,7 +886,7 @@ Def=<em>1</em>.</p>
 </dd>
 <dt><strong>-d</strong>, <strong>--text</strong></dt>
 <dd>
-<p>Start new multi-turn session in pure text completions.</p>
+<p>Start new multi-turn session in plain text completions.</p>
 </dd>
 <dt><strong>-e</strong> [<em>INSTRUCTION</em>] [<em>INPUT</em>],
 <strong>--edit</strong></dt>
@@ -916,7 +917,8 @@ insert text (cmpls).</p>
 <dl>
 <dt><strong>-S</strong> <code>%</code>[_AWESOME_PROMPT_NAME_ZH]</dt>
 <dd>
-<p>Set or search an <em>awesome-chatgpt-prompt</em>.</p>
+<p>Set or search an <em>awesome-chatgpt-prompt(-zh)</em>
+(<em>davinci</em> and <em>gpt3.5+</em> models).</p>
 <p>Set <code>//</code> or <code>%%</code> instead to refresh cache.</p>
 </dd>
 <dt><strong>-TTT</strong>, <strong>--tiktoken</strong></dt>

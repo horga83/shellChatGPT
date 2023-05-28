@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.14.2  may/2023  by mountaineerbr  GPL+3
+# v0.14.3  may/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -121,7 +121,7 @@ Description
 	argument is taken as INSTRUCTION and the following ones as INPUT
 	or PROMPT.
 
-	Option -d starts a multi-turn session in pure text completions,
+	Option -d starts a multi-turn session in plain text completions,
 	and does not set further options automatically.
 
 	Set option -c to start multi-turn chat mode via text completions
@@ -283,7 +283,7 @@ Options
 	-C, --continue, --resume
 		Continue (resume) from last session (compls/chat).
 	-d, --text
-		Start new multi-turn session in pure text completions.
+		Start new multi-turn session in plain text completions.
 	-e [INSTRUCTION] [INPUT], --edit
 		Set Edit mode. Model def=text-davinci-edit-001.
 	-i [PROMPT], --image
@@ -298,7 +298,7 @@ Options
 	-S /[AWESOME_PROMPT_NAME]
 	-S %[AWESOME_PROMPT_NAME_ZH]
 		Set or search an awesome-chatgpt-prompt(-zh).
-		Set \`//' or \`%%' to refresh cache.
+		Set \`//' or \`%%' to refresh cache (davinci+ models).
 	-TTT, --tiktoken
 		Count input tokens with tiktoken, it heeds options -ccm.
 		Set twice to print tokens, thrice to available encodings.
@@ -657,10 +657,10 @@ function set_histf
 			
 			#use substring to improve bash globbing speed
 			sub="${string:0:30}" sub="${sub##@("${q_type}"|"${a_type}"|":")}"
-			((OPTC)) && sub="${sub##$SPC0}"
+			((OPTC)) && sub="${sub##$SPC0}" #del leading spaces in chat only
 			stringc="${sub}${string:30}"
 			
-			((OPTC)) && {
+			((OPTC)) && {  #del trailing spaces in chat only
 			  ((ind = ${#stringc}-((${#stringc}/3)<30?(${#stringc}/3):30) ))
 			  sub="${stringc:$ind}" sub="${sub%%*(\\[ntrvf])}"
 			  stringc="${stringc:0:$ind}${sub}"
@@ -696,16 +696,19 @@ function set_histf
 		else 	break
 		fi
 	done < <(tac -- "$FILECHAT")
-	if [[ "$role" = system ]]  #1st sys/instruction msg extra newline 
+	if [[ "$role" = system ]]  #first system/instruction msg extra newline 
 	then 	[[ ${role_last:=user} = @(user|assistant) ]] || unset role_last
 		HIST="${HIST##"$stringc"?(\\n)}" HIST="${stringc}${role_last:+\\n}\\n${HIST}"
+		[[ $HIST = "$stringc"*(\\n) ]] && return  #hist contains only the system prompt
 	fi
 	sub="${HIST:0:30}" sub="${sub##\\[ntrvf]}" sub="${sub## }"
-	HIST="${sub}${HIST:30}"
+	HIST="${sub}${HIST:30}"  #del one leading nl+sp
 
-	((ind = ${#HIST}-((${#HIST}/3)<30?(${#HIST}/3):30) ))
-	sub="${HIST:$ind}" sub="${sub%%*(\\[ntrvf])}"
-	HIST="${HIST:0:$ind}${sub}"
+	((OPTC)) && {  #del multiple trailing nl in chat only
+	  ((ind = ${#HIST}-((${#HIST}/3)<30?(${#HIST}/3):30) ))
+	  sub="${HIST:$ind}" sub="${sub%%*(\\[ntrvf])}"
+	  HIST="${HIST:0:$ind}${sub}"
+	}
 }
 #https://thoughtblogger.com/continuing-a-conversation-with-a-chatbot-using-gpt/
 
@@ -1942,7 +1945,7 @@ do
 		C) 	((++OPTRESUME));;
 		d) 	OPTCMPL=1;;
 		e) 	OPTE=1 EPN=2;;
-		f$OPTF) unset EPN MOD MOD_CHAT MOD_EDIT MOD_AUDIO MODMAX INSTRUCTION CHATINSTR OPTC OPTE OPTI OPTJ OPTLOG USRLOG OPTRESUME OPTCMPL CHAT OPTTIKTOKEN OPTTIK OPTHH OPTL OPTMARG OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTN OPTP OPTT OPTV OPTVV OPTW OPTWW OPTZ OPTZZ OPTCLIP OPTMULTI MULTI OPT_AT_PC OPT_AT Q_TYPE A_TYPE RESTART START STOPS OPTSUFFIX SUFFIX
+		f$OPTF) unset EPN MOD MOD_CHAT MOD_EDIT MOD_AUDIO MODMAX INSTRUCTION OPTC OPTE OPTI OPTJ OPTLOG USRLOG OPTRESUME OPTCMPL CHAT OPTTIKTOKEN OPTTIK OPTHH OPTL OPTMARG OPTM OPTMM OPTMAX OPTA OPTAA OPTB OPTBB OPTN OPTP OPTT OPTV OPTVV OPTW OPTWW OPTZ OPTZZ OPTCLIP OPTMULTI MULTI OPT_AT_PC OPT_AT Q_TYPE A_TYPE RESTART START STOPS OPTSUFFIX SUFFIX CHATGPTRC CONFFILE REC_CMD
 			OPTF=1 OPTIND=1 OPTARG= ;. "$0" "$@" ;exit;;
 		F) 	[[ -f "${CHATGPTRC:-$CONFFILE}" ]] \
 			&& ${VISUAL:-${EDITOR:-vim}} "${CHATGPTRC:-$CONFFILE}" </dev/tty >/dev/tty
@@ -2001,7 +2004,7 @@ do
 	esac ;OPTARG=
 done
 shift $((OPTIND -1))
-unset LANGW CHAT REPLY N_LOOP SKIP EDIT COL1 COL2 optstring opt role rest input arg n
+unset LANGW CHAT REPLY N_LOOP SKIP EDIT ANS_NL COL1 COL2 optstring opt role rest input arg n
 
 [[ -t 1 ]] || OPTK=1 ;((OPTK)) ||
 # Normal Colours    # Bold              # Background
@@ -2034,10 +2037,10 @@ fi
 
 if ((OPTI+OPTII))
 then 	command -v base64 >/dev/null 2>&1 || OPTI_FMT=url
-	if set_sizef "${OPTS:-$1}"
-	then 	[[ -n $OPTS ]] || shift
-	elif set_sizef "${OPTS:-$2}"
-	then 	[[ -n $OPTS ]] || set -- "$1" "${@:3}"
+	if set_sizef "$1"
+	then 	shift
+	elif (($#<5)) && set_sizef "$2"
+	then 	set -- "$1" "${@:3}"
 	fi
 	[[ -e $1 ]] && OPTII=1  #img edits and vars
 fi
@@ -2182,7 +2185,7 @@ else               #text/chat completions
 	#model instruction
 	__sysmsgf 'Language Model:' "$MOD"
 	if ((CHAT+OPTRESUME))
-	then 	INSTRUCTION="${INSTRUCTION##:$SPC}"
+	then 	INSTRUCTION="${INSTRUCTION##$SPC:$SPC}" ;shell_histf "${INSTRUCTION}"
 		if ((OPTC&&OPTRESUME)) || ((OPTCMPL==1||OPTRESUME==1))
 		then 	unset INSTRUCTION
 		else 	break_sessionf
@@ -2263,28 +2266,29 @@ else               #text/chat completions
 					else 	unset OPTW
 					fi ;printf "${BPurple}%s${NC}\\n" "${REPLY:-"(EMPTY)"}" >&2
 				else
-					if ((OPTCMPL)) && { 	((N_LOOP)) || ((OPTCMPL==1)) ;} \
-						&&  ((EPN!=6)) && [[ -z "${RESTART}${REPLY}" ]]
-					then 	REPLY=" " EDIT=1
+					if ((OPTCMPL)) && ((!ANS_NL)) && { 	((N_LOOP)) || ((OPTCMPL==1)) ;} \
+						&& ((EPN!=6)) && [[ -z "${RESTART}${REPLY}" ]]
+					then 	REPLY=" " EDIT=1  #txt cmpls: start with space or at newline?
 					fi ;unset ex
 					while ((EDIT)) || unset REPLY  #!#
 						((OPTMULTI+MULTI)) && [[ -z "$RESTART" ]] && printf ">\\r" >&2
 						if [[ -n $ZSH_VERSION ]]
 						then 	((OPTK)) || arg='-p%B%F{14}' #cyan=14
-							vared -c -e -h $arg REPLY
-						else 	IFS=$'\n' read -r -e ${REPLY:+-i "$REPLY"} REPLY
+							IFS= vared -c -e -h $arg REPLY
+						else 	IFS= read -r -e ${REPLY:+-i "$REPLY"} REPLY
 						fi </dev/tty
 					do 	unset EDIT
 						case "$REPLY" in
-							*\\) 	MULTI=1 ex=1
+							*\\) 	MULTI=1 ex=1  #explicit new line
 								REPLY="${REPLY%%?(\\)\\}"
 								if [[ -z $REPLY ]]
-								then 	input="${input}${input:+\\n}"
+								then 	input="${input}\\n"
 									continue
 								fi;;
 						esac
-						[[ -n "$REPLY" ]] || break ;unset ex
-						input="${input}${input:+\\n}${REPLY}"
+						[[ -n "$REPLY" ]] || break
+						((ex)) || input="${input}${input:+\\n}"
+						input="${input}${REPLY}" ;unset ex
 						((MULTI+OPTMULTI)) || break
 					done
 					REPLY="${input:-$REPLY}"
@@ -2326,7 +2330,7 @@ else               #text/chat completions
 				else
 					set --
 				fi ; set -- "$REPLY"
-				unset WSKIP SKIP EDIT arg
+				unset WSKIP SKIP EDIT ANS_NL arg
 				break
 			done
 		fi
@@ -2335,8 +2339,8 @@ else               #text/chat completions
 		then 	__warmsgf "(empty)"
 			set -- ; continue
 		fi
-		if ((!OPTCMPL))
-		then 	set -- "${*##$SPC1}" #!#
+		if ((!OPTCMPL)) && ((OPTC))
+		then 	set -- "${*##$SPC1}"  #!#
 			set -- "${*%%$SPC1}"
 		fi
 		
@@ -2423,6 +2427,7 @@ else               #text/chat completions
 				.usage.completion_tokens//"0",
 				(.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"
 			) )
+			((OPTCMPL)) && ((EPN!=6)) && [[ $(jq -r '.choices[0]|.text' "$FILE") = *\\n ]] && ANS_NL=1
 			ans=$(jq '.choices[0]|.text//(.message.content)' "$FILE")
 			ans="${ans##[\"]}" ans="${ans%%[\"]}"
 			[[ -n "$ans" ]] || __warmsgf "(response empty)"
@@ -2452,6 +2457,6 @@ else               #text/chat completions
 		((++N_LOOP)) ;set --
 		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSUFFIX_OPT SUFFIX OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC Q P optv_save role rest tkn arg ans glob out var s n
 		((CHAT)) || break
-	done ;unset OLD_TOTAL SLEEP_WORDS N_LOOP SPC SPC0 SPC1 CKSUM CKSUM_OLD INSTRUCTION_OLD
+	done ;unset OLD_TOTAL SLEEP_WORDS N_LOOP SPC SPC0 SPC1 CKSUM CKSUM_OLD INSTRUCTION_OLD ANS_NL
 fi
-# vim=syntax sync minlines=2450
+# vim=syntax sync minlines=2470

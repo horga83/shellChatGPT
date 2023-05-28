@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "May 2023" "v0.14.2" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "May 2023" "v0.14.3" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -81,8 +81,8 @@
 \ \ \ \f[B]chatgpt.sh\f[R] \f[V]-ll\f[R] [\f[I]MODEL_NAME\f[R]]
 .SS DESCRIPTION
 .PP
-Complete INPUT text when run without any options (single-turn, pure text
-completions).
+Complete INPUT text when run without any options (single-turn, plain
+text completions).
 .PP
 Positional arguments are read as a single \f[B]PROMPT\f[R].
 Model \f[B]INSTRUCTION\f[R] is usually optional, however if it is
@@ -90,7 +90,7 @@ mandatory for a chosen model (such as edits models), then the first
 positional argument is read as \f[B]INSTRUCTION\f[R] and the following
 ones as \f[B]INPUT\f[R] or \f[B]PROMPT\f[R].
 .PP
-\f[V]Option -d\f[R] starts a multi-turn session in \f[B]pure text
+\f[V]Option -d\f[R] starts a multi-turn session in \f[B]plain text
 completions\f[R].
 This does not set further options automatically.
 .PP
@@ -140,6 +140,7 @@ percent sign, such as \[lq]\f[V]-S\f[R]
 \f[V]/\f[R]\f[I]linux_terminal\f[R]\[rq], start search for an
 \f[I]awesome-chatgpt-prompt(-zh)\f[R] (by Fatih KA and PlexPt).
 Set \[lq]\f[V]//\f[R]\[rq] or \[lq]\f[V]%%\f[R]\[rq] to refresh cache.
+Use with \f[I]davinci\f[R] and \f[I]gpt-3.5+\f[R] models.
 .PP
 \f[V]Option -e\f[R] sets the \f[B]text edits\f[R] endpoint.
 That endpoint requires both INSTRUCTION and INPUT prompts.
@@ -876,7 +877,7 @@ Chat mode in chat completions, session break.
 Continue (resume) from last session (compls/chat).
 .TP
 \f[B]-d\f[R], \f[B]--text\f[R]
-Start new multi-turn session in pure text completions.
+Start new multi-turn session in plain text completions.
 .TP
 \f[B]-e\f[R] [\f[I]INSTRUCTION\f[R]] [\f[I]INPUT\f[R]], \f[B]--edit\f[R]
 Set Edit mode.
@@ -902,7 +903,8 @@ should insert text (cmpls).
 \f[B]-S\f[R] \f[V]/\f[R][\f[I]AWESOME_PROMPT_NAME\f[R]]
 .TP
 \f[B]-S\f[R] \f[V]%\f[R][_AWESOME_PROMPT_NAME_ZH]
-Set or search an \f[I]awesome-chatgpt-prompt\f[R].
+Set or search an \f[I]awesome-chatgpt-prompt(-zh)\f[R]
+(\f[I]davinci\f[R] and \f[I]gpt3.5+\f[R] models).
 .RS
 .PP
 Set \f[V]//\f[R] or \f[V]%%\f[R] instead to refresh cache.

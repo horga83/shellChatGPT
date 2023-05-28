@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.14.2 | General Commands Manual
+% CHATGPT.SH(1) v0.14.3 | General Commands Manual
 % mountaineerbr
 % May 2023
 
@@ -27,14 +27,14 @@
 ### DESCRIPTION
 
 Complete INPUT text when run without any options (single-turn,
-pure text completions).
+plain text completions).
 
 Positional arguments are read as a single **PROMPT**. Model **INSTRUCTION**
 is usually optional, however if it is mandatory for a chosen model
 (such as edits models), then the first positional argument is read as
 **INSTRUCTION** and the following ones as **INPUT** or **PROMPT**.
 
-`Option -d` starts a multi-turn session in **pure text completions**.
+`Option -d` starts a multi-turn session in **plain text completions**.
 This does not set further options automatically.
 
 Set `option -c` to start a multi-turn chat mode via **text completions**
@@ -73,7 +73,8 @@ may be supplied as the single argument.
 
 If the argument to `-S` option starts with a backslash or a percent sign,
 such as "`-S` `/`_linux_terminal_", start search for an *awesome-chatgpt-prompt(-zh)*
-(by Fatih KA and PlexPt). Set "`//`" or "`%%`" to refresh cache.
+(by Fatih KA and PlexPt). Set "`//`" or "`%%`" to refresh cache. Use
+with _davinci_ and _gpt-3.5+_ models.
 
 `Option -e` sets the **text edits** endpoint. That endpoint requires
 both INSTRUCTION and INPUT prompts. User may choose a model amongst
@@ -608,7 +609,7 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
  
 **-d**, **\--text**
 
-: Start new multi-turn session in pure text completions.
+: Start new multi-turn session in plain text completions.
 
 
 **-e** \[_INSTRUCTION_] \[_INPUT_], **\--edit**
@@ -642,7 +643,7 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 
 **-S** `%`[_AWESOME_PROMPT_NAME_ZH]
 
-:     Set or search an *awesome-chatgpt-prompt*.
+:     Set or search an *awesome-chatgpt-prompt(-zh)* (_davinci_ and _gpt3.5+_ models).
       
       Set `//` or `%%` instead to refresh cache.
 

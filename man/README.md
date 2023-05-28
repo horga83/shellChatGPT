@@ -2,7 +2,7 @@
 author:
 - mountaineerbr
 date: May 2023
-title: CHATGPT.SH(1) v0.14.2 \| General Commands Manual
+title: CHATGPT.SH(1) v0.14.3 \| General Commands Manual
 ---
 
 ### NAME
@@ -29,8 +29,8 @@ title: CHATGPT.SH(1) v0.14.2 \| General Commands Manual
 
 ### DESCRIPTION
 
-Complete INPUT text when run without any options (single-turn, pure text
-completions).
+Complete INPUT text when run without any options (single-turn, plain
+text completions).
 
 Positional arguments are read as a single **PROMPT**. Model
 **INSTRUCTION** is usually optional, however if it is mandatory for a
@@ -38,7 +38,7 @@ chosen model (such as edits models), then the first positional argument
 is read as **INSTRUCTION** and the following ones as **INPUT** or
 **PROMPT**.
 
-`Option -d` starts a multi-turn session in **pure text completions**.
+`Option -d` starts a multi-turn session in **plain text completions**.
 This does not set further options automatically.
 
 Set `option -c` to start a multi-turn chat mode via **text completions**
@@ -77,7 +77,7 @@ as the single argument.
 If the argument to `-S` option starts with a backslash or a percent
 sign, such as “`-S` `/`*linux_terminal*”, start search for an
 *awesome-chatgpt-prompt(-zh)* (by Fatih KA and PlexPt). Set “`//`” or
-“`%%`” to refresh cache.
+“`%%`” to refresh cache. Use with *davinci* and *gpt-3.5+* models.
 
 `Option -e` sets the **text edits** endpoint. That endpoint requires
 both INSTRUCTION and INPUT prompts. User may choose a model amongst the
@@ -538,7 +538,7 @@ Chat mode in chat completions, session break.
 Continue (resume) from last session (compls/chat).
 
 **-d**, **--text**  
-Start new multi-turn session in pure text completions.
+Start new multi-turn session in plain text completions.
 
 **-e** \[*INSTRUCTION*\] \[*INPUT*\], **--edit**  
 Set Edit mode. Model def=*text-davinci-edit-001*.
@@ -561,7 +561,8 @@ text (cmpls).
 **-S** `/`\[*AWESOME_PROMPT_NAME*\]
 
 **-S** `%`\[\_AWESOME_PROMPT_NAME_ZH\]  
-Set or search an *awesome-chatgpt-prompt*.
+Set or search an *awesome-chatgpt-prompt(-zh)* (*davinci* and *gpt3.5+*
+models).
 
 Set `//` or `%%` instead to refresh cache.
 

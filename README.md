@@ -125,7 +125,8 @@ Chat mode in text editor (visual) mode. Edit initial input:
 ### 🔌 Awesome Prompts
 
 Set a prompt from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts)
-or [awesome-chatgpt-prompts-zh](https://github.com/PlexPt/awesome-chatgpt-prompts-zh):
+or [awesome-chatgpt-prompts-zh](https://github.com/PlexPt/awesome-chatgpt-prompts-zh),
+(use with Davinci or gpt-3.5+ models):
 
     chatgpt.sh -cc -S /linux_terminal
     
@@ -134,7 +135,7 @@ or [awesome-chatgpt-prompts-zh](https://github.com/PlexPt/awesome-chatgpt-prompt
     chatgpt.sh -cc -S %担任雅思写作考官
 
 
-Some simple prompts to get one started include:
+Alternatively, some simple prompts to get one started include:
 
 
     chatgpt.sh -cc -S'You are a professional psicologist.' 
