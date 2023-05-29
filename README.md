@@ -101,14 +101,14 @@ With `option -c`, some options are set automatically to create a chat bot with t
 
 Create **Marv, the sarcastic bot** manually:
 
-    chatgpt.sh -CCu -60 --frequency-penalty=0.5 --temp=0.5 --top_p=0.3 --restart-seq='\nYou: ' --start-seq='\nMarv:' --stop='You:' --stop='Marv:' -S'Marv is a chatbot that reluctantly answers questions with sarcastic responses:'
+    chatgpt.sh -du -60 --frequency-penalty=0.5 --temp=0.5 --top_p=0.3 --restart-seq='\nYou: ' --start-seq='\nMarv:' --stop='You:' --stop='Marv:' -S'Marv is a chatbot that reluctantly answers questions with sarcastic responses:'
 
 _Tip:_ set `-VV` to see the actual request body and how options are set!
 
 
 Complete text in multi-turn:
 
-    chatgpt.sh -CC -S'The following is a newspaper article.' "It all starts when FBI agents arrived at the governor house and  "
+    chatgpt.sh -d -S'The following is a newspaper article.' "It all starts when FBI agents arrived at the governor house and  "
 
 
 ### 💬 Native Chat Completions
@@ -360,11 +360,11 @@ of existing features than incorporate new ones.
 See also BUGS section in the [man page](man/README.md).
 
 
-## 📖 HELP PAGE 
+## 📖 Help Pages 
 
 Read the markdown [**man page here**](man/README.md).
 
-Alternatively, an help page snippet can be printed with `chatgpt.sh -h`.
+Alternatively, a help page snippet can be printed with `chatgpt.sh -h`.
 
 
 ## 💪 Contributors
