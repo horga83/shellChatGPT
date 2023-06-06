@@ -256,10 +256,11 @@ empty prompt.
 Minimal **INSTRUCTION** to behave like a chatbot is given with chat
 `options -cc`, unless otherwise explicitly set by the user.
 
-On chat mode, if no INSTRUCTION is set, a mininal one is given, and some
-options auto set, such as increasing temp and presence penalty, in order
-to un-lobotomise the bot. With cheap and fast models of text cmpls, such
-as Curie, the best_of option may be worth setting (to 2 or 3).
+On chat mode, if no INSTRUCTION is set, minimal instruction is given,
+and some options auto set, such as increasing temp and presence penalty,
+in order to un-lobotomise the bot. With cheap and fast models of text
+cmpls, such as Curie, the best_of option may be worth setting (to 2 or
+3).
 
 Prompt engineering is an art on itself. Study carefully how to craft the
 best prompts to get the most out of text, code and chat compls models.

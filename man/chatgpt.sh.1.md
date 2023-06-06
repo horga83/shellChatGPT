@@ -264,7 +264,7 @@ new empty prompt.
 Minimal **INSTRUCTION** to behave like a chatbot is given with
 chat `options -cc`, unless otherwise explicitly set by the user.
 
-On chat mode, if no INSTRUCTION is set, a mininal one is given,
+On chat mode, if no INSTRUCTION is set, minimal instruction is given,
 and some options auto set, such as increasing temp and presence penalty,
 in order to un-lobotomise the bot. With cheap and fast models of
 text cmpls, such as Curie, the best_of option may be worth
