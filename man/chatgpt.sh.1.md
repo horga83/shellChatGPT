@@ -1,6 +1,6 @@
-% CHATGPT.SH(1) v0.14.3 | General Commands Manual
+% CHATGPT.SH(1) v0.14.5 | General Commands Manual
 % mountaineerbr
-% May 2023
+% June 2023
 
 
 ### NAME
@@ -261,10 +261,10 @@ new empty prompt.
 
 #### 3. Prompt Engineering and Design
 
-Very short **INSTRUCTION** to behave like a chatbot are given with
+Minimal **INSTRUCTION** to behave like a chatbot is given with
 chat `options -cc`, unless otherwise explicitly set by the user.
 
-On chat mode, if no INSTRUCTION is set, a short one is given,
+On chat mode, if no INSTRUCTION is set, a mininal one is given,
 and some options auto set, such as increasing temp and presence penalty,
 in order to un-lobotomise the bot. With cheap and fast models of
 text cmpls, such as Curie, the best_of option may be worth

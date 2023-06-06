@@ -257,8 +257,8 @@ or ask it in comments to optimise the following code, for example.
 
 Unless the chat `option -c` or `-cc` are set, _no_ instruction is
 given to the language model. On chat mode, if no instruction is set,
-a short one is given, and some options set, such as increasing temp and presence
-penalty, in order to un-lobotomise the bot.
+minimal instruction is given, and some options set, such as increasing
+temp and presence penalty, in order to un-lobotomise the bot.
 
 Prompt engineering is an art on itself. Study carefully how to
 craft the best prompts to get the most out of text, code and

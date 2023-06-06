@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.14.4  may/2023  by mountaineerbr  GPL+3
+# v0.14.5  jun/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -2196,7 +2196,7 @@ else               #text/chat completions
 		if ((OPTC&&OPTRESUME)) || ((OPTCMPL==1||OPTRESUME==1))
 		then 	unset INSTRUCTION
 		else 	break_sessionf
-			((OPTC)) && INSTRUCTION="${INSTRUCTION:-Be a helpful assistant.}"
+			((OPTC)) && INSTRUCTION="${INSTRUCTION:-The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and friendly.}" #
 			[[ ${INSTRUCTION} != ?(:)*([$IFS]) ]] \
 			&& push_tohistf "$(escapef ":${INSTRUCTION}")"
 		fi ;[[ ${INSTRUCTION} != ?(:)*([$IFS]) ]] \

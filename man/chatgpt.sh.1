@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "May 2023" "v0.14.3" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "June 2023" "v0.14.5" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -508,10 +508,10 @@ After a response has been written to the history file,
 in a single forward slash in the new empty prompt.
 .SS 3. Prompt Engineering and Design
 .PP
-Very short \f[B]INSTRUCTION\f[R] to behave like a chatbot are given with
+Minimal \f[B]INSTRUCTION\f[R] to behave like a chatbot is given with
 chat \f[V]options -cc\f[R], unless otherwise explicitly set by the user.
 .PP
-On chat mode, if no INSTRUCTION is set, a short one is given, and some
+On chat mode, if no INSTRUCTION is set, a mininal one is given, and some
 options auto set, such as increasing temp and presence penalty, in order
 to un-lobotomise the bot.
 With cheap and fast models of text cmpls, such as Curie, the best_of
