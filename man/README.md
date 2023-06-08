@@ -2,7 +2,7 @@
 author:
 - mountaineerbr
 date: June 2023
-title: CHATGPT.SH(1) v0.14.5 \| General Commands Manual
+title: CHATGPT.SH(1) v0.14.6 \| General Commands Manual
 ---
 
 ### NAME
@@ -186,7 +186,9 @@ or “`/`”.
 | `!NUM` | `!max` \[*NUM*,*NUM*\]  | Set response tokens / model capacity. |
 | `-a`   | `!pre` \[*VAL*\]        | Set presence pensalty.                |
 | `-A`   | `!freq` \[*VAL*\]       | Set frequency penalty.                |
+| `-b`   | `!best` \[*NUM*\]       | Set best-of n results.                |
 | `-m`   | `!mod` \[*MOD*\|*IND*\] | Set model (by index or name).         |
+| `-n`   | `!results` \[*NUM*\]    | Set number of results.                |
 | `-p`   | `!top` \[*VAL*\]        | Set top_p.                            |
 | `-r`   | `!restart` \[*SEQ*\]    | Set restart sequence.                 |
 | `-R`   | `!start` \[*SEQ*\]      | Set start sequence.                   |
@@ -480,7 +482,7 @@ Set presence penalty (cmpls/chat, -2.0 - 2.0).
 **-A** \[*VAL*\], **--frequency-penalty**=\[*VAL*\]  
 Set frequency penalty (cmpls/chat, -2.0 - 2.0).
 
-**-b** \[*VAL*\], **--best-of**=\[*VAL*\]  
+**-b** \[*NUM*\], **--best-of**=\[*NUM*\]  
 Set best of, must be greater than `option -n` (cmpls). Def=*1*.
 
 **-B**, **--log-prob**  

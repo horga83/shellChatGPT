@@ -5,7 +5,7 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="mountaineerbr" />
-  <title>CHATGPT.SH(1) v0.14.5 | General Commands Manual</title>
+  <title>CHATGPT.SH(1) v0.14.6 | General Commands Manual</title>
   <style>
     html {
       color: #1a1a1a;
@@ -167,7 +167,7 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">CHATGPT.SH(1) v0.14.5 | General Commands Manual</h1>
+<h1 class="title">CHATGPT.SH(1) v0.14.6 | General Commands Manual</h1>
 <p class="author">mountaineerbr</p>
 <p class="date">June 2023</p>
 </header>
@@ -363,10 +363,20 @@ prompt to set a new parameter. The command operator may be either
 <td>Set frequency penalty.</td>
 </tr>
 <tr class="even">
+<td style="text-align: left;"><code>-b</code></td>
+<td style="text-align: left;"><code>!best</code> [<em>NUM</em>]</td>
+<td>Set best-of n results.</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;"><code>-m</code></td>
 <td style="text-align: left;"><code>!mod</code>
 [<em>MOD</em>|<em>IND</em>]</td>
 <td>Set model (by index or name).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>-n</code></td>
+<td style="text-align: left;"><code>!results</code> [<em>NUM</em>]</td>
+<td>Set number of results.</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;"><code>-p</code></td>
@@ -757,8 +767,8 @@ Def=<em>auto-512</em>.</p>
 <dd>
 <p>Set frequency penalty (cmpls/chat, -2.0 - 2.0).</p>
 </dd>
-<dt><strong>-b</strong> [<em>VAL</em>],
-<strong>--best-of</strong>=[<em>VAL</em>]</dt>
+<dt><strong>-b</strong> [<em>NUM</em>],
+<strong>--best-of</strong>=[<em>NUM</em>]</dt>
 <dd>
 <p>Set best of, must be greater than <code>option -n</code> (cmpls).
 Def=<em>1</em>.</p>

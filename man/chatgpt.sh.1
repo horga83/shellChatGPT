@@ -15,7 +15,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "CHATGPT.SH" "1" "June 2023" "v0.14.5" "General Commands Manual"
+.TH "CHATGPT.SH" "1" "June 2023" "v0.14.6" "General Commands Manual"
 .hy
 .SS NAME
 .PP
@@ -286,11 +286,25 @@ T}@T{
 Set frequency penalty.
 T}
 T{
+\f[V]-b\f[R]
+T}@T{
+\f[V]!best\f[R] [\f[I]NUM\f[R]]
+T}@T{
+Set best-of n results.
+T}
+T{
 \f[V]-m\f[R]
 T}@T{
 \f[V]!mod\f[R] [\f[I]MOD\f[R]|\f[I]IND\f[R]]
 T}@T{
 Set model (by index or name).
+T}
+T{
+\f[V]-n\f[R]
+T}@T{
+\f[V]!results\f[R] [\f[I]NUM\f[R]]
+T}@T{
+Set number of results.
 T}
 T{
 \f[V]-p\f[R]
@@ -748,7 +762,7 @@ Set presence penalty (cmpls/chat, -2.0 - 2.0).
 \f[B]-A\f[R] [\f[I]VAL\f[R]], \f[B]--frequency-penalty\f[R]=[\f[I]VAL\f[R]]
 Set frequency penalty (cmpls/chat, -2.0 - 2.0).
 .TP
-\f[B]-b\f[R] [\f[I]VAL\f[R]], \f[B]--best-of\f[R]=[\f[I]VAL\f[R]]
+\f[B]-b\f[R] [\f[I]NUM\f[R]], \f[B]--best-of\f[R]=[\f[I]NUM\f[R]]
 Set best of, must be greater than \f[V]option -n\f[R] (cmpls).
 Def=\f[I]1\f[R].
 .TP

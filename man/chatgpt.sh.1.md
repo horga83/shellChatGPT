@@ -1,4 +1,4 @@
-% CHATGPT.SH(1) v0.14.5 | General Commands Manual
+% CHATGPT.SH(1) v0.14.6 | General Commands Manual
 % mountaineerbr
 % June 2023
 
@@ -189,7 +189,9 @@ may be either "`!`", or "`/`".
     `!NUM`    `!max` \[_NUM_,_NUM_]    Set response tokens / model capacity.
       `-a`    `!pre`       \[_VAL_]    Set presence pensalty.
       `-A`    `!freq`      \[_VAL_]    Set frequency penalty.
+      `-b`    `!best`      \[_NUM_]    Set best-of n results.
       `-m`    `!mod` \[_MOD_|_IND_]    Set model (by index or name).
+      `-n`    `!results`   \[_NUM_]    Set number of results.
       `-p`    `!top`       \[_VAL_]    Set top_p.
       `-r`    `!restart`   \[_SEQ_]    Set restart sequence.
       `-R`    `!start`     \[_SEQ_]    Set start sequence.
@@ -523,7 +525,7 @@ A free OpenAI **API key**. `Bash`, `cURL`, and `JQ`.
 : Set frequency penalty (cmpls/chat, -2.0 - 2.0).
 
 
-**-b** \[_VAL_], **\--best-of**=\[_VAL_]
+**-b** \[_NUM_], **\--best-of**=\[_NUM_]
 
 : Set best of, must be greater than `option -n` (cmpls). Def=_1_.
 

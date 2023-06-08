@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # chatgpt.sh -- ChatGPT/DALL-E/Whisper Shell Wrapper
-# v0.14.5  jun/2023  by mountaineerbr  GPL+3
+# v0.14.6  jun/2023  by mountaineerbr  GPL+3
 if [[ -n $ZSH_VERSION  ]]
 then 	set -o emacs; setopt NO_SH_GLOB KSH_GLOB KSH_ARRAYS SH_WORD_SPLIT GLOB_SUBST PROMPT_PERCENT NO_NOMATCH NO_POSIX_BUILTINS NO_SINGLE_LINE_ZLE PIPE_FAIL
 else 	shopt -s extglob ;shopt -s checkwinsize ;set -o pipefail
@@ -179,7 +179,9 @@ Chat Commands
      !NUM      !max  [NUM,NUM]  Set response tokens / model capacity.
        -a      !pre      [VAL]  Set presence pensalty.
        -A      !freq     [VAL]  Set frequency penalty.
+       -b      !best     [NUM]  Set best-of n results.
        -m      !mod  [MOD|IND]  Set model (by index or name).
+       -n      !results  [NUM]  Set number of results.
        -p      !top      [VAL]  Set top_p.
        -r      !restart  [SEQ]  Set restart sequence.
        -R      !start    [SEQ]  Set start sequence.
@@ -243,7 +245,7 @@ Options
 		Set presence penalty  (cmpls/chat, -2.0 - 2.0).
 	-A [VAL], --frequency-penalty=[VAL]
 		Set frequency penalty (cmpls/chat, -2.0 - 2.0).
-	-b [VAL], --best-of=[VAL]
+	-b [NUM], --best-of=[NUM]
 		Set best of, must be greater than opt -n (cmpls). Def=1.
 	-B, --log-prob
 		Print log probabilities to stderr (cmpls, 0 - 5).
@@ -835,6 +837,11 @@ function cmd_runf
 			fix_dotf OPTAA
 			__cmdmsgf 'Frequency penalty' "$OPTAA"
 			;;
+		-b*|best[_-]of*|best*)
+			set -- "${*//[!0-9.]}" ;set -- "${*%%.*}"
+			OPTB="${*:-$OPTB}"
+			__cmdmsgf 'Best_of' "$OPTB"
+			;;
 		-[Cc]|break|br|new)
 			break_sessionf
 			[[ -n ${INSTRUCTION_OLD} ]] && {
@@ -871,6 +878,11 @@ function cmd_runf
 			fi
 			set_model_epnf "$MOD" ;__cmdmsgf 'Model' "$MOD"
 			((EPN==6)) && OPTC=2 || OPTC=1
+			;;
+		-n*|results*)
+			set -- "${*//[!0-9.]}" ;set -- "${*%%.*}"
+			OPTN="${*:-$OPTN}"
+			__cmdmsgf 'Results' "$OPTN"
 			;;
 		-p*|top*)
 			set -- "${*//[!0-9.]}"
@@ -2010,7 +2022,7 @@ do
 	esac ;OPTARG=
 done
 shift $((OPTIND -1))
-unset LANGW CHAT REPLY N_LOOP SKIP EDIT ANS_NL COL1 COL2 optstring opt role rest input arg n
+unset LANGW CHAT REPLY N_LOOP SKIP EDIT COL1 COL2 optstring opt role rest input arg n
 
 [[ -t 1 ]] || OPTK=1 ;((OPTK)) ||
 # Normal Colours    # Bold              # Background
@@ -2273,7 +2285,7 @@ else               #text/chat completions
 					else 	unset OPTW
 					fi ;printf "${BPurple}%s${NC}\\n" "${REPLY:-"(EMPTY)"}" >&2
 				else
-					if ((OPTCMPL)) && ((!ANS_NL)) && { 	((N_LOOP)) || ((OPTCMPL==1)) ;} \
+					if ((OPTCMPL)) && { 	((N_LOOP)) || ((OPTCMPL==1)) ;} \
 						&& ((EPN!=6)) && [[ -z "${RESTART}${REPLY}" ]]
 					then 	REPLY=" " EDIT=1  #txt cmpls: start with space or at newline?
 					fi ;unset ex
@@ -2337,7 +2349,7 @@ else               #text/chat completions
 				else
 					set --
 				fi ; set -- "$REPLY"
-				unset WSKIP SKIP EDIT ANS_NL arg
+				unset WSKIP SKIP EDIT arg
 				break
 			done
 		fi
@@ -2434,12 +2446,15 @@ else               #text/chat completions
 				.usage.completion_tokens//"0",
 				(.created//empty|strflocaltime("%Y-%m-%dT%H:%M:%S%Z"))' "$FILE"
 			) )
-			((OPTCMPL)) && ((EPN!=6)) && [[ $(jq -r '.choices[0]|.text' "$FILE") = *\\n ]] && ANS_NL=1
-			ans=$(jq '.choices[0]|.text//(.message.content)' "$FILE")
-			ans="${ans##[\"]}" ans="${ans%%[\"]}"
+			unset ans buff n
+			for ((n=0;n<OPTN;n++))
+			do 	buff=$(jq ".choices[$n]|.text//(.message.content)//empty" "$FILE")
+				buff="${buff##[\"]}" buff="${buff%%[\"]}"
+				ans="${ans}"${ans:+${buff:+\\n\\n}}"${buff}"
+			done
 			[[ -n "$ans" ]] || __warmsgf "(response empty)"
 			if CKSUM=$(cksumf "$FILECHAT") ;[[ $CKSUM != "${CKSUM_OLD:-$CKSUM}" ]]
-			then 	COL2=${NC} __warmsgf 'Err: History file changed'$'\n' 'Copy to new? [Y]es/[n]o/[i]gnore all ' ''
+			then 	COL2=${NC} __warmsgf 'Err: History file changed'$'\n' 'Fork session? [Y]es/[n]o/[i]gnore all ' ''
 				case "$(__read_charf)" in
 					[IiGg]) 	unset CKSUM CKSUM_OLD ;function cksumf { 	: ;};;
 					[QqNnAa]|$'\e') :;;
@@ -2448,8 +2463,7 @@ else               #text/chat completions
 			fi
 			((${#tkn[@]}>2)) && ((${#ans}))
 		}
-		then
-			ans="${A_TYPE##$SPC0}${ans}"
+		then 	ans="${A_TYPE##$SPC0}${ans}"
 			((OPTB>1)) && tkn[1]=$(__tiktokenf "$ans" "4") #tkn sum will compensate later
 			((OPTAWE)) || push_tohistf "$(escapef "${REC_OUT:-$*}")" "$((tkn[0]-OLD_TOTAL))" "${tkn[2]}"
 			push_tohistf "$ans" "${tkn[1]}" "${tkn[2]}" || unset OPTC OPTRESUME OPTCMPL CHAT
@@ -2462,8 +2476,8 @@ else               #text/chat completions
 		((OPTLOG)) && (usr_logf "$(unescapef "${ESC}\\n${ans}")" > "$USRLOG" &)
 
 		((++N_LOOP)) ;set --
-		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSUFFIX_OPT SUFFIX OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC Q P optv_save role rest tkn arg ans glob out var s n
+		unset INSTRUCTION TKN_PREV REC_OUT HIST HIST_C WSIP SKIP EDIT REPLY REPLY_OLD OPTA_OPT OPTAA_OPT OPTP_OPT OPTB_OPT OPTBB_OPT OPTSUFFIX_OPT SUFFIX OPTSTOP OPTAWE RETRY BAD_RESPONSE ESC Q P optv_save role rest tkn arg ans buff glob out var s n
 		((CHAT)) || break
-	done ;unset OLD_TOTAL SLEEP_WORDS N_LOOP SPC SPC0 SPC1 CKSUM CKSUM_OLD INSTRUCTION_OLD ANS_NL
+	done ;unset OLD_TOTAL SLEEP_WORDS N_LOOP SPC SPC0 SPC1 CKSUM CKSUM_OLD INSTRUCTION_OLD
 fi
-# vim=syntax sync minlines=2470
+# vim=syntax sync minlines=2490
